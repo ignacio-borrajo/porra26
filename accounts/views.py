@@ -5,7 +5,7 @@ from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views import View
 
-from .forms import ChangePasswordForm, LoginForm
+from .forms import ChangePasswordForm, LoginForm, ProfileForm
 
 
 class LoginView(View):
@@ -54,4 +54,19 @@ class ChangePasswordView(LoginRequiredMixin, View):
             login(request, request.user)
             messages.success(request, "Contraseña actualizada.")
             return redirect("competicion:dashboard")
+        return render(request, self.template_name, {"form": form})
+
+
+class ProfileView(LoginRequiredMixin, View):
+    template_name = "accounts/profile.html"
+
+    def get(self, request):
+        return render(request, self.template_name, {"form": ProfileForm(instance=request.user)})
+
+    def post(self, request):
+        form = ProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Perfil actualizado.")
+            return redirect("accounts:profile")
         return render(request, self.template_name, {"form": form})
