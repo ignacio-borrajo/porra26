@@ -7,6 +7,7 @@ urlpatterns = [
     path("jugadores/nuevo/", views.PlayerFormView.as_view(), name="player_new"),
     path("jugadores/<int:pk>/", views.PlayerFormView.as_view(), name="player_edit"),
     path("jugadores/<int:pk>/reset/", views.ResetPasswordView.as_view(), name="player_reset"),
+    path("jugadores/<int:pk>/clave/", views.PasswordRevealView.as_view(), name="player_reveal"),
     path(
         "jugadores/<int:pk>/baja/",
         views.TogglePlayerActiveView.as_view(),

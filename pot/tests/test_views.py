@@ -20,24 +20,6 @@ def test_manage_players_renders_for_gestor(client):
 
 
 @pytest.mark.django_db
-def test_create_player_shows_temp_password(client, monkeypatch):
-    monkeypatch.setattr("accounts.validators._allowed_domains", lambda: ["edisa.com"])
-    g = GestorFactory(must_change_password=False)
-    client.force_login(g)
-    r = client.post(
-        reverse("pot:player_new"),
-        {
-            "name": "Nuevo",
-            "email": "nuevo@edisa.com",
-            "dept": "Dev",
-        },
-    )
-    assert r.status_code == 200
-    assert "Contraseña temporal".encode() in r.content
-    assert User.objects.filter(email="nuevo@edisa.com").exists()
-
-
-@pytest.mark.django_db
 def test_toggle_payment(client):
     g = GestorFactory(must_change_password=False)
     client.force_login(g)
@@ -72,3 +54,73 @@ def test_reset_password_changes_password_and_shows_temp(client):
     p.refresh_from_db()
     assert p.password != old_hash
     assert p.must_change_password is True
+
+
+@pytest.mark.django_db
+def test_player_new_get_returns_fragment_with_x_modal_header(client, monkeypatch):
+    monkeypatch.setattr("accounts.validators._allowed_domains", lambda: ["edisa.com"])
+    client.force_login(GestorFactory(must_change_password=False))
+    r = client.get(reverse("pot:player_new"), HTTP_X_MODAL="1")
+    assert r.status_code == 200
+    assert b"<html" not in r.content.lower()  # fragmento, no página completa
+    assert b"Nuevo jugador" in r.content
+
+
+@pytest.mark.django_db
+def test_player_edit_post_ok_returns_x_modal_redirect(client, monkeypatch):
+    monkeypatch.setattr("accounts.validators._allowed_domains", lambda: ["edisa.com"])
+    client.force_login(GestorFactory(must_change_password=False))
+    p = UserFactory()
+    r = client.post(
+        reverse("pot:player_edit", args=[p.id]),
+        {
+            "name": "Nuevo Nombre",
+            "email": p.email,
+            "dept": "",
+            "sede": "",
+            "puesto": "",
+            "is_jugador": "on",
+            "is_gestor": "",
+        },
+        HTTP_X_MODAL="1",
+    )
+    assert r.status_code == 200
+    assert r.headers.get("X-Modal-Redirect", "").endswith("/gestion/jugadores/")
+
+
+@pytest.mark.django_db
+def test_player_new_post_ok_redirects_to_password_reveal(client, monkeypatch):
+    monkeypatch.setattr("accounts.validators._allowed_domains", lambda: ["edisa.com"])
+    client.force_login(GestorFactory(must_change_password=False))
+    r = client.post(
+        reverse("pot:player_new"),
+        {
+            "name": "Nuevo",
+            "email": "nuevo@edisa.com",
+            "dept": "",
+            "sede": "",
+            "puesto": "",
+            "is_jugador": "on",
+            "is_gestor": "",
+        },
+        HTTP_X_MODAL="1",
+    )
+    assert r.status_code == 200
+    # El header apunta al password reveal de ese usuario.
+    redirect = r.headers.get("X-Modal-Redirect", "")
+    user = User.objects.get(email="nuevo@edisa.com")
+    assert redirect == reverse("pot:player_reveal", args=[user.id])
+
+
+@pytest.mark.django_db
+def test_player_form_invalid_returns_x_modal_errors_header(client, monkeypatch):
+    monkeypatch.setattr("accounts.validators._allowed_domains", lambda: ["edisa.com"])
+    client.force_login(GestorFactory(must_change_password=False))
+    r = client.post(
+        reverse("pot:player_new"),
+        {"name": "", "email": "no-email", "dept": "", "sede": "", "puesto": "",
+         "is_jugador": "on", "is_gestor": ""},
+        HTTP_X_MODAL="1",
+    )
+    assert r.status_code == 200
+    assert r.headers.get("X-Modal-Errors") == "1"

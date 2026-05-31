@@ -1,5 +1,7 @@
 from django.contrib import messages
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 
@@ -31,19 +33,32 @@ class ManagePlayersView(GestorRequiredMixin, View):
 
 
 class PlayerFormView(GestorRequiredMixin, View):
+    def _is_modal(self, request) -> bool:
+        return request.headers.get("X-Modal") == "1"
+
     def _get_object(self, pk):
         return User.objects.get(pk=pk) if pk else None
 
+    def _render_form(self, request, form, obj):
+        return render(
+            request,
+            "pot/_player_modal.html",
+            {"form": form, "player": obj, "modal": self._is_modal(request)},
+        )
+
     def get(self, request, pk=None):
         obj = self._get_object(pk)
-        form = PlayerForm(instance=obj)
-        return render(request, "pot/_player_modal.html", {"form": form, "player": obj})
+        return self._render_form(request, PlayerForm(instance=obj), obj)
 
     def post(self, request, pk=None):
         obj = self._get_object(pk)
         form = PlayerForm(request.POST, instance=obj)
         if not form.is_valid():
-            return render(request, "pot/_player_modal.html", {"form": form, "player": obj})
+            response = self._render_form(request, form, obj)
+            if self._is_modal(request):
+                response["X-Modal-Errors"] = "1"
+            return response
+
         is_new = obj is None
         if is_new:
             temp = generate_temp_password()
@@ -53,19 +68,21 @@ class PlayerFormView(GestorRequiredMixin, View):
             user.save()
             Payment.objects.get_or_create(player=user)
             AuditLog.objects.create(
-                actor=request.user,
-                action="player_created",
-                target_type="user",
-                target_id=str(user.id),
-                payload={},
+                actor=request.user, action="player_created",
+                target_type="user", target_id=str(user.id), payload={},
             )
-            messages.success(request, "Jugador creado.")
-            return render(
-                request, "pot/_password_reveal.html", {"player": user, "temp_password": temp}
-            )
-        form.save()
-        messages.success(request, "Cambios guardados.")
-        return redirect("pot:manage_players")
+            request.session[f"temp_pw_{user.id}"] = temp
+            target = reverse("pot:player_reveal", args=[user.id])
+        else:
+            form.save()
+            target = reverse("pot:manage_players")
+
+        messages.success(request, "Jugador guardado." if not is_new else "Jugador creado.")
+        if self._is_modal(request):
+            response = HttpResponse(status=200)
+            response["X-Modal-Redirect"] = target
+            return response
+        return redirect(target)
 
 
 class ResetPasswordView(GestorRequiredMixin, View):
@@ -83,6 +100,27 @@ class ResetPasswordView(GestorRequiredMixin, View):
             payload={},
         )
         return render(request, "pot/_password_reveal.html", {"player": u, "temp_password": temp})
+
+
+class PasswordRevealView(GestorRequiredMixin, View):
+    """Pantalla que muestra la contraseña temporal generada para un alta.
+
+    Se accede vía X-Modal-Redirect tras un POST exitoso de alta. Es
+    información sensible y por eso vive en una página propia, fuera del
+    overlay.
+    """
+
+    def get(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        temp = request.session.pop(f"temp_pw_{pk}", None)
+        if not temp:
+            messages.warning(request, "La contraseña ya no está disponible.")
+            return redirect("pot:manage_players")
+        return render(
+            request,
+            "pot/_password_reveal.html",
+            {"player": user, "temp_password": temp},
+        )
 
 
 class TogglePlayerActiveView(GestorRequiredMixin, View):
