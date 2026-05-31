@@ -168,3 +168,108 @@ def test_profile_post_invalid_choice_keeps_db_intact(client):
     assert r.status_code == 200
     user.refresh_from_db()
     assert user.dept == "gestion"
+
+
+@pytest.mark.django_db
+def test_password_post_changes_password_and_keeps_session(client):
+    user = UserFactory(email="ana@edisa.com")
+    user.set_password("Vieja12345!")
+    user.save()
+    client.force_login(user)
+    r = client.post(
+        reverse("accounts:my_account"),
+        {
+            "action": "password",
+            "current": "Vieja12345!",
+            "new1": "NuevaSegura1",
+            "new2": "NuevaSegura1",
+        },
+    )
+    assert r.status_code == 302
+    user.refresh_from_db()
+    assert user.check_password("NuevaSegura1")
+    # sesión sigue viva
+    r2 = client.get(reverse("accounts:my_account"))
+    assert r2.status_code == 200
+
+
+@pytest.mark.django_db
+def test_password_post_wrong_current_keeps_password(client):
+    user = UserFactory()
+    user.set_password("Correcta1234")
+    user.save()
+    client.force_login(user)
+    r = client.post(
+        reverse("accounts:my_account"),
+        {
+            "action": "password",
+            "current": "Incorrecta1234",
+            "new1": "NuevaSegura1",
+            "new2": "NuevaSegura1",
+        },
+    )
+    assert r.status_code == 200
+    user.refresh_from_db()
+    assert user.check_password("Correcta1234")
+
+
+@pytest.mark.django_db
+def test_password_post_mismatch_shows_error(client):
+    user = UserFactory()
+    user.set_password("Correcta1234")
+    user.save()
+    client.force_login(user)
+    r = client.post(
+        reverse("accounts:my_account"),
+        {
+            "action": "password",
+            "current": "Correcta1234",
+            "new1": "NuevaSegura1",
+            "new2": "OtraDistinta1",
+        },
+    )
+    assert r.status_code == 200
+    assert b"no coinciden" in r.content
+
+
+@pytest.mark.django_db
+def test_password_post_weak_rejected(client):
+    user = UserFactory()
+    user.set_password("Correcta1234")
+    user.save()
+    client.force_login(user)
+    r = client.post(
+        reverse("accounts:my_account"),
+        {
+            "action": "password",
+            "current": "Correcta1234",
+            "new1": "todominusculas",
+            "new2": "todominusculas",
+        },
+    )
+    assert r.status_code == 200
+    user.refresh_from_db()
+    assert user.check_password("Correcta1234")
+
+
+@pytest.mark.django_db
+def test_password_post_keeps_must_change_flag_false(client):
+    """El cambio normal desde /mi-cuenta/ ocurre cuando must_change_password ya
+    es False (el middleware redirige si fuera True). Verificamos que tras el
+    cambio el flag sigue siendo False."""
+    user = UserFactory(must_change_password=False)
+    user.set_password("Inicial12345")
+    user.save()
+    client.force_login(user)
+    r = client.post(
+        reverse("accounts:my_account"),
+        {
+            "action": "password",
+            "current": "Inicial12345",
+            "new1": "NuevaSegura1",
+            "new2": "NuevaSegura1",
+        },
+    )
+    assert r.status_code == 302
+    user.refresh_from_db()
+    assert user.must_change_password is False
