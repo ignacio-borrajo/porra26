@@ -35,3 +35,19 @@ class User(AbstractBaseUser, PermissionsMixin):
         if len(parts) == 1:
             return parts[0][:2].upper()
         return (parts[0][0] + parts[-1][0]).upper()
+
+
+class AuditLog(models.Model):
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="audit_actions")
+    action = models.CharField(max_length=40)
+    target_type = models.CharField(max_length=20)
+    target_id = models.CharField(max_length=64)
+    payload = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["action", "-created_at"])]
+
+    def __str__(self):
+        return f"{self.action} on {self.target_type}#{self.target_id} by {self.actor_id}"
