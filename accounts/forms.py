@@ -1,8 +1,7 @@
 from django import forms
 from django.contrib.auth import authenticate
 
-from accounts.models import User
-
+from .models import User
 from .validators import validate_email_domain
 
 
