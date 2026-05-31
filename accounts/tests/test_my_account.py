@@ -289,3 +289,65 @@ def test_post_unknown_action_returns_400(client):
     client.force_login(user)
     r = client.post(reverse("accounts:my_account"), {"action": "explotame"})
     assert r.status_code == 400
+
+
+@pytest.mark.django_db
+def test_profile_post_writes_audit_log_when_changed(client):
+    user = UserFactory(name="Ana", dept="gestion", sede="vigo", puesto="desarrollo")
+    client.force_login(user)
+    client.post(
+        reverse("accounts:my_account"),
+        {
+            "action": "profile",
+            "name": "Ana López",
+            "dept": "gestion",
+            "sede": "vigo",
+            "puesto": "desarrollo",
+        },
+    )
+    log = AuditLog.objects.filter(action="profile.update").first()
+    assert log is not None
+    assert log.actor_id == user.id
+    assert log.target_type == "user"
+    assert log.target_id == str(user.id)
+    assert log.payload == {"changed": ["name"]}
+
+
+@pytest.mark.django_db
+def test_profile_post_no_audit_when_nothing_changed(client):
+    user = UserFactory(name="Ana", dept="gestion", sede="vigo", puesto="desarrollo")
+    client.force_login(user)
+    client.post(
+        reverse("accounts:my_account"),
+        {
+            "action": "profile",
+            "name": "Ana",
+            "dept": "gestion",
+            "sede": "vigo",
+            "puesto": "desarrollo",
+        },
+    )
+    assert AuditLog.objects.filter(action="profile.update").count() == 0
+
+
+@pytest.mark.django_db
+def test_password_change_writes_audit_log(client):
+    user = UserFactory()
+    user.set_password("Correcta1234")
+    user.save()
+    client.force_login(user)
+    client.post(
+        reverse("accounts:my_account"),
+        {
+            "action": "password",
+            "current": "Correcta1234",
+            "new1": "NuevaSegura1",
+            "new2": "NuevaSegura1",
+        },
+    )
+    log = AuditLog.objects.filter(action="password.change").first()
+    assert log is not None
+    assert log.actor_id == user.id
+    assert log.target_type == "user"
+    assert log.target_id == str(user.id)
+    assert log.payload == {}

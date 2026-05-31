@@ -7,6 +7,7 @@ from django.urls import reverse_lazy
 from django.views import View
 
 from .forms import ChangePasswordForm, LoginForm, ProfileForm
+from .models import AuditLog
 
 
 class LoginView(View):
@@ -88,7 +89,16 @@ class MyAccountView(LoginRequiredMixin, View):
         form = ProfileForm(request.POST, instance=request.user)
         if not form.is_valid():
             return self._render(request, profile_form=form)
+        changed = list(form.changed_data)
         form.save()
+        if changed:
+            AuditLog.objects.create(
+                actor=request.user,
+                action="profile.update",
+                target_type="user",
+                target_id=str(request.user.id),
+                payload={"changed": changed},
+            )
         messages.success(request, "Datos actualizados.")
         return redirect("accounts:my_account")
 
@@ -100,5 +110,11 @@ class MyAccountView(LoginRequiredMixin, View):
         request.user.must_change_password = False
         request.user.save(update_fields=["password", "must_change_password"])
         update_session_auth_hash(request, request.user)
+        AuditLog.objects.create(
+            actor=request.user,
+            action="password.change",
+            target_type="user",
+            target_id=str(request.user.id),
+        )
         messages.success(request, "Contraseña actualizada.")
         return redirect("accounts:my_account")
