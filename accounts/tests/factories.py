@@ -9,8 +9,7 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     email = factory.Sequence(lambda n: f"user{n}@edisa.com")
     name = factory.Faker("name", locale="es_ES")
-    dept = "Desarrollo"
-    role = "jugador"
+    is_jugador = True
     must_change_password = False
 
     @classmethod
@@ -21,4 +20,4 @@ class UserFactory(factory.django.DjangoModelFactory):
 
 
 class GestorFactory(UserFactory):
-    role = "gestor"
+    is_gestor = True

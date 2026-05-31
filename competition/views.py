@@ -4,7 +4,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
-from accounts.mixins import RoleRequiredMixin
+from accounts.mixins import GestorRequiredMixin
 from competition.models import Match, Prediction, Round
 from competition.services.resolve import resolve_match
 from competition.services.standings import standings
@@ -49,6 +49,8 @@ class CompetitionView(LoginRequiredMixin, View):
 class PredictView(LoginRequiredMixin, View):
     def get(self, request, match_id):
         m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
+        if not request.user.is_jugador:
+            raise PermissionDenied("Solo los jugadores pueden pronosticar.")
         if not m.editable:
             messages.error(request, "Las apuestas para este partido están cerradas.")
             return redirect("competicion:dashboard")
@@ -57,6 +59,8 @@ class PredictView(LoginRequiredMixin, View):
 
     def post(self, request, match_id):
         m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
+        if not request.user.is_jugador:
+            raise PermissionDenied("Solo los jugadores pueden pronosticar.")
         if not m.editable:
             raise PermissionDenied("Apuestas cerradas")
         try:
@@ -72,9 +76,7 @@ class PredictView(LoginRequiredMixin, View):
         return redirect("competicion:dashboard")
 
 
-class ManageResultsView(RoleRequiredMixin, View):
-    required_role = "gestor"
-
+class ManageResultsView(GestorRequiredMixin, View):
     def get(self, request):
         rounds = list(Round.objects.all())
         active_id = request.GET.get("round", rounds[0].id if rounds else "groups")
@@ -105,9 +107,7 @@ class ManageResultsView(RoleRequiredMixin, View):
         )
 
 
-class ResultOfficialView(RoleRequiredMixin, View):
-    required_role = "gestor"
-
+class ResultOfficialView(GestorRequiredMixin, View):
     def get(self, request, match_id):
         m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
         return render(request, "competition/_official_modal.html", {"match": m})

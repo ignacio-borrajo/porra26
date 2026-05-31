@@ -15,8 +15,11 @@ Define las entidades, relaciones y reglas que la aplicación debe implementar. L
 | `passwordHash` | string | contraseña (temporal en el alta) |
 | `mustChangePassword` | bool | true tras un alta o un reset |
 | `avatar` | string | iniciales (derivable del nombre) |
-| `dept` | string | departamento |
-| `role` | enum | `jugador` \| `gestor` |
+| `dept` | enum | `nominas` \| `gestion` \| `financiera` \| `pesca` (opcional) |
+| `sede` | enum | `ourense` \| `vigo` \| `asturias` \| `madrid` \| `barcelona` \| `latam` (opcional) |
+| `puesto` | enum | `desarrollo` \| `sistemas` \| `consultoria` \| `administracion` (opcional) |
+| `is_jugador` | bool | aparece en clasificaciones y puede pronosticar |
+| `is_gestor` | bool | accede a Jugadores, Resultados, Premios y Auditoría |
 | `paid` | bool | ha pagado su parte del bote |
 | `active` | bool | activo / dado de baja |
 | `createdAt` | datetime | |
@@ -142,7 +145,7 @@ Solo cuentan jugadores `active = true`. El podio destaca el top 3; el usuario ac
 - Acceso con **correo corporativo + contraseña**.
 - **No hay recuperación automática de contraseña.** El restablecimiento lo hace un **gestor**.
 - Al **dar de alta** un jugador se genera una **contraseña temporal**; en el primer acceso (`mustChangePassword`) debe cambiarla.
-- Dos roles: `jugador` (Competición, Estadísticas) y `gestor` (todo lo anterior + Jugadores + Resultados).
+- Dos flags independientes: `is_jugador` (Competición, Estadísticas, Rankings, Mi perfil) e `is_gestor` (todo lo anterior + Jugadores + Resultados + Premios + Auditoría). Pueden coexistir o estar ambos a `false` (usuario administrativo invisible en el juego).
 
 ---
 
@@ -166,3 +169,16 @@ Solo cuentan jugadores `active = true`. El podio destaca el top 3; el usuario ac
 - **48 jugadores** (12 nombrados + 36 generados) con departamentos, puntos, pagos y estados variados. El usuario de demo es `u_07` ("Tú · Sergio Mas").
 - **Partidos** repartidos por rondas con los cinco estados representados, incluido un partido `live` con marcador en directo.
 - **Histórico** de posición/puntos partido a partido generado de forma **determinista** solo para alimentar el gráfico de estadísticas — en producción se construye del histórico real.
+
+---
+
+## 8. Rankings por grupo
+
+La página Rankings agrega los puntos de la clasificación general por una de tres dimensiones organizativas (`sede`, `puesto`, `dept`). Cada fila representa un grupo con:
+
+- **Jugadores**: número de usuarios `is_jugador=True, is_active=True` con ese valor en la dimensión.
+- **Total**: suma de `earned` de sus pronósticos resueltos.
+- **Media**: `Total / Jugadores`. 0 si no hay jugadores.
+- **Líder**: el jugador del grupo con más puntos.
+
+Los `choices` sin miembros aparecen igualmente (fila vacía). Una fila final "Sin asignar" agrupa a los jugadores que tengan el campo en blanco. El orden es `media desc → total desc → label asc`.

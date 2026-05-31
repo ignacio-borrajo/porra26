@@ -27,6 +27,9 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Worktrees aislados de Claude/superpowers
+.worktrees/
+
 # IDE
 .idea/
 .vscode/*

@@ -1,17 +1,17 @@
 from django.contrib import messages
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 
-from accounts.mixins import RoleRequiredMixin
+from accounts.mixins import GestorRequiredMixin
 from accounts.models import AuditLog, User
 from pot.forms import PlayerForm, generate_temp_password
 from pot.models import Payment, Prize
 
 
-class ManagePlayersView(RoleRequiredMixin, View):
-    required_role = "gestor"
-
+class ManagePlayersView(GestorRequiredMixin, View):
     def get(self, request):
         q = request.GET.get("q", "").strip()
         players = User.objects.all().order_by("name")
@@ -32,22 +32,33 @@ class ManagePlayersView(RoleRequiredMixin, View):
         )
 
 
-class PlayerFormView(RoleRequiredMixin, View):
-    required_role = "gestor"
+class PlayerFormView(GestorRequiredMixin, View):
+    def _is_modal(self, request) -> bool:
+        return request.headers.get("X-Modal") == "1"
 
     def _get_object(self, pk):
         return User.objects.get(pk=pk) if pk else None
 
+    def _render_form(self, request, form, obj):
+        return render(
+            request,
+            "pot/_player_modal.html",
+            {"form": form, "player": obj, "modal": self._is_modal(request)},
+        )
+
     def get(self, request, pk=None):
         obj = self._get_object(pk)
-        form = PlayerForm(instance=obj)
-        return render(request, "pot/_player_modal.html", {"form": form, "player": obj})
+        return self._render_form(request, PlayerForm(instance=obj), obj)
 
     def post(self, request, pk=None):
         obj = self._get_object(pk)
         form = PlayerForm(request.POST, instance=obj)
         if not form.is_valid():
-            return render(request, "pot/_player_modal.html", {"form": form, "player": obj})
+            response = self._render_form(request, form, obj)
+            if self._is_modal(request):
+                response["X-Modal-Errors"] = "1"
+            return response
+
         is_new = obj is None
         if is_new:
             temp = generate_temp_password()
@@ -63,18 +74,21 @@ class PlayerFormView(RoleRequiredMixin, View):
                 target_id=str(user.id),
                 payload={},
             )
-            messages.success(request, "Jugador creado.")
-            return render(
-                request, "pot/_password_reveal.html", {"player": user, "temp_password": temp}
-            )
-        form.save()
-        messages.success(request, "Cambios guardados.")
-        return redirect("pot:manage_players")
+            request.session[f"temp_pw_{user.id}"] = temp
+            target = reverse("pot:player_reveal", args=[user.id])
+        else:
+            form.save()
+            target = reverse("pot:manage_players")
+
+        messages.success(request, "Jugador guardado." if not is_new else "Jugador creado.")
+        if self._is_modal(request):
+            response = HttpResponse(status=200)
+            response["X-Modal-Redirect"] = target
+            return response
+        return redirect(target)
 
 
-class ResetPasswordView(RoleRequiredMixin, View):
-    required_role = "gestor"
-
+class ResetPasswordView(GestorRequiredMixin, View):
     def post(self, request, pk):
         u = get_object_or_404(User, pk=pk)
         temp = generate_temp_password()
@@ -91,9 +105,28 @@ class ResetPasswordView(RoleRequiredMixin, View):
         return render(request, "pot/_password_reveal.html", {"player": u, "temp_password": temp})
 
 
-class TogglePlayerActiveView(RoleRequiredMixin, View):
-    required_role = "gestor"
+class PasswordRevealView(GestorRequiredMixin, View):
+    """Pantalla que muestra la contraseña temporal generada para un alta.
 
+    Se accede vía X-Modal-Redirect tras un POST exitoso de alta. Es
+    información sensible y por eso vive en una página propia, fuera del
+    overlay.
+    """
+
+    def get(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        temp = request.session.pop(f"temp_pw_{pk}", None)
+        if not temp:
+            messages.warning(request, "La contraseña ya no está disponible.")
+            return redirect("pot:manage_players")
+        return render(
+            request,
+            "pot/_password_reveal.html",
+            {"player": user, "temp_password": temp},
+        )
+
+
+class TogglePlayerActiveView(GestorRequiredMixin, View):
     def post(self, request, pk):
         u = get_object_or_404(User, pk=pk)
         u.is_active = not u.is_active
@@ -101,9 +134,7 @@ class TogglePlayerActiveView(RoleRequiredMixin, View):
         return redirect("pot:manage_players")
 
 
-class TogglePaymentView(RoleRequiredMixin, View):
-    required_role = "gestor"
-
+class TogglePaymentView(GestorRequiredMixin, View):
     def post(self, request, pk):
         u = get_object_or_404(User, pk=pk)
         pay, _ = Payment.objects.get_or_create(player=u)
@@ -120,9 +151,7 @@ class TogglePaymentView(RoleRequiredMixin, View):
         return redirect("pot:manage_players")
 
 
-class PrizesSettingsView(RoleRequiredMixin, View):
-    required_role = "gestor"
-
+class PrizesSettingsView(GestorRequiredMixin, View):
     def get(self, request):
         return render(
             request,
@@ -151,8 +180,6 @@ class PrizesSettingsView(RoleRequiredMixin, View):
         return redirect("pot:prizes")
 
 
-class AuditLogView(RoleRequiredMixin, View):
-    required_role = "gestor"
-
+class AuditLogView(GestorRequiredMixin, View):
     def get(self, request):
         return render(request, "accounts/audit_log.html", {"logs": AuditLog.objects.all()[:200]})

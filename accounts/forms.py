@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth import authenticate
 
+from accounts.models import User
+
 from .validators import validate_email_domain
 
 
@@ -46,3 +48,15 @@ class ChangePasswordForm(forms.Form):
                     "La contraseña debe tener al menos una mayúscula y un dígito."
                 )
         return c
+
+
+class ProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ["name", "dept", "sede", "puesto"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "input"}),
+            "dept": forms.Select(attrs={"class": "input"}),
+            "sede": forms.Select(attrs={"class": "input"}),
+            "puesto": forms.Select(attrs={"class": "input"}),
+        }

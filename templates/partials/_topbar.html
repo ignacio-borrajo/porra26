@@ -9,10 +9,13 @@
     <a href="{% url 'competicion:dashboard' %}" class="nav-item{% if ns == 'competicion' and url_name != 'manage_results' %} is-active{% endif %}">
       {% icon "ball" width=17 height=17 %} Competición
     </a>
-    <a href="{% url 'stats:dashboard' %}" class="nav-item{% if ns == 'stats' %} is-active{% endif %}">
+    <a href="{% url 'stats:dashboard' %}" class="nav-item{% if ns == 'stats' and url_name == 'dashboard' %} is-active{% endif %}">
       {% icon "chart" width=17 height=17 %} Estadísticas
     </a>
-    {% if user.role == 'gestor' %}
+    <a href="{% url 'stats:rankings' %}" class="nav-item{% if url_name == 'rankings' %} is-active{% endif %}">
+      {% icon "trophy" width=17 height=17 %} Rankings
+    </a>
+    {% if user.is_gestor %}
     <a href="{% url 'pot:manage_players' %}" class="nav-item{% if ns == 'pot' %} is-active{% endif %}">
       {% icon "users" width=17 height=17 %} Jugadores
     </a>
@@ -29,18 +32,21 @@
     <button class="btn btn-ghost" data-theme-toggle style="width:40px;height:40px;padding:0;border-radius:12px" title="Cambiar tema">
       {% icon "sun" width=18 height=18 %}
     </button>
-    <div style="display:flex;align-items:center;gap:9px;padding-left:6px">
+    <a href="{% url 'accounts:profile' %}" style="display:flex;align-items:center;gap:9px;padding-left:6px;text-decoration:none;color:inherit">
       <span class="avatar" data-name="{{ user.name }}">{{ user.initials }}</span>
       <div style="line-height:1.2">
         <div style="font-size:13px;font-weight:700">{{ user.name }}</div>
-        <div class="mono" style="font-size:10.5px;color:var(--text-faint);text-transform:capitalize">{{ user.role }}</div>
+        <div style="display:flex;gap:4px;margin-top:2px">
+          {% if user.is_jugador %}<span class="chip" style="padding:0 6px;font-size:9px;color:var(--c-lime);border-color:oklch(from var(--c-lime) l c h / 0.4)">Jugador</span>{% endif %}
+          {% if user.is_gestor %}<span class="chip" style="padding:0 6px;font-size:9px;color:var(--c-cyan);border-color:oklch(from var(--c-cyan) l c h / 0.4)">Gestor</span>{% endif %}
+        </div>
       </div>
-      <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">
-        {% csrf_token %}
-        <button class="btn btn-ghost" type="submit" style="width:38px;height:38px;padding:0;border-radius:11px;margin-left:4px" title="Salir">
-          {% icon "logout" width=16 height=16 %}
-        </button>
-      </form>
-    </div>
+    </a>
+    <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">
+      {% csrf_token %}
+      <button class="btn btn-ghost" type="submit" style="width:38px;height:38px;padding:0;border-radius:11px" title="Salir">
+        {% icon "logout" width=16 height=16 %}
+      </button>
+    </form>
   </div>
 </header>
