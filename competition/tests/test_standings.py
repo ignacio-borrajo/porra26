@@ -1,6 +1,10 @@
+from datetime import timedelta
+
 import pytest
+from django.utils import timezone
 
 from accounts.tests.factories import UserFactory
+from competition.models import Prediction
 from competition.services.standings import standings
 from competition.tests.factories import MatchFactory, PredictionFactory, RoundFactory
 
@@ -59,3 +63,24 @@ def test_standings_excludes_inactive_users():
     names = [r.name for r in s]
     assert "Act" in names
     assert "Ina" not in names
+
+
+@pytest.mark.django_db
+def test_non_jugador_user_excluded_from_standings():
+    gestor_puro = UserFactory(is_jugador=False, is_gestor=True)
+    grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    m = MatchFactory(round=grp, kickoff=timezone.now() - timedelta(days=2))
+    m.result_home, m.result_away = 1, 0
+    m.finished_at = timezone.now()
+    m.save()
+    Prediction.objects.create(player=gestor_puro, match=m, home=1, away=0, earned=3)
+
+    rows = standings()
+    assert all(r.player_id != gestor_puro.id for r in rows)
+
+
+@pytest.mark.django_db
+def test_jugador_with_zero_points_still_listed():
+    u = UserFactory(is_jugador=True)
+    rows = standings()
+    assert any(r.player_id == u.id and r.pts == 0 for r in rows)

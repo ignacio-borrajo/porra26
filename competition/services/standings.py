@@ -19,7 +19,7 @@ class StandingRow:
 
 def standings() -> list[StandingRow]:
     rows = list(
-        Prediction.objects.filter(player__is_active=True, earned__isnull=False)
+        Prediction.objects.filter(player__is_active=True, player__is_jugador=True, earned__isnull=False)
         .values("player_id", "player__name", "player__email")
         .annotate(
             pts=Sum("earned"),
@@ -38,7 +38,7 @@ def standings() -> list[StandingRow]:
             "hits": 0,
             "exact_hits": 0,
         }
-        for u in User.objects.filter(is_active=True).exclude(id__in=seen)
+        for u in User.objects.filter(is_active=True, is_jugador=True).exclude(id__in=seen)
     ]
     merged = list(rows) + extras
     merged.sort(
