@@ -1,0 +1,168 @@
+# Modelo de datos y reglas de negocio — PORRA 26
+
+Define las entidades, relaciones y reglas que la aplicación debe implementar. Los datos del prototipo (`design-reference/data.jsx`) son **mock**; sirven de ejemplo de forma y volumen, no como datos reales.
+
+---
+
+## 1. Entidades
+
+### Player (Jugador)
+| Campo | Tipo | Notas |
+|-------|------|-------|
+| `id` | id | PK |
+| `name` | string | nombre y apellidos |
+| `email` | string | **usuario de acceso**; correo corporativo; único |
+| `passwordHash` | string | contraseña (temporal en el alta) |
+| `mustChangePassword` | bool | true tras un alta o un reset |
+| `avatar` | string | iniciales (derivable del nombre) |
+| `dept` | string | departamento |
+| `role` | enum | `jugador` \| `gestor` |
+| `paid` | bool | ha pagado su parte del bote |
+| `active` | bool | activo / dado de baja |
+| `createdAt` | datetime | |
+
+> **Métricas derivadas** (no se almacenan; se calculan de los pronósticos resueltos): `pts` (puntos), `hits` (aciertos = resultado correcto o exacto), `exact` (marcadores exactos), `streak` (racha de aciertos consecutivos), `trend` (▲/▼/— respecto al partido anterior). En el prototipo vienen precalculadas por comodidad.
+
+### Team (Selección)
+| Campo | Tipo | Notas |
+|-------|------|-------|
+| `code` | string | PK corta (ESP, ARG, FRA…) |
+| `name` | string | nombre en español |
+| `flag` | string | emoji o referencia a imagen de bandera |
+
+### Round (Ronda)
+| Campo | Tipo | Notas |
+|-------|------|-------|
+| `id` | string | `groups`, `r32`, `r16`, `qf`, `sf`, `final` |
+| `label` | string | "Fase de grupos", "Dieciseisavos", … |
+| `short` | string | etiqueta corta |
+| `points` | int | puntos que vale acertar el marcador exacto en esta ronda |
+| `order` | int | orden de la competición |
+
+### Match (Partido)
+| Campo | Tipo | Notas |
+|-------|------|-------|
+| `id` | id | PK |
+| `roundId` | fk | → Round |
+| `group` | string | grupo ("A".."H") o nombre de fase eliminatoria |
+| `homeCode` | fk | → Team |
+| `awayCode` | fk | → Team |
+| `kickoff` | datetime | hora de saque |
+| `resultHome` | int? | marcador oficial local (null si no finalizado) |
+| `resultAway` | int? | marcador oficial visitante |
+| `liveHome` | int? | marcador en directo (opcional) |
+| `liveAway` | int? | marcador en directo (opcional) |
+| `finishedAt` | datetime? | cuándo se confirmó el resultado |
+
+> El **estado** del partido (`open/closing/closed/live/done`) **no se almacena**: se calcula (ver §3).
+
+### Prediction (Pronóstico)
+| Campo | Tipo | Notas |
+|-------|------|-------|
+| `id` | id | PK |
+| `playerId` | fk | → Player |
+| `matchId` | fk | → Match |
+| `home` | int | marcador pronosticado local |
+| `away` | int | marcador pronosticado visitante |
+| `earned` | int? | puntos obtenidos una vez resuelto el partido |
+| `updatedAt` | datetime | |
+
+Restricción: **un pronóstico por jugador y partido** (único `playerId+matchId`).
+
+### Pot / Settings (Bote y configuración)
+| Campo | Tipo | Notas |
+|-------|------|-------|
+| `perPlayer` | int | aportación por jugador (prototipo: 10 €) |
+| `prizes` | int[] | reparto del top 3 (prototipo: [240, 144, 96] €) |
+
+`total` = `perPlayer × nº de jugadores que pagan`. En el prototipo: 48 jugadores → 480 €.
+
+---
+
+## 2. Sistema de puntuación
+
+Al resolver un partido (resultado oficial confirmado), por cada pronóstico:
+
+```
+si pronóstico.home == resultado.home Y pronóstico.away == resultado.away:
+    earned = round.points              // MARCADOR EXACTO → puntos completos de la ronda
+sino si signo(pron.home − pron.away) == signo(res.home − res.away):
+    earned = 1                         // ACIERTA SOLO EL RESULTADO (1·X·2) → 1 punto
+sino:
+    earned = 0                         // FALLO
+```
+
+`signo()` distingue victoria local (+), empate (0) y victoria visitante (−). Es la lógica exacta del prototipo (`app.jsx → saveOfficial`).
+
+**Puntos por ronda** (token `round.points`):
+
+| Ronda | Puntos (exacto) |
+|-------|-----------------|
+| Fase de grupos | **3** |
+| Dieciseisavos | **5** |
+| Octavos | **7** |
+| Cuartos | **10** |
+| Semifinales | por definir (mantener progresión, p. ej. 12–15) |
+| Final | por definir (el mayor) |
+
+> Acertar solo el resultado siempre vale **1 punto**, independientemente de la ronda.
+
+**Métricas que se recalculan** tras resolver: puntos totales, aciertos (`earned > 0`), exactos (`earned == round.points`), racha (aciertos consecutivos por orden de partido), tendencia y posición en la clasificación.
+
+---
+
+## 3. Estados del partido (derivados)
+
+Calculados a partir de `kickoff`, el momento actual y el resultado. El cierre de apuestas es **2 horas antes del saque**: `closeAt = kickoff − 2h`.
+
+| Estado | Condición | UI |
+|--------|-----------|-----|
+| `open` | `now < closeAt` | apuestas abiertas; "Cierra {hora}" |
+| `closing` | `closeAt − 2h ≤ now < closeAt` (última franja, prototipo usa <2h) | cuenta atrás visible, punto pulsante |
+| `closed` | `closeAt ≤ now < kickoff` | "Apuestas cerradas", sin resultado |
+| `live` | `kickoff ≤ now` y sin resultado oficial | marcador en directo, halo/punto rojo |
+| `done` | resultado oficial confirmado | marcador final + puntos obtenidos |
+
+> En el prototipo el estado viene fijado en los datos mock; en producción **debe derivarse** de los tiempos y del resultado. Solo se puede crear/editar un pronóstico mientras el partido esté `open` o `closing` (es decir, `now < closeAt`).
+
+---
+
+## 4. Clasificación (orden)
+
+Jugadores **activos** ordenados por:
+1. `pts` descendente.
+2. Desempate estable (el prototipo usa un orden secundario determinista). En producción, definir el criterio de desempate con el responsable (p. ej.: más exactos → más aciertos → orden alfabético).
+
+Solo cuentan jugadores `active = true`. El podio destaca el top 3; el usuario actual va resaltado en toda la tabla.
+
+---
+
+## 5. Reglas de autenticación
+
+- Acceso con **correo corporativo + contraseña**.
+- **No hay recuperación automática de contraseña.** El restablecimiento lo hace un **gestor**.
+- Al **dar de alta** un jugador se genera una **contraseña temporal**; en el primer acceso (`mustChangePassword`) debe cambiarla.
+- Dos roles: `jugador` (Competición, Estadísticas) y `gestor` (todo lo anterior + Jugadores + Resultados).
+
+---
+
+## 6. Acciones principales (casos de uso)
+
+| Acción | Rol | Efecto |
+|--------|-----|--------|
+| Guardar pronóstico | jugador | Crea/actualiza su `Prediction` si el partido está abierto. Toast de confirmación. |
+| Confirmar resultado oficial | gestor | Fija `resultHome/Away`, marca `done`, **recalcula `earned`** de todos los pronósticos y la clasificación. |
+| Editar resultado | gestor | Permite corregir un resultado ya confirmado y recalcular. |
+| Alta de jugador | gestor | Crea `Player` con contraseña temporal. |
+| Editar jugador | gestor | Modifica nombre, correo, departamento, rol, pago. |
+| Marcar pago | gestor | `paid = true/false`. Afecta al total del bote. |
+| Dar de baja / reactivar | gestor | `active = false/true`. Los inactivos no cuentan en la clasificación. |
+
+---
+
+## 7. Datos de ejemplo (en el prototipo)
+
+- **16 selecciones** con banderas (emoji): ESP, ARG, FRA, BRA, ENG, POR, GER, NED, MEX, USA, CAN, JPN, CRO, MAR, URU, BEL.
+- **48 jugadores** (12 nombrados + 36 generados) con departamentos, puntos, pagos y estados variados. El usuario de demo es `u_07` ("Tú · Sergio Mas").
+- **Partidos** repartidos por rondas con los cinco estados representados, incluido un partido `live` con marcador en directo.
+- **Histórico** de posición/puntos partido a partido generado de forma **determinista** solo para alimentar el gráfico de estadísticas — en producción se construye del histórico real.
