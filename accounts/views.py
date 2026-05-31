@@ -57,16 +57,8 @@ class ChangePasswordView(LoginRequiredMixin, View):
         return render(request, self.template_name, {"form": form})
 
 
-class ProfileView(LoginRequiredMixin, View):
-    template_name = "accounts/profile.html"
+class MyAccountView(LoginRequiredMixin, View):
+    login_url = reverse_lazy("accounts:login")
 
     def get(self, request):
-        return render(request, self.template_name, {"form": ProfileForm(instance=request.user)})
-
-    def post(self, request):
-        form = ProfileForm(request.POST, instance=request.user)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Perfil actualizado.")
-            return redirect("accounts:profile")
-        return render(request, self.template_name, {"form": form})
+        return render(request, "accounts/my_account.html", {})

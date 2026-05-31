@@ -76,3 +76,7 @@ def test_profile_form_ignores_uneditable_fields():
     assert saved.email == "ana@edisa.com"
     assert saved.is_gestor is False
     assert saved.is_staff is False
+
+
+def test_my_account_url_resolves():
+    assert reverse("accounts:my_account") == "/mi-cuenta/"
