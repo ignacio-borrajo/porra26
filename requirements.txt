@@ -1,0 +1,5 @@
+Django>=5.0,<5.2
+# mysqlclient>=2.2  # Requiere MySQL dev headers; se activa solo en producción. Dev usa SQLite.
+django-axes>=6.4
+django-csp>=3.8
+python-dotenv>=1.0

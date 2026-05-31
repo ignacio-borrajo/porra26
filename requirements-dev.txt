@@ -1,0 +1,8 @@
+-r requirements.txt
+pytest>=8.0
+pytest-django>=4.8
+pytest-cov>=4.1
+factory-boy>=3.3
+freezegun>=1.4
+ruff>=0.5
+playwright>=1.45
