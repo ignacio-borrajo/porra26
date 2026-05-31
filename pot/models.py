@@ -17,3 +17,24 @@ class PotSettings(models.Model):
     def load(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class Prize(models.Model):
+    SCOPE_CHOICES = [("global", "Global"), ("matchday", "Jornada"), ("round", "Ronda KO")]
+
+    scope = models.CharField(max_length=10, choices=SCOPE_CHOICES)
+    position = models.PositiveSmallIntegerField(null=True, blank=True)
+    matchday = models.PositiveSmallIntegerField(null=True, blank=True)
+    round = models.ForeignKey("competition.Round", on_delete=models.PROTECT,
+                              null=True, blank=True, related_name="prizes")
+    amount = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    label = models.CharField(max_length=60)
+
+    class Meta:
+        ordering = ["scope", "position", "matchday", "round_id"]
+
+
+class Payment(models.Model):
+    player = models.OneToOneField("accounts.User", on_delete=models.CASCADE, related_name="payment")
+    paid = models.BooleanField(default=False)
+    paid_at = models.DateTimeField(null=True, blank=True)
