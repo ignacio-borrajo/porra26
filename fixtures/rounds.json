@@ -1,0 +1,8 @@
+[
+  {"model": "competition.round", "pk": "groups", "fields": {"label": "Fase de grupos", "short": "GRP", "points": 3, "order": 1}},
+  {"model": "competition.round", "pk": "r32",    "fields": {"label": "Dieciseisavos", "short": "R32", "points": 5, "order": 2}},
+  {"model": "competition.round", "pk": "r16",    "fields": {"label": "Octavos",       "short": "R16", "points": 7, "order": 3}},
+  {"model": "competition.round", "pk": "qf",     "fields": {"label": "Cuartos",       "short": "QF",  "points": 10, "order": 4}},
+  {"model": "competition.round", "pk": "sf",     "fields": {"label": "Semifinales",   "short": "SF",  "points": 15, "order": 5}},
+  {"model": "competition.round", "pk": "final",  "fields": {"label": "Final",         "short": "FIN", "points": 25, "order": 6}}
+]
