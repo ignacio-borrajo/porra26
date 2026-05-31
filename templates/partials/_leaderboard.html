@@ -1,0 +1,21 @@
+{% load icons %}
+<section class="glass" style="padding:18px;border-radius:20px;position:sticky;top:18px;max-height:calc(100vh - 100px);overflow:auto">
+  <header style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+    {% icon "trophy" width=18 height=18 %}
+    <h2 class="display" style="font-size:18px;margin:0">Clasificación</h2>
+  </header>
+  <ol style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px">
+    {% for r in rows %}
+    <li style="display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center;padding:8px;border-radius:10px;{% if r.player_id == me.id %}background:oklch(from var(--accent) l c h / 0.12);{% endif %}">
+      <span class="mono" style="font-size:13px;color:var(--text-faint)">{{ r.position }}</span>
+      <div>
+        <strong style="font-size:13px">{{ r.name }}{% if r.player_id == me.id %} · tú{% endif %}</strong>
+        <div class="mono" style="font-size:10px;color:var(--text-faint)">{{ r.hits }}h · {{ r.exact_hits }}e</div>
+      </div>
+      <strong class="display" style="font-size:16px">{{ r.pts }}</strong>
+    </li>
+    {% empty %}
+    <li style="color:var(--text-faint)">Sin jugadores todavía.</li>
+    {% endfor %}
+  </ol>
+</section>
