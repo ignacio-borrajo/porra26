@@ -55,6 +55,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "porra26.wsgi.application"
 
 AUTH_USER_MODEL = "accounts.User"
+AUTHENTICATION_BACKENDS = ["accounts.backends.EmailBackend"]
 
 LANGUAGE_CODE = "es-es"
 TIME_ZONE = "Europe/Madrid"

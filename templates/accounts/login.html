@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load icons %}
+{% block main %}
+<section class="glass pop" style="max-width:460px;margin:6vh auto;padding:32px;border-radius:24px">
+  <div class="eyebrow">PORRA 26 · MUNDIAL 2026</div>
+  <h1 class="display" style="font-size:34px;margin:4px 0 18px">Bienvenido de nuevo</h1>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="field"><label>Correo</label>
+      <input class="input" type="email" name="email" required value="{{ form.email.value|default:'' }}">
+    </div>
+    <div class="field" style="margin-top:14px"><label>Contraseña</label>
+      <input class="input" type="password" name="password" required>
+    </div>
+    {% if form.non_field_errors %}<p style="color:var(--c-red)">{{ form.non_field_errors|join:' ' }}</p>{% endif %}
+    {% for f in form %}{% for e in f.errors %}<p style="color:var(--c-red)">{{ e }}</p>{% endfor %}{% endfor %}
+    <button type="submit" class="btn btn-primary" style="margin-top:20px;width:100%">Entrar al torneo</button>
+    <p class="mono" style="margin-top:14px;color:var(--text-faint);font-size:11px">
+      ¿Olvidaste tu contraseña? Pídele a un gestor que la restablezca.
+    </p>
+  </form>
+</section>
+{% endblock %}
