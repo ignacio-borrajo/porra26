@@ -80,3 +80,26 @@ def test_profile_form_ignores_uneditable_fields():
 
 def test_my_account_url_resolves():
     assert reverse("accounts:my_account") == "/mi-cuenta/"
+
+
+@pytest.mark.django_db
+def test_my_account_redirects_anonymous(client):
+    r = client.get(reverse("accounts:my_account"))
+    assert r.status_code == 302
+    # accounts.urls está montado en "/" en porra26/urls.py, así que login es "/"
+    assert "next=/mi-cuenta/" in r.url
+
+
+@pytest.mark.django_db
+def test_my_account_get_renders_for_authenticated_user(client):
+    user = UserFactory(email="ana@edisa.com", name="Ana", dept="gestion", sede="vigo", puesto="desarrollo")
+    client.force_login(user)
+    r = client.get(reverse("accounts:my_account"))
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert "ana@edisa.com" in body
+    assert "Datos personales" in body
+    assert "Seguridad" in body
+    assert "Preferencias" in body
+    assert 'name="action" value="profile"' in body
+    assert 'name="action" value="password"' in body

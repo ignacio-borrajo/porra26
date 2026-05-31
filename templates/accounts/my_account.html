@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Mi cuenta · PORRA 26{% endblock %}
+{% block main %}
+<section class="stagger" style="max-width:720px;margin:6vh auto;display:flex;flex-direction:column;gap:20px">
+
+  <header>
+    <h1 class="display" style="font-size:28px;margin:0">Mi cuenta</h1>
+    <p style="color:var(--text-dim);margin:6px 0 0">Gestiona tus datos, contraseña y preferencias.</p>
+  </header>
+
+  <div class="glass" style="padding:24px;border-radius:24px">
+    <h2 class="display" style="font-size:18px;margin:0 0 14px">Datos personales</h2>
+    <div class="field" style="margin-top:6px">
+      <label>Correo</label>
+      <input type="email" value="{{ user.email }}" disabled style="opacity:.7;cursor:not-allowed">
+      <p style="font-size:12px;color:var(--text-faint);margin:6px 0 0">Para cambiar el correo, contacta con un gestor.</p>
+    </div>
+    <form method="post" novalidate style="margin-top:8px">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="profile">
+      {% for f in profile_form %}
+        <div class="field" style="margin-top:14px">
+          <label>{{ f.label }}</label>
+          {{ f }}
+          {% for e in f.errors %}<p style="color:var(--c-red);font-size:12px;margin:4px 0 0">{{ e }}</p>{% endfor %}
+        </div>
+      {% endfor %}
+      {% if profile_form.non_field_errors %}<p style="color:var(--c-red)">{{ profile_form.non_field_errors|join:' ' }}</p>{% endif %}
+      <button type="submit" class="btn btn-primary" style="margin-top:18px">Guardar cambios</button>
+    </form>
+  </div>
+
+  <div class="glass" style="padding:24px;border-radius:24px">
+    <h2 class="display" style="font-size:18px;margin:0 0 14px">Seguridad</h2>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <input type="hidden" name="action" value="password">
+      {% for f in password_form %}
+        <div class="field" style="margin-top:14px">
+          <label>{{ f.label }}</label>
+          {{ f }}
+          {% for e in f.errors %}<p style="color:var(--c-red);font-size:12px;margin:4px 0 0">{{ e }}</p>{% endfor %}
+        </div>
+      {% endfor %}
+      {% if password_form.non_field_errors %}<p style="color:var(--c-red)">{{ password_form.non_field_errors|join:' ' }}</p>{% endif %}
+      <button type="submit" class="btn btn-primary" style="margin-top:18px">Actualizar contraseña</button>
+    </form>
+  </div>
+
+  <div class="glass" style="padding:24px;border-radius:24px">
+    <h2 class="display" style="font-size:18px;margin:0 0 14px">Preferencias</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div>
+        <div style="font-weight:600">Tema</div>
+        <div style="font-size:12px;color:var(--text-faint)">Cambia entre claro y oscuro. La preferencia se guarda en este navegador.</div>
+      </div>
+      <button class="btn btn-ghost" data-theme-toggle style="width:44px;height:44px;padding:0;border-radius:12px" title="Cambiar tema">☀︎</button>
+    </div>
+  </div>
+
+</section>
+{% endblock %}

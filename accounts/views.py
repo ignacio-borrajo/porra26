@@ -61,4 +61,11 @@ class MyAccountView(LoginRequiredMixin, View):
     login_url = reverse_lazy("accounts:login")
 
     def get(self, request):
-        return render(request, "accounts/my_account.html", {})
+        return render(
+            request,
+            "accounts/my_account.html",
+            {
+                "profile_form": ProfileForm(instance=request.user),
+                "password_form": ChangePasswordForm(request.user),
+            },
+        )
