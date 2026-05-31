@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 from django.db import models
+from django.utils import timezone
 
 
 class Team(models.Model):
@@ -25,3 +28,47 @@ class Round(models.Model):
 
     def __str__(self):
         return self.label
+
+
+class Match(models.Model):
+    round = models.ForeignKey(Round, on_delete=models.PROTECT, related_name="matches")
+    group = models.CharField(max_length=20)
+    matchday = models.PositiveSmallIntegerField(null=True, blank=True)
+    home = models.ForeignKey(Team, on_delete=models.PROTECT, related_name="home_matches")
+    away = models.ForeignKey(Team, on_delete=models.PROTECT, related_name="away_matches")
+    kickoff = models.DateTimeField()
+    result_home = models.PositiveSmallIntegerField(null=True, blank=True)
+    result_away = models.PositiveSmallIntegerField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["kickoff"]
+        indexes = [
+            models.Index(fields=["round", "matchday", "kickoff"]),
+            models.Index(fields=["finished_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.home_id} vs {self.away_id} @ {self.kickoff:%Y-%m-%d %H:%M}"
+
+    @property
+    def has_result(self) -> bool:
+        return self.result_home is not None and self.result_away is not None
+
+    @property
+    def status(self) -> str:
+        now = timezone.now()
+        if self.has_result:
+            return "done"
+        close_at = self.kickoff - timedelta(hours=2)
+        if now >= self.kickoff:
+            return "live"
+        if now >= close_at:
+            return "closed"
+        if close_at - now <= timedelta(hours=2):
+            return "closing"
+        return "open"
+
+    @property
+    def editable(self) -> bool:
+        return self.status in ("open", "closing")
