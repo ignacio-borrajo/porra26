@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load icons %}
+{% block main %}
+<header class="rise" style="margin-bottom:18px">
+  <div class="eyebrow">MUNDIAL 2026</div>
+  <h1 class="display" style="font-size:28px;margin:6px 0 4px">Rankings por equipo</h1>
+  <p style="color:var(--text-dim);margin:0;max-width:560px">Compara qué sede, puesto o departamento puntúa más en la porra. Cada fila es un grupo; orden por media de puntos por jugador.</p>
+</header>
+
+<nav class="glass rise" style="display:inline-flex;gap:4px;padding:6px;border-radius:14px;margin-bottom:18px">
+  {% for key, label in tabs %}
+    <a href="?tab={{ key }}" class="nav-item{% if key == tab %} is-active{% endif %}" style="padding:8px 16px">{{ label }}</a>
+  {% endfor %}
+</nav>
+
+<div class="glass rise" style="border-radius:22px;overflow:hidden">
+  <div style="display:grid;grid-template-columns:60px 1fr 100px 110px 110px 1.6fr;padding:14px 18px;font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.18em;border-bottom:1px solid var(--border)">
+    <span>#</span><span>Grupo</span><span>Jugadores</span><span>Total</span><span>Media</span><span>Líder</span>
+  </div>
+  <div class="stagger">
+  {% for r in rows %}
+    <div style="display:grid;grid-template-columns:60px 1fr 100px 110px 110px 1.6fr;padding:14px 18px;align-items:center;border-bottom:1px solid var(--border);{% if r.key == my_group %}background:oklch(from var(--accent) l c h / 0.12);{% endif %}{% if r.key == '__none__' %}opacity:0.55;{% endif %}">
+      <span class="mono" style="font-size:13px;color:var(--text-faint)">{{ forloop.counter }}</span>
+      <strong style="font-size:14px">{{ r.label }}{% if r.key == my_group %} · tú{% endif %}</strong>
+      <span class="mono" style="font-size:13px">{{ r.players }}</span>
+      <span class="mono" style="font-size:13px">{{ r.total }} pts</span>
+      <span class="display" style="font-size:22px">{{ r.avg|floatformat:1 }}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        {% if r.top_name %}
+          <span class="avatar" data-name="{{ r.top_name }}" style="width:28px;height:28px;font-size:11px">{{ r.top_name|slice:":2"|upper }}</span>
+          <strong style="font-size:13px">{{ r.top_name }}</strong>
+          <span class="chip" style="padding:0 6px;font-size:10px">{{ r.top_pts }} pts</span>
+        {% else %}
+          <span style="color:var(--text-faint);font-size:12px">sin jugadores</span>
+        {% endif %}
+      </div>
+    </div>
+  {% empty %}
+    <p style="padding:18px;color:var(--text-faint)">Aún no hay jugadores en esta dimensión.</p>
+  {% endfor %}
+  </div>
+</div>
+{% endblock %}
