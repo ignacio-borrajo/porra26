@@ -35,9 +35,7 @@ def group_standings(dimension: Dimension) -> list[GroupRow]:
     labels = {key: label for key, label in choices}
 
     standings_rows = standings()
-    users = User.objects.filter(is_active=True, is_jugador=True).only(
-        "id", dimension
-    )
+    users = User.objects.filter(is_active=True, is_jugador=True).only("id", dimension)
     user_group = {u.id: (getattr(u, dimension) or "__none__") for u in users}
 
     buckets: dict[str, list] = {key: [] for key, _ in choices}
@@ -71,6 +69,11 @@ def _row_for(key: str, label: str, members) -> GroupRow:
     else:
         top_name, top_pts = "", 0
     return GroupRow(
-        key=key, label=label, players=players, total=total, avg=avg,
-        top_name=top_name, top_pts=top_pts,
+        key=key,
+        label=label,
+        players=players,
+        total=total,
+        avg=avg,
+        top_name=top_name,
+        top_pts=top_pts,
     )

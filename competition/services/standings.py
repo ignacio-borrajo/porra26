@@ -19,7 +19,9 @@ class StandingRow:
 
 def standings() -> list[StandingRow]:
     rows = list(
-        Prediction.objects.filter(player__is_active=True, player__is_jugador=True, earned__isnull=False)
+        Prediction.objects.filter(
+            player__is_active=True, player__is_jugador=True, earned__isnull=False
+        )
         .values("player_id", "player__name", "player__email")
         .annotate(
             pts=Sum("earned"),

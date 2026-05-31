@@ -10,15 +10,17 @@ def _allow_domain(monkeypatch):
 
 @pytest.mark.django_db
 def test_player_form_accepts_all_org_fields():
-    form = PlayerForm(data={
-        "name": "Ana López",
-        "email": "ana@edisa.com",
-        "dept": "nominas",
-        "sede": "vigo",
-        "puesto": "desarrollo",
-        "is_jugador": "on",
-        "is_gestor": "",
-    })
+    form = PlayerForm(
+        data={
+            "name": "Ana López",
+            "email": "ana@edisa.com",
+            "dept": "nominas",
+            "sede": "vigo",
+            "puesto": "desarrollo",
+            "is_jugador": "on",
+            "is_gestor": "",
+        }
+    )
     assert form.is_valid(), form.errors
     user = form.save(commit=False)
     user.set_password("x")
@@ -32,28 +34,32 @@ def test_player_form_accepts_all_org_fields():
 
 @pytest.mark.django_db
 def test_player_form_allows_blank_org_fields():
-    form = PlayerForm(data={
-        "name": "Sin Datos",
-        "email": "sin@edisa.com",
-        "dept": "",
-        "sede": "",
-        "puesto": "",
-        "is_jugador": "on",
-        "is_gestor": "",
-    })
+    form = PlayerForm(
+        data={
+            "name": "Sin Datos",
+            "email": "sin@edisa.com",
+            "dept": "",
+            "sede": "",
+            "puesto": "",
+            "is_jugador": "on",
+            "is_gestor": "",
+        }
+    )
     assert form.is_valid(), form.errors
 
 
 @pytest.mark.django_db
 def test_player_form_rejects_unknown_choice():
-    form = PlayerForm(data={
-        "name": "X",
-        "email": "x@edisa.com",
-        "dept": "marketing",  # no está en choices
-        "sede": "",
-        "puesto": "",
-        "is_jugador": "on",
-        "is_gestor": "",
-    })
+    form = PlayerForm(
+        data={
+            "name": "X",
+            "email": "x@edisa.com",
+            "dept": "marketing",  # no está en choices
+            "sede": "",
+            "puesto": "",
+            "is_jugador": "on",
+            "is_gestor": "",
+        }
+    )
     assert not form.is_valid()
     assert "dept" in form.errors

@@ -55,8 +55,8 @@ class ProfileForm(forms.ModelForm):
         model = User
         fields = ["name", "dept", "sede", "puesto"]
         widgets = {
-            "name":   forms.TextInput(attrs={"class": "input"}),
-            "dept":   forms.Select(attrs={"class": "input"}),
-            "sede":   forms.Select(attrs={"class": "input"}),
+            "name": forms.TextInput(attrs={"class": "input"}),
+            "dept": forms.Select(attrs={"class": "input"}),
+            "sede": forms.Select(attrs={"class": "input"}),
             "puesto": forms.Select(attrs={"class": "input"}),
         }

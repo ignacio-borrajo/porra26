@@ -24,12 +24,15 @@ def test_profile_get_shows_user_fields(client):
 def test_profile_post_updates_fields(client):
     u = UserFactory(name="Antes", sede="")
     client.force_login(u)
-    r = client.post(reverse("accounts:profile"), {
-        "name": "Después",
-        "dept": "nominas",
-        "sede": "madrid",
-        "puesto": "sistemas",
-    })
+    r = client.post(
+        reverse("accounts:profile"),
+        {
+            "name": "Después",
+            "dept": "nominas",
+            "sede": "madrid",
+            "puesto": "sistemas",
+        },
+    )
     assert r.status_code == 302
     u.refresh_from_db()
     assert u.name == "Después"
@@ -42,15 +45,18 @@ def test_profile_post_updates_fields(client):
 def test_profile_post_cannot_grant_flags(client):
     u = UserFactory(is_gestor=False, is_jugador=True)
     client.force_login(u)
-    client.post(reverse("accounts:profile"), {
-        "name": u.name,
-        "dept": "",
-        "sede": "",
-        "puesto": "",
-        "is_gestor": "on",      # debería ser ignorado
-        "is_jugador": "",       # debería ser ignorado
-        "email": "hacker@evil.com",
-    })
+    client.post(
+        reverse("accounts:profile"),
+        {
+            "name": u.name,
+            "dept": "",
+            "sede": "",
+            "puesto": "",
+            "is_gestor": "on",  # debería ser ignorado
+            "is_jugador": "",  # debería ser ignorado
+            "email": "hacker@evil.com",
+        },
+    )
     u.refresh_from_db()
     assert u.is_gestor is False
     assert u.is_jugador is True

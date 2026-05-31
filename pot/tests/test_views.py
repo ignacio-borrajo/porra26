@@ -118,8 +118,15 @@ def test_player_form_invalid_returns_x_modal_errors_header(client, monkeypatch):
     client.force_login(GestorFactory(must_change_password=False))
     r = client.post(
         reverse("pot:player_new"),
-        {"name": "", "email": "no-email", "dept": "", "sede": "", "puesto": "",
-         "is_jugador": "on", "is_gestor": ""},
+        {
+            "name": "",
+            "email": "no-email",
+            "dept": "",
+            "sede": "",
+            "puesto": "",
+            "is_jugador": "on",
+            "is_gestor": "",
+        },
         HTTP_X_MODAL="1",
     )
     assert r.status_code == 200

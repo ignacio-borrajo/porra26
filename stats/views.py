@@ -36,9 +36,13 @@ class RankingsView(LoginRequiredMixin, View):
             tab = "sede"
         rows = group_standings(tab)
         my_group = getattr(request.user, tab, "") or "__none__"
-        return render(request, "stats/rankings.html", {
-            "tab": tab,
-            "rows": rows,
-            "tabs": [(k, self.TAB_LABELS[k]) for k in self.VALID_TABS],
-            "my_group": my_group,
-        })
+        return render(
+            request,
+            "stats/rankings.html",
+            {
+                "tab": tab,
+                "rows": rows,
+                "tabs": [(k, self.TAB_LABELS[k]) for k in self.VALID_TABS],
+                "my_group": my_group,
+            },
+        )

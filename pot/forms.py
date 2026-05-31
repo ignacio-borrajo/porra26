@@ -11,13 +11,13 @@ class PlayerForm(forms.ModelForm):
         model = User
         fields = ["name", "email", "dept", "sede", "puesto", "is_jugador", "is_gestor"]
         widgets = {
-            "name":  forms.TextInput(attrs={"class": "input"}),
+            "name": forms.TextInput(attrs={"class": "input"}),
             "email": forms.EmailInput(attrs={"class": "input"}),
-            "dept":   forms.Select(attrs={"class": "input"}),
-            "sede":   forms.Select(attrs={"class": "input"}),
+            "dept": forms.Select(attrs={"class": "input"}),
+            "sede": forms.Select(attrs={"class": "input"}),
             "puesto": forms.Select(attrs={"class": "input"}),
             "is_jugador": forms.CheckboxInput(),
-            "is_gestor":  forms.CheckboxInput(),
+            "is_gestor": forms.CheckboxInput(),
         }
 
     def clean_email(self):

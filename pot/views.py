@@ -68,8 +68,11 @@ class PlayerFormView(GestorRequiredMixin, View):
             user.save()
             Payment.objects.get_or_create(player=user)
             AuditLog.objects.create(
-                actor=request.user, action="player_created",
-                target_type="user", target_id=str(user.id), payload={},
+                actor=request.user,
+                action="player_created",
+                target_type="user",
+                target_id=str(user.id),
+                payload={},
             )
             request.session[f"temp_pw_{user.id}"] = temp
             target = reverse("pot:player_reveal", args=[user.id])
