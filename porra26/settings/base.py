@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "pot",
     "stats",
     "core",
+    "axes",
 ]
 
 MIDDLEWARE = [
@@ -32,6 +33,7 @@ MIDDLEWARE = [
     "accounts.middleware.ForcePasswordChangeMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "axes.middleware.AxesMiddleware",
 ]
 
 ROOT_URLCONF = "porra26.urls"
@@ -55,7 +57,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "porra26.wsgi.application"
 
 AUTH_USER_MODEL = "accounts.User"
-AUTHENTICATION_BACKENDS = ["accounts.backends.EmailBackend"]
+AUTHENTICATION_BACKENDS = ["axes.backends.AxesStandaloneBackend", "accounts.backends.EmailBackend"]
 
 LANGUAGE_CODE = "es-es"
 TIME_ZONE = "Europe/Madrid"
@@ -74,3 +76,8 @@ LOGOUT_REDIRECT_URL = "/"
 
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
+
+AXES_FAILURE_LIMIT = 5
+AXES_COOLOFF_TIME = 0.25
+AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
+AXES_RESET_ON_SUCCESS = True
