@@ -351,3 +351,15 @@ def test_password_change_writes_audit_log(client):
     assert log.target_type == "user"
     assert log.target_id == str(user.id)
     assert log.payload == {}
+
+
+@pytest.mark.django_db
+def test_topbar_avatar_links_to_my_account(client):
+    user = UserFactory()
+    client.force_login(user)
+    # Usamos la propia /mi-cuenta/ — también renderiza el topbar y no depende
+    # de que existan datos del dashboard de competición.
+    r = client.get(reverse("accounts:my_account"))
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert 'href="/mi-cuenta/"' in body
