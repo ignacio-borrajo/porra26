@@ -49,6 +49,8 @@ class CompetitionView(LoginRequiredMixin, View):
 class PredictView(LoginRequiredMixin, View):
     def get(self, request, match_id):
         m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
+        if not request.user.is_jugador:
+            raise PermissionDenied("Solo los jugadores pueden pronosticar.")
         if not m.editable:
             messages.error(request, "Las apuestas para este partido están cerradas.")
             return redirect("competicion:dashboard")
@@ -57,6 +59,8 @@ class PredictView(LoginRequiredMixin, View):
 
     def post(self, request, match_id):
         m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
+        if not request.user.is_jugador:
+            raise PermissionDenied("Solo los jugadores pueden pronosticar.")
         if not m.editable:
             raise PermissionDenied("Apuestas cerradas")
         try:

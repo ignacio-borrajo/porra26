@@ -63,3 +63,13 @@ def test_official_post_resolves_match(client):
     assert r.status_code == 302
     m.refresh_from_db()
     assert (m.result_home, m.result_away) == (2, 1)
+
+
+@pytest.mark.django_db
+def test_predict_forbidden_for_non_jugador(client):
+    gestor_puro = GestorFactory(must_change_password=False, is_jugador=False)
+    client.force_login(gestor_puro)
+    grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    m = MatchFactory(round=grp, kickoff=timezone.now() + timedelta(days=1))
+    r = client.post(reverse("competicion:predict", args=[m.id]), {"home": 1, "away": 0})
+    assert r.status_code == 403
