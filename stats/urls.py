@@ -1,12 +1,7 @@
 from django.urls import path
-from django.http import HttpResponse
-
-
-def _stub(request, *a, **kw):
-    return HttpResponse("stub")
-
+from . import views
 
 urlpatterns = [
-    path("", _stub, name="dashboard"),
-    path("chart-data.json", _stub, name="chart_data"),
+    path("", views.StatsView.as_view(), name="dashboard"),
+    path("chart-data.json", views.ChartDataView.as_view(), name="chart_data"),
 ]
