@@ -103,3 +103,68 @@ def test_my_account_get_renders_for_authenticated_user(client):
     assert "Preferencias" in body
     assert 'name="action" value="profile"' in body
     assert 'name="action" value="password"' in body
+
+
+@pytest.mark.django_db
+def test_profile_post_updates_editable_fields(client):
+    user = UserFactory(name="Ana", dept="", sede="", puesto="")
+    client.force_login(user)
+    r = client.post(
+        reverse("accounts:my_account"),
+        {
+            "action": "profile",
+            "name": "Ana López",
+            "dept": "gestion",
+            "sede": "vigo",
+            "puesto": "desarrollo",
+        },
+    )
+    assert r.status_code == 302
+    assert r.url == reverse("accounts:my_account")
+    user.refresh_from_db()
+    assert user.name == "Ana López"
+    assert user.dept == "gestion"
+    assert user.sede == "vigo"
+    assert user.puesto == "desarrollo"
+
+
+@pytest.mark.django_db
+def test_profile_post_ignores_email_and_role(client):
+    user = UserFactory(email="ana@edisa.com", is_gestor=False, is_staff=False)
+    client.force_login(user)
+    client.post(
+        reverse("accounts:my_account"),
+        {
+            "action": "profile",
+            "name": "Ana",
+            "dept": "gestion",
+            "sede": "vigo",
+            "puesto": "desarrollo",
+            "email": "otro@edisa.com",
+            "is_gestor": "on",
+            "is_staff": "on",
+        },
+    )
+    user.refresh_from_db()
+    assert user.email == "ana@edisa.com"
+    assert user.is_gestor is False
+    assert user.is_staff is False
+
+
+@pytest.mark.django_db
+def test_profile_post_invalid_choice_keeps_db_intact(client):
+    user = UserFactory(name="Ana", dept="gestion", sede="vigo", puesto="desarrollo")
+    client.force_login(user)
+    r = client.post(
+        reverse("accounts:my_account"),
+        {
+            "action": "profile",
+            "name": "Ana",
+            "dept": "INEXISTENTE",
+            "sede": "vigo",
+            "puesto": "desarrollo",
+        },
+    )
+    assert r.status_code == 200
+    user.refresh_from_db()
+    assert user.dept == "gestion"

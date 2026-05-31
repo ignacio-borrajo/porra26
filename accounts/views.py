@@ -1,6 +1,7 @@
 from django.contrib import messages
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views import View
@@ -59,13 +60,45 @@ class ChangePasswordView(LoginRequiredMixin, View):
 
 class MyAccountView(LoginRequiredMixin, View):
     login_url = reverse_lazy("accounts:login")
+    template_name = "accounts/my_account.html"
 
-    def get(self, request):
+    def _render(self, request, profile_form=None, password_form=None, status=200):
         return render(
             request,
-            "accounts/my_account.html",
+            self.template_name,
             {
-                "profile_form": ProfileForm(instance=request.user),
-                "password_form": ChangePasswordForm(request.user),
+                "profile_form": profile_form or ProfileForm(instance=request.user),
+                "password_form": password_form or ChangePasswordForm(request.user),
             },
+            status=status,
         )
+
+    def get(self, request):
+        return self._render(request)
+
+    def post(self, request):
+        action = request.POST.get("action")
+        if action == "profile":
+            return self._post_profile(request)
+        if action == "password":
+            return self._post_password(request)
+        return HttpResponseBadRequest("acción no válida")
+
+    def _post_profile(self, request):
+        form = ProfileForm(request.POST, instance=request.user)
+        if not form.is_valid():
+            return self._render(request, profile_form=form)
+        form.save()
+        messages.success(request, "Datos actualizados.")
+        return redirect("accounts:my_account")
+
+    def _post_password(self, request):
+        form = ChangePasswordForm(request.user, request.POST)
+        if not form.is_valid():
+            return self._render(request, password_form=form)
+        request.user.set_password(form.cleaned_data["new1"])
+        request.user.must_change_password = False
+        request.user.save(update_fields=["password", "must_change_password"])
+        update_session_auth_hash(request, request.user)
+        messages.success(request, "Contraseña actualizada.")
+        return redirect("accounts:my_account")
