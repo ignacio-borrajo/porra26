@@ -3,15 +3,13 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import View
 
-from accounts.mixins import RoleRequiredMixin
+from accounts.mixins import GestorRequiredMixin
 from accounts.models import AuditLog, User
 from pot.forms import PlayerForm, generate_temp_password
 from pot.models import Payment, Prize
 
 
-class ManagePlayersView(RoleRequiredMixin, View):
-    required_role = "gestor"
-
+class ManagePlayersView(GestorRequiredMixin, View):
     def get(self, request):
         q = request.GET.get("q", "").strip()
         players = User.objects.all().order_by("name")
@@ -32,9 +30,7 @@ class ManagePlayersView(RoleRequiredMixin, View):
         )
 
 
-class PlayerFormView(RoleRequiredMixin, View):
-    required_role = "gestor"
-
+class PlayerFormView(GestorRequiredMixin, View):
     def _get_object(self, pk):
         return User.objects.get(pk=pk) if pk else None
 
@@ -72,9 +68,7 @@ class PlayerFormView(RoleRequiredMixin, View):
         return redirect("pot:manage_players")
 
 
-class ResetPasswordView(RoleRequiredMixin, View):
-    required_role = "gestor"
-
+class ResetPasswordView(GestorRequiredMixin, View):
     def post(self, request, pk):
         u = get_object_or_404(User, pk=pk)
         temp = generate_temp_password()
@@ -91,9 +85,7 @@ class ResetPasswordView(RoleRequiredMixin, View):
         return render(request, "pot/_password_reveal.html", {"player": u, "temp_password": temp})
 
 
-class TogglePlayerActiveView(RoleRequiredMixin, View):
-    required_role = "gestor"
-
+class TogglePlayerActiveView(GestorRequiredMixin, View):
     def post(self, request, pk):
         u = get_object_or_404(User, pk=pk)
         u.is_active = not u.is_active
@@ -101,9 +93,7 @@ class TogglePlayerActiveView(RoleRequiredMixin, View):
         return redirect("pot:manage_players")
 
 
-class TogglePaymentView(RoleRequiredMixin, View):
-    required_role = "gestor"
-
+class TogglePaymentView(GestorRequiredMixin, View):
     def post(self, request, pk):
         u = get_object_or_404(User, pk=pk)
         pay, _ = Payment.objects.get_or_create(player=u)
@@ -120,9 +110,7 @@ class TogglePaymentView(RoleRequiredMixin, View):
         return redirect("pot:manage_players")
 
 
-class PrizesSettingsView(RoleRequiredMixin, View):
-    required_role = "gestor"
-
+class PrizesSettingsView(GestorRequiredMixin, View):
     def get(self, request):
         return render(
             request,
@@ -151,8 +139,6 @@ class PrizesSettingsView(RoleRequiredMixin, View):
         return redirect("pot:prizes")
 
 
-class AuditLogView(RoleRequiredMixin, View):
-    required_role = "gestor"
-
+class AuditLogView(GestorRequiredMixin, View):
     def get(self, request):
         return render(request, "accounts/audit_log.html", {"logs": AuditLog.objects.all()[:200]})

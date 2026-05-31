@@ -47,7 +47,7 @@ def test_predict_post_rejected_when_live(client):
 
 @pytest.mark.django_db
 def test_manage_results_requires_gestor(client):
-    u = UserFactory(must_change_password=False, role="jugador")
+    u = UserFactory(must_change_password=False)
     client.force_login(u)
     r = client.get(reverse("competicion:manage_results"))
     assert r.status_code == 302  # redirect to dashboard

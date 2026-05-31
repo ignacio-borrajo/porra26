@@ -30,7 +30,6 @@ def test_create_player_shows_temp_password(client, monkeypatch):
             "name": "Nuevo",
             "email": "nuevo@edisa.com",
             "dept": "Dev",
-            "role": "jugador",
         },
     )
     assert r.status_code == 200
