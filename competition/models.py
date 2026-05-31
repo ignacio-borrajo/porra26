@@ -11,3 +11,17 @@ class Team(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Round(models.Model):
+    id = models.CharField(primary_key=True, max_length=10)
+    label = models.CharField(max_length=40)
+    short = models.CharField(max_length=10)
+    points = models.PositiveSmallIntegerField()
+    order = models.PositiveSmallIntegerField()
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return self.label
