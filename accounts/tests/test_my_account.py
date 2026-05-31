@@ -2,7 +2,7 @@ import pytest
 from django.urls import reverse
 
 from accounts.forms import ProfileForm
-from accounts.models import AuditLog, User
+from accounts.models import AuditLog
 from accounts.tests.factories import UserFactory
 
 
@@ -92,7 +92,9 @@ def test_my_account_redirects_anonymous(client):
 
 @pytest.mark.django_db
 def test_my_account_get_renders_for_authenticated_user(client):
-    user = UserFactory(email="ana@edisa.com", name="Ana", dept="gestion", sede="vigo", puesto="desarrollo")
+    user = UserFactory(
+        email="ana@edisa.com", name="Ana", dept="gestion", sede="vigo", puesto="desarrollo"
+    )
     client.force_login(user)
     r = client.get(reverse("accounts:my_account"))
     assert r.status_code == 200
