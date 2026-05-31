@@ -1,34 +1,84 @@
 {% load icons %}
-<article class="glass" style="border-radius:20px;padding:14px;position:relative">
-  <header style="display:flex;justify-content:space-between;align-items:center">
-    <span class="mono" style="color:var(--text-faint);font-size:11px">Grupo {{ match.group }}</span>
-    <span class="chip chip-{{ match.status }}">{{ match.status }}</span>
-  </header>
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
-      <span style="font-size:34px">{{ match.home.flag }}</span>
-      <strong style="font-size:13px">{{ match.home.name }}</strong>
+{% with st=match.status %}
+{% if match.editable %}
+<a href="{% url 'competicion:predict' match.id %}" data-modal-url="{% url 'competicion:predict' match.id %}" class="match-card glass rise{% if st == 'closing' %} match-card-closing{% endif %}">
+{% else %}
+<article class="match-card glass rise{% if st == 'live' %} match-card-live{% endif %}">
+{% endif %}
+  <div class="match-card-head">
+    <span class="eyebrow">{% if match.group|length <= 1 %}Grupo {{ match.group }}{% else %}{{ match.group }}{% endif %}</span>
+    <span class="chip
+      {% if st == 'open' %}chip-open
+      {% elif st == 'closing' %}chip-open
+      {% elif st == 'closed' %}chip-closed
+      {% elif st == 'live' %}chip-live
+      {% elif st == 'done' %}chip-done{% endif %}">
+      {% if st == 'live' or st == 'closing' %}<span class="dot dot-pulse"></span>{% endif %}
+      {% if st == 'open' %}Abierto
+      {% elif st == 'closing' %}Cierra pronto
+      {% elif st == 'closed' %}Cerrado
+      {% elif st == 'live' %}En juego
+      {% elif st == 'done' %}Finalizado{% endif %}
+    </span>
+  </div>
+
+  <div class="match-card-teams">
+    <div class="team-side">
+      <span class="team-flag">{{ match.home.flag }}</span>
+      <strong class="team-name display">{{ match.home.name }}</strong>
     </div>
-    <div class="display" style="font-size:22px;min-width:60px;text-align:center">
-      {% if match.has_result %}{{ match.result_home }}–{{ match.result_away }}{% else %}VS{% endif %}
+    <div class="match-score">
+      {% if st == 'done' %}
+        <span class="score-bubble">{{ match.result_home }}</span>
+        <span class="score-sep">:</span>
+        <span class="score-bubble">{{ match.result_away }}</span>
+      {% else %}
+        <span class="match-vs display">VS</span>
+      {% endif %}
     </div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
-      <span style="font-size:34px">{{ match.away.flag }}</span>
-      <strong style="font-size:13px">{{ match.away.name }}</strong>
+    <div class="team-side">
+      <span class="team-flag">{{ match.away.flag }}</span>
+      <strong class="team-name display">{{ match.away.name }}</strong>
     </div>
   </div>
-  <footer style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
-    <span class="mono" style="font-size:11px;color:var(--text-faint)">
-      {% icon "cal" width=11 height=11 %} {{ match.kickoff|date:"d M · H:i" }}
+
+  <div class="match-card-meta">
+    {% icon "cal" width=13 height=13 %}
+    <span class="mono">{{ match.kickoff|date:"D j M · H:i" }}</span>
+  </div>
+
+  <div class="match-card-foot">
+    <span class="match-card-foot-info">
+      {% if st == 'done' %}
+        Tu pronóstico {% if match.my_pred %}{{ match.my_pred.home }}-{{ match.my_pred.away }}{% else %}—{% endif %}
+      {% elif st == 'open' or st == 'closing' %}
+        Cierra {{ match.kickoff|date:"d M H:i" }}
+      {% else %}
+        Apuestas cerradas
+      {% endif %}
     </span>
-    {% if match.editable %}
-      <a class="btn btn-primary" href="{% url 'competicion:predict' match.id %}" data-modal-url="{% url 'competicion:predict' match.id %}" style="padding:6px 12px;font-size:12px">Pronosticar</a>
-    {% elif match.status == 'done' %}
-      {% with mp=my_preds|default:None %}
-        {% if mp %}<span class="chip chip-done">+{{ match.id|stringformat:'s' }} pts</span>{% endif %}
-      {% endwith %}
-    {% else %}
-      <span class="chip">Cerrado</span>
+
+    {% if st == 'done' %}
+      {% if match.my_pred and match.my_pred.earned %}
+        <span class="chip chip-earned-{% if match.my_pred.earned >= match.round.points %}full{% else %}partial{% endif %}">
+          +{{ match.my_pred.earned }} pts{% if match.my_pred.earned >= match.round.points %} · exacto{% endif %}
+        </span>
+      {% else %}
+        <span class="chip">0 pts</span>
+      {% endif %}
+    {% elif match.my_pred and match.editable %}
+      <span class="chip chip-open">
+        {% icon "check" width=11 height=11 %} Apostaste {{ match.my_pred.home }}-{{ match.my_pred.away }}
+      </span>
+    {% elif match.editable %}
+      <span class="chip chip-accent">
+        {% icon "edit" width=11 height=11 %} Pronosticar
+      </span>
     {% endif %}
-  </footer>
+  </div>
+{% if match.editable %}
+</a>
+{% else %}
 </article>
+{% endif %}
+{% endwith %}

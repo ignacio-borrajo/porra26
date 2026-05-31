@@ -24,6 +24,7 @@ class CompetitionView(LoginRequiredMixin, View):
         }
         open_matches, live_matches, done_matches = [], [], []
         for m in matches:
+            m.my_pred = my_preds.get(m.id)
             st = m.status
             if st == "live":
                 live_matches.append(m)
@@ -40,7 +41,6 @@ class CompetitionView(LoginRequiredMixin, View):
                 "open_matches": open_matches,
                 "live_matches": live_matches,
                 "done_matches": done_matches,
-                "my_preds": my_preds,
                 "standings": standings()[:50],
             },
         )

@@ -18,8 +18,8 @@
   --c-green:  oklch(0.70 0.18 150);   /* MEX */
   --c-red:    oklch(0.63 0.23 25);    /* CAN */
 
-  /* acento primario configurable por Tweaks */
-  --accent: var(--c-pink);
+  /* acento primario (Mundial 26 → azul, igual que en design-reference/app.jsx) */
+  --accent: var(--c-blue);
   --accent-2: var(--c-cyan);
 
   --font-display: 'Sora', system-ui, sans-serif;
@@ -186,6 +186,127 @@ body {
   backdrop-filter: blur(10px);
 }
 .btn-ghost:hover { border-color: var(--accent); color: var(--text); transform: translateY(calc(-1px * var(--anim))); }
+
+/* ---------------- Navegación principal (topbar) ---------------- */
+.nav-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 13px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  background: transparent;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: background 0.25s var(--ease-out), color 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
+  position: relative;
+}
+.nav-item svg { color: currentColor; transition: color 0.25s var(--ease-out); }
+.nav-item:hover { color: var(--text); }
+.nav-item.is-active {
+  background: var(--surface-hi);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border-hi);
+}
+.nav-item.is-active svg { color: var(--accent); }
+.nav-item.is-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 18px;
+  border-radius: 3px;
+  background: linear-gradient(var(--accent), var(--accent-2));
+}
+
+/* ---------------- Tarjeta de partido ---------------- */
+.match-card {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  border-radius: 20px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-align: left;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
+}
+a.match-card { cursor: pointer; }
+a.match-card:hover {
+  transform: translateY(calc(-4px * var(--anim)));
+  border-color: oklch(from var(--accent) l c h / 0.5);
+  box-shadow: 0 22px 50px -22px var(--accent), var(--shadow-glow);
+}
+.match-card-live::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 60% at 50% 0%, oklch(from var(--c-red) l c h / 0.16), transparent 60%);
+  pointer-events: none;
+}
+.match-card-head { display: flex; align-items: center; justify-content: space-between; }
+.match-card-teams { display: flex; align-items: center; gap: 10px; }
+.team-side { display: flex; flex-direction: column; align-items: center; gap: 7px; flex: 1; min-width: 0; }
+.team-flag { font-size: 38px; line-height: 1; filter: drop-shadow(0 4px 8px oklch(0 0 0 / 0.25)); }
+.team-name { font-size: 13px; font-weight: 700; text-align: center; letter-spacing: -0.01em; }
+.match-score { display: flex; align-items: center; gap: 6px; }
+.match-vs { font-size: 15px; color: var(--text-faint); font-weight: 700; }
+.score-bubble {
+  min-width: 38px;
+  height: 46px;
+  padding: 0 8px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  background: linear-gradient(135deg, oklch(from var(--accent) l c h / 0.22), oklch(from var(--accent-2) l c h / 0.12));
+  border: 1px solid var(--border-hi);
+  color: var(--text);
+}
+.score-sep { color: var(--text-faint); font-weight: 700; }
+.match-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.match-card-meta svg { color: var(--text-faint); }
+.match-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.match-card-foot-info { font-size: 12px; color: var(--text-faint); }
+.chip-accent {
+  color: var(--accent);
+  border-color: oklch(from var(--accent) l c h / 0.5);
+  background: oklch(from var(--accent) l c h / 0.10);
+}
+.chip-earned-full {
+  color: var(--c-lime);
+  border-color: oklch(from var(--c-lime) l c h / 0.4);
+  background: oklch(from var(--c-lime) l c h / 0.10);
+}
+.chip-earned-partial {
+  color: var(--c-yellow);
+  border-color: oklch(from var(--c-yellow) l c h / 0.4);
+  background: oklch(from var(--c-yellow) l c h / 0.10);
+}
 
 /* ---------------- Inputs ---------------- */
 .field { display: flex; flex-direction: column; gap: 7px; }
