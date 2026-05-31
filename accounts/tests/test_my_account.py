@@ -273,3 +273,19 @@ def test_password_post_keeps_must_change_flag_false(client):
     assert r.status_code == 302
     user.refresh_from_db()
     assert user.must_change_password is False
+
+
+@pytest.mark.django_db
+def test_post_without_action_returns_400(client):
+    user = UserFactory()
+    client.force_login(user)
+    r = client.post(reverse("accounts:my_account"), {"name": "Ana"})
+    assert r.status_code == 400
+
+
+@pytest.mark.django_db
+def test_post_unknown_action_returns_400(client):
+    user = UserFactory()
+    client.force_login(user)
+    r = client.post(reverse("accounts:my_account"), {"action": "explotame"})
+    assert r.status_code == 400
