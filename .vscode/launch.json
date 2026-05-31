@@ -1,0 +1,128 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Django: runserver (dev)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["runserver", "8000", "--settings=porra26.settings.dev"],
+      "django": true,
+      "justMyCode": true,
+      "console": "integratedTerminal",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "porra26.settings.dev",
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+    {
+      "name": "Django: runserver (no autoreload, debug breakpoints)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["runserver", "8000", "--noreload", "--settings=porra26.settings.dev"],
+      "django": true,
+      "justMyCode": false,
+      "console": "integratedTerminal",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "porra26.settings.dev",
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
+    {
+      "name": "Django: migrate",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["migrate", "--settings=porra26.settings.dev"],
+      "console": "integratedTerminal",
+      "python": "${workspaceFolder}/.venv/bin/python"
+    },
+    {
+      "name": "Django: loaddata fixtures",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": [
+        "loaddata",
+        "fixtures/rounds.json",
+        "fixtures/teams.json",
+        "fixtures/world_cup_2026.json",
+        "--settings=porra26.settings.dev"
+      ],
+      "console": "integratedTerminal",
+      "python": "${workspaceFolder}/.venv/bin/python"
+    },
+    {
+      "name": "Django: createsuperuser",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["createsuperuser", "--settings=porra26.settings.dev"],
+      "console": "integratedTerminal",
+      "python": "${workspaceFolder}/.venv/bin/python"
+    },
+    {
+      "name": "Django: shell",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["shell", "--settings=porra26.settings.dev"],
+      "console": "integratedTerminal",
+      "python": "${workspaceFolder}/.venv/bin/python"
+    },
+    {
+      "name": "pytest: todo",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-v"],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "porra26.settings.test"
+      }
+    },
+    {
+      "name": "pytest: fichero actual",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-v", "${file}"],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "porra26.settings.test"
+      }
+    },
+    {
+      "name": "pytest: test bajo el cursor",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-v", "${file}::${selectedText}"],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "porra26.settings.test"
+      }
+    },
+    {
+      "name": "Python: fichero actual",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "porra26.settings.dev"
+      }
+    }
+  ]
+}
