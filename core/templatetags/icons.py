@@ -21,5 +21,5 @@ def icon(name: str, width=18, height=18, **kw):
         return ""
     attrs = f'width="{width}" height="{height}"'
     extra = " ".join(f'{k}="{v}"' for k, v in kw.items())
-    out = raw.replace("<svg", f'<svg {attrs} {extra}', 1)
+    out = raw.replace("<svg", f"<svg {attrs} {extra}", 1)
     return mark_safe(out)

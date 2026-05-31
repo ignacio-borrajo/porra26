@@ -1,5 +1,6 @@
 import pytest
 from django.urls import reverse
+
 from accounts.models import User
 from accounts.tests.factories import GestorFactory, UserFactory
 
@@ -23,11 +24,17 @@ def test_create_player_shows_temp_password(client, monkeypatch):
     monkeypatch.setattr("accounts.validators._allowed_domains", lambda: ["edisa.com"])
     g = GestorFactory(must_change_password=False)
     client.force_login(g)
-    r = client.post(reverse("pot:player_new"), {
-        "name": "Nuevo", "email": "nuevo@edisa.com", "dept": "Dev", "role": "jugador",
-    })
+    r = client.post(
+        reverse("pot:player_new"),
+        {
+            "name": "Nuevo",
+            "email": "nuevo@edisa.com",
+            "dept": "Dev",
+            "role": "jugador",
+        },
+    )
     assert r.status_code == 200
-    assert "Contraseña temporal".encode("utf-8") in r.content
+    assert "Contraseña temporal".encode() in r.content
     assert User.objects.filter(email="nuevo@edisa.com").exists()
 
 
@@ -37,6 +44,7 @@ def test_toggle_payment(client):
     client.force_login(g)
     p = UserFactory()
     from pot.models import Payment
+
     Payment.objects.create(player=p, paid=False)
     r = client.post(reverse("pot:player_toggle_payment", args=[p.id]))
     assert r.status_code == 302

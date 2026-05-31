@@ -1,4 +1,5 @@
 import pytest
+
 from competition.models import Team
 
 

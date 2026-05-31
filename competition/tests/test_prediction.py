@@ -13,8 +13,14 @@ def setup(db):
     grp = Round.objects.create(id="groups", label="Grupos", short="GRP", points=3, order=1)
     esp = Team.objects.create(code="ESP", name="España", flag="🇪🇸")
     arg = Team.objects.create(code="ARG", name="Argentina", flag="🇦🇷")
-    m = Match.objects.create(round=grp, group="A", matchday=1, home=esp, away=arg,
-                              kickoff=timezone.now() + timedelta(days=1))
+    m = Match.objects.create(
+        round=grp,
+        group="A",
+        matchday=1,
+        home=esp,
+        away=arg,
+        kickoff=timezone.now() + timedelta(days=1),
+    )
     u = User.objects.create_user(email="a@edisa.com", password="x", name="Ana")
     return u, m
 

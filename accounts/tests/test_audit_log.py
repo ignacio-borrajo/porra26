@@ -1,4 +1,5 @@
 import pytest
+
 from accounts.models import AuditLog, User
 
 
@@ -6,8 +7,11 @@ from accounts.models import AuditLog, User
 def test_audit_log_can_be_created():
     actor = User.objects.create_user(email="g@edisa.com", password="x", name="G", role="gestor")
     entry = AuditLog.objects.create(
-        actor=actor, action="password_reset",
-        target_type="user", target_id="42", payload={"by": "g@edisa.com"},
+        actor=actor,
+        action="password_reset",
+        target_type="user",
+        target_id="42",
+        payload={"by": "g@edisa.com"},
     )
     assert entry.pk
     assert entry.created_at is not None

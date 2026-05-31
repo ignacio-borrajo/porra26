@@ -17,14 +17,19 @@ class ManagePlayersView(RoleRequiredMixin, View):
         players = User.objects.all().order_by("name")
         if q:
             from django.db.models import Q
+
             players = players.filter(Q(name__icontains=q) | Q(email__icontains=q))
-        return render(request, "pot/manage_players.html", {
-            "players": players,
-            "q": q,
-            "active_count": User.objects.filter(is_active=True).count(),
-            "paid_count": Payment.objects.filter(paid=True).count(),
-            "total_count": User.objects.count(),
-        })
+        return render(
+            request,
+            "pot/manage_players.html",
+            {
+                "players": players,
+                "q": q,
+                "active_count": User.objects.filter(is_active=True).count(),
+                "paid_count": Payment.objects.filter(paid=True).count(),
+                "total_count": User.objects.count(),
+            },
+        )
 
 
 class PlayerFormView(RoleRequiredMixin, View):
@@ -51,10 +56,17 @@ class PlayerFormView(RoleRequiredMixin, View):
             user.must_change_password = True
             user.save()
             Payment.objects.get_or_create(player=user)
-            AuditLog.objects.create(actor=request.user, action="player_created",
-                                     target_type="user", target_id=str(user.id), payload={})
+            AuditLog.objects.create(
+                actor=request.user,
+                action="player_created",
+                target_type="user",
+                target_id=str(user.id),
+                payload={},
+            )
             messages.success(request, "Jugador creado.")
-            return render(request, "pot/_password_reveal.html", {"player": user, "temp_password": temp})
+            return render(
+                request, "pot/_password_reveal.html", {"player": user, "temp_password": temp}
+            )
         form.save()
         messages.success(request, "Cambios guardados.")
         return redirect("pot:manage_players")
@@ -69,8 +81,13 @@ class ResetPasswordView(RoleRequiredMixin, View):
         u.set_password(temp)
         u.must_change_password = True
         u.save(update_fields=["password", "must_change_password"])
-        AuditLog.objects.create(actor=request.user, action="password_reset",
-                                 target_type="user", target_id=str(u.id), payload={})
+        AuditLog.objects.create(
+            actor=request.user,
+            action="password_reset",
+            target_type="user",
+            target_id=str(u.id),
+            payload={},
+        )
         return render(request, "pot/_password_reveal.html", {"player": u, "temp_password": temp})
 
 
@@ -93,8 +110,13 @@ class TogglePaymentView(RoleRequiredMixin, View):
         pay.paid = not pay.paid
         pay.paid_at = timezone.now() if pay.paid else None
         pay.save()
-        AuditLog.objects.create(actor=request.user, action="payment_toggled",
-                                 target_type="user", target_id=str(u.id), payload={"paid": pay.paid})
+        AuditLog.objects.create(
+            actor=request.user,
+            action="payment_toggled",
+            target_type="user",
+            target_id=str(u.id),
+            payload={"paid": pay.paid},
+        )
         return redirect("pot:manage_players")
 
 
@@ -102,7 +124,11 @@ class PrizesSettingsView(RoleRequiredMixin, View):
     required_role = "gestor"
 
     def get(self, request):
-        return render(request, "pot/prizes_settings.html", {"prizes": Prize.objects.all().select_related("round")})
+        return render(
+            request,
+            "pot/prizes_settings.html",
+            {"prizes": Prize.objects.all().select_related("round")},
+        )
 
     def post(self, request):
         for prize in Prize.objects.all():
@@ -114,8 +140,13 @@ class PrizesSettingsView(RoleRequiredMixin, View):
                 prize.save(update_fields=["amount"])
             except (ValueError, TypeError):
                 pass
-        AuditLog.objects.create(actor=request.user, action="prize_changed",
-                                 target_type="prize", target_id="*", payload={})
+        AuditLog.objects.create(
+            actor=request.user,
+            action="prize_changed",
+            target_type="prize",
+            target_id="*",
+            payload={},
+        )
         messages.success(request, "Premios actualizados.")
         return redirect("pot:prizes")
 

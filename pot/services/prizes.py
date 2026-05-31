@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 
 from django.db.models import Sum
+
 from competition.models import Match, Prediction
 
 
@@ -46,5 +47,6 @@ def matchday_winners(scope_key) -> WinnerResult:
     winners_raw = [r for r in rows if r["p"] == top]
 
     from accounts.models import User
+
     winners = list(User.objects.filter(id__in=[w["player_id"] for w in winners_raw]))
     return WinnerResult(status="resolved", winners=winners, points=int(top), tied=len(winners) > 1)

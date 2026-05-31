@@ -1,7 +1,8 @@
 import pytest
+
 from accounts.tests.factories import UserFactory
 from competition.tests.factories import MatchFactory, PredictionFactory, RoundFactory
-from stats.services.kpis import kpis, donut
+from stats.services.kpis import donut, kpis
 
 
 @pytest.mark.django_db
@@ -25,5 +26,5 @@ def test_kpis_basic():
         PredictionFactory(player=p, match=m, earned=earned)
     k = kpis(me)
     assert k["exact"] == 1
-    assert k["hit_rate"] == pytest.approx(2/3)
+    assert k["hit_rate"] == pytest.approx(2 / 3)
     assert k["vs_leader"] >= 0

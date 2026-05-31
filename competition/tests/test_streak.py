@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pytest
 from django.utils import timezone
+
 from accounts.tests.factories import UserFactory
 from competition.services.streak import streak
 from competition.tests.factories import MatchFactory, PredictionFactory, RoundFactory
@@ -13,8 +14,9 @@ def test_streak_counts_consecutive_hits_from_latest():
     u = UserFactory()
     base = timezone.now()
     for i, earned in enumerate([0, 1, 3, 1, 3]):
-        m = MatchFactory(round=groups, kickoff=base + timedelta(hours=i),
-                          result_home=1, result_away=0)
+        m = MatchFactory(
+            round=groups, kickoff=base + timedelta(hours=i), result_home=1, result_away=0
+        )
         PredictionFactory(player=u, match=m, earned=earned)
     assert streak(u.id) == 4
 
@@ -25,8 +27,9 @@ def test_streak_zero_if_latest_is_zero():
     u = UserFactory()
     base = timezone.now()
     for i, earned in enumerate([3, 1, 0]):
-        m = MatchFactory(round=groups, kickoff=base + timedelta(hours=i),
-                          result_home=1, result_away=0)
+        m = MatchFactory(
+            round=groups, kickoff=base + timedelta(hours=i), result_home=1, result_away=0
+        )
         PredictionFactory(player=u, match=m, earned=earned)
     assert streak(u.id) == 0
 

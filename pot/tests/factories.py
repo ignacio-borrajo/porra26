@@ -1,4 +1,5 @@
 import factory
+
 from pot.models import Payment, Prize
 
 

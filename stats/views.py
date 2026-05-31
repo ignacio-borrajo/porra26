@@ -9,10 +9,14 @@ from stats.services.kpis import donut, kpis
 
 class StatsView(LoginRequiredMixin, View):
     def get(self, request):
-        return render(request, "stats/stats.html", {
-            "kpis": kpis(request.user),
-            "donut": donut(request.user.id),
-        })
+        return render(
+            request,
+            "stats/stats.html",
+            {
+                "kpis": kpis(request.user),
+                "donut": donut(request.user.id),
+            },
+        )
 
 
 class ChartDataView(LoginRequiredMixin, View):

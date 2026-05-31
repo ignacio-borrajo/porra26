@@ -1,4 +1,5 @@
 import pytest
+
 from accounts.tests.factories import UserFactory
 from competition.tests.factories import MatchFactory, PredictionFactory, RoundFactory
 from pot.services.prizes import matchday_winners
@@ -19,7 +20,8 @@ def test_matchday_pending_if_any_match_unresolved(groups_round):
 
 @pytest.mark.django_db
 def test_matchday_single_winner(groups_round):
-    a = UserFactory(name="A"); b = UserFactory(name="B")
+    a = UserFactory(name="A")
+    b = UserFactory(name="B")
     m1 = MatchFactory(round=groups_round, matchday=1, result_home=1, result_away=0)
     m2 = MatchFactory(round=groups_round, matchday=1, result_home=2, result_away=2)
     PredictionFactory(player=a, match=m1, earned=3)
@@ -33,7 +35,8 @@ def test_matchday_single_winner(groups_round):
 
 @pytest.mark.django_db
 def test_matchday_tie_splits_prize(groups_round):
-    a = UserFactory(name="A"); b = UserFactory(name="B")
+    a = UserFactory(name="A")
+    b = UserFactory(name="B")
     m1 = MatchFactory(round=groups_round, matchday=2, result_home=1, result_away=0)
     PredictionFactory(player=a, match=m1, earned=3)
     PredictionFactory(player=b, match=m1, earned=3)

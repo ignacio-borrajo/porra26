@@ -14,7 +14,9 @@ def resolve_match(match: Match, *, home: int, away: int, actor) -> None:
     match.finished_at = timezone.now()
     match.save(update_fields=["result_home", "result_away", "finished_at"])
 
-    preds = list(Prediction.objects.select_for_update().filter(match=match).select_related("match__round"))
+    preds = list(
+        Prediction.objects.select_for_update().filter(match=match).select_related("match__round")
+    )
     for p in preds:
         p.earned = score(p, match)
     if preds:

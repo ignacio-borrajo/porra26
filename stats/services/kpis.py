@@ -1,12 +1,12 @@
 from statistics import mean
-from competition.services.standings import standings
+
 from competition.models import Prediction
+from competition.services.standings import standings
 
 
 def donut(player_id: int) -> dict:
-    rows = (
-        Prediction.objects.filter(player_id=player_id, earned__isnull=False)
-        .values_list("earned", "match__round__points")
+    rows = Prediction.objects.filter(player_id=player_id, earned__isnull=False).values_list(
+        "earned", "match__round__points"
     )
     exact = partial = fail = 0
     for earned, round_points in rows:

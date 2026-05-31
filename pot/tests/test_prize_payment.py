@@ -1,4 +1,5 @@
 import pytest
+
 from accounts.models import User
 from competition.models import Round
 from pot.models import Payment, Prize

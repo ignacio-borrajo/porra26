@@ -16,7 +16,9 @@ def setup_match(db):
 
 
 def _match(round, home, away, kickoff, **kw):
-    return Match.objects.create(round=round, group="A", matchday=1, home=home, away=away, kickoff=kickoff, **kw)
+    return Match.objects.create(
+        round=round, group="A", matchday=1, home=home, away=away, kickoff=kickoff, **kw
+    )
 
 
 @pytest.mark.django_db

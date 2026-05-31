@@ -1,4 +1,5 @@
 import factory
+
 from accounts.models import User
 
 

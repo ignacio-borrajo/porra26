@@ -1,5 +1,7 @@
 import secrets
+
 from django import forms
+
 from accounts.models import User
 from accounts.validators import validate_email_domain
 

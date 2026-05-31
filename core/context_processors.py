@@ -1,4 +1,5 @@
 from decimal import Decimal
+
 from pot.models import Payment, PotSettings
 
 

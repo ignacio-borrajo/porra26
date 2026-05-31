@@ -75,7 +75,9 @@ class Match(models.Model):
 
 
 class Prediction(models.Model):
-    player = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="predictions")
+    player = models.ForeignKey(
+        "accounts.User", on_delete=models.CASCADE, related_name="predictions"
+    )
     match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name="predictions")
     home = models.PositiveSmallIntegerField()
     away = models.PositiveSmallIntegerField()
@@ -87,3 +89,6 @@ class Prediction(models.Model):
             models.UniqueConstraint(fields=["player", "match"], name="uniq_pred_per_player_match"),
         ]
         indexes = [models.Index(fields=["match", "player"])]
+
+    def __str__(self):
+        return f"{self.player_id} → {self.match_id}"

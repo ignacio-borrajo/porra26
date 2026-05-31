@@ -19,7 +19,9 @@ class CompetitionView(LoginRequiredMixin, View):
             .select_related("home", "away", "round")
             .order_by("kickoff")
         )
-        my_preds = {p.match_id: p for p in Prediction.objects.filter(player=request.user, match__in=matches)}
+        my_preds = {
+            p.match_id: p for p in Prediction.objects.filter(player=request.user, match__in=matches)
+        }
         open_matches, live_matches, done_matches = [], [], []
         for m in matches:
             st = m.status
@@ -29,15 +31,19 @@ class CompetitionView(LoginRequiredMixin, View):
                 done_matches.append(m)
             else:
                 open_matches.append(m)
-        return render(request, "competition/dashboard.html", {
-            "rounds": rounds,
-            "active_round": active_id,
-            "open_matches": open_matches,
-            "live_matches": live_matches,
-            "done_matches": done_matches,
-            "my_preds": my_preds,
-            "standings": standings()[:50],
-        })
+        return render(
+            request,
+            "competition/dashboard.html",
+            {
+                "rounds": rounds,
+                "active_round": active_id,
+                "open_matches": open_matches,
+                "live_matches": live_matches,
+                "done_matches": done_matches,
+                "my_preds": my_preds,
+                "standings": standings()[:50],
+            },
+        )
 
 
 class PredictView(LoginRequiredMixin, View):
@@ -59,7 +65,9 @@ class PredictView(LoginRequiredMixin, View):
         except ValueError:
             messages.error(request, "Marcador inválido.")
             return redirect("competicion:dashboard")
-        Prediction.objects.update_or_create(player=request.user, match=m, defaults={"home": h, "away": a})
+        Prediction.objects.update_or_create(
+            player=request.user, match=m, defaults={"home": h, "away": a}
+        )
         messages.success(request, f"Pronóstico guardado · {m.home.name} {h}–{a} {m.away.name}")
         return redirect("competicion:dashboard")
 
@@ -70,7 +78,11 @@ class ManageResultsView(RoleRequiredMixin, View):
     def get(self, request):
         rounds = list(Round.objects.all())
         active_id = request.GET.get("round", rounds[0].id if rounds else "groups")
-        ms = list(Match.objects.filter(round_id=active_id).select_related("home", "away", "round").order_by("kickoff"))
+        ms = list(
+            Match.objects.filter(round_id=active_id)
+            .select_related("home", "away", "round")
+            .order_by("kickoff")
+        )
         pending, upcoming, done = [], [], []
         for m in ms:
             st = m.status
@@ -80,10 +92,17 @@ class ManageResultsView(RoleRequiredMixin, View):
                 pending.append(m)
             else:
                 upcoming.append(m)
-        return render(request, "competition/manage_results.html", {
-            "rounds": rounds, "active_round": active_id,
-            "pending": pending, "upcoming": upcoming, "done": done,
-        })
+        return render(
+            request,
+            "competition/manage_results.html",
+            {
+                "rounds": rounds,
+                "active_round": active_id,
+                "pending": pending,
+                "upcoming": upcoming,
+                "done": done,
+            },
+        )
 
 
 class ResultOfficialView(RoleRequiredMixin, View):

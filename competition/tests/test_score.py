@@ -1,4 +1,5 @@
 import pytest
+
 from competition.services.score import score
 from competition.tests.factories import MatchFactory, RoundFactory
 
@@ -13,14 +14,17 @@ def _match_with_result(groups_round, rh, ra):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("ph,pa,rh,ra,expected", [
-    (2, 1, 2, 1, 3),
-    (3, 1, 2, 1, 1),
-    (0, 0, 1, 1, 1),
-    (1, 2, 0, 3, 1),
-    (2, 0, 0, 1, 0),
-    (1, 1, 2, 0, 0),
-])
+@pytest.mark.parametrize(
+    "ph,pa,rh,ra,expected",
+    [
+        (2, 1, 2, 1, 3),
+        (3, 1, 2, 1, 1),
+        (0, 0, 1, 1, 1),
+        (1, 2, 0, 3, 1),
+        (2, 0, 0, 1, 0),
+        (1, 1, 2, 0, 0),
+    ],
+)
 def test_score_groups(groups_round, ph, pa, rh, ra, expected):
     m = _match_with_result(groups_round, rh, ra)
     pred = type("P", (), {"home": ph, "away": pa})()

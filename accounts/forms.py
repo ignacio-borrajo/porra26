@@ -42,5 +42,7 @@ class ChangePasswordForm(forms.Form):
         if c.get("new1"):
             pwd = c["new1"]
             if not any(ch.isupper() for ch in pwd) or not any(ch.isdigit() for ch in pwd):
-                raise forms.ValidationError("La contraseña debe tener al menos una mayúscula y un dígito.")
+                raise forms.ValidationError(
+                    "La contraseña debe tener al menos una mayúscula y un dígito."
+                )
         return c

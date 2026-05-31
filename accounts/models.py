@@ -38,7 +38,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class AuditLog(models.Model):
-    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="audit_actions")
+    actor = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="audit_actions"
+    )
     action = models.CharField(max_length=40)
     target_type = models.CharField(max_length=20)
     target_id = models.CharField(max_length=64)
