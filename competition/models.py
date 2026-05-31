@@ -72,3 +72,18 @@ class Match(models.Model):
     @property
     def editable(self) -> bool:
         return self.status in ("open", "closing")
+
+
+class Prediction(models.Model):
+    player = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="predictions")
+    match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name="predictions")
+    home = models.PositiveSmallIntegerField()
+    away = models.PositiveSmallIntegerField()
+    earned = models.PositiveSmallIntegerField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["player", "match"], name="uniq_pred_per_player_match"),
+        ]
+        indexes = [models.Index(fields=["match", "player"])]
