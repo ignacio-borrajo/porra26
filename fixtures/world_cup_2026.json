@@ -1,0 +1,6 @@
+[
+  {"model":"competition.match","pk":1,"fields":{"round":"groups","group":"A","matchday":1,"home":"MEX","away":"USA","kickoff":"2026-06-11T18:00:00Z"}},
+  {"model":"competition.match","pk":2,"fields":{"round":"groups","group":"A","matchday":1,"home":"CAN","away":"JPN","kickoff":"2026-06-11T21:00:00Z"}},
+  {"model":"competition.match","pk":3,"fields":{"round":"groups","group":"B","matchday":1,"home":"ESP","away":"POR","kickoff":"2026-06-12T18:00:00Z"}},
+  {"model":"competition.match","pk":4,"fields":{"round":"groups","group":"B","matchday":1,"home":"ARG","away":"BRA","kickoff":"2026-06-12T21:00:00Z"}}
+]

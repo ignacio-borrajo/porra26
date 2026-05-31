@@ -1,0 +1,18 @@
+[
+  {"model":"competition.team","pk":"ESP","fields":{"name":"España","flag":"🇪🇸"}},
+  {"model":"competition.team","pk":"ARG","fields":{"name":"Argentina","flag":"🇦🇷"}},
+  {"model":"competition.team","pk":"FRA","fields":{"name":"Francia","flag":"🇫🇷"}},
+  {"model":"competition.team","pk":"BRA","fields":{"name":"Brasil","flag":"🇧🇷"}},
+  {"model":"competition.team","pk":"ENG","fields":{"name":"Inglaterra","flag":"🏴󠁧󠁢󠁥󠁮󠁧󠁿"}},
+  {"model":"competition.team","pk":"POR","fields":{"name":"Portugal","flag":"🇵🇹"}},
+  {"model":"competition.team","pk":"GER","fields":{"name":"Alemania","flag":"🇩🇪"}},
+  {"model":"competition.team","pk":"NED","fields":{"name":"Países Bajos","flag":"🇳🇱"}},
+  {"model":"competition.team","pk":"MEX","fields":{"name":"México","flag":"🇲🇽"}},
+  {"model":"competition.team","pk":"USA","fields":{"name":"Estados Unidos","flag":"🇺🇸"}},
+  {"model":"competition.team","pk":"CAN","fields":{"name":"Canadá","flag":"🇨🇦"}},
+  {"model":"competition.team","pk":"JPN","fields":{"name":"Japón","flag":"🇯🇵"}},
+  {"model":"competition.team","pk":"CRO","fields":{"name":"Croacia","flag":"🇭🇷"}},
+  {"model":"competition.team","pk":"MAR","fields":{"name":"Marruecos","flag":"🇲🇦"}},
+  {"model":"competition.team","pk":"URU","fields":{"name":"Uruguay","flag":"🇺🇾"}},
+  {"model":"competition.team","pk":"BEL","fields":{"name":"Bélgica","flag":"🇧🇪"}}
+]
