@@ -1,14 +1,9 @@
 from django.urls import path
-from django.http import HttpResponse
-
-
-def _stub(request, *a, **kw):
-    return HttpResponse("stub")
-
+from . import views
 
 urlpatterns = [
-    path("", _stub, name="dashboard"),
-    path("resultados/", _stub, name="manage_results"),
-    path("pronosticar/<int:match_id>/", _stub, name="predict"),
-    path("resultados/<int:match_id>/", _stub, name="official"),
+    path("", views.CompetitionView.as_view(), name="dashboard"),
+    path("pronosticar/<int:match_id>/", views.PredictView.as_view(), name="predict"),
+    path("resultados/", views.ManageResultsView.as_view(), name="manage_results"),
+    path("resultados/<int:match_id>/", views.ResultOfficialView.as_view(), name="official"),
 ]

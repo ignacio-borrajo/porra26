@@ -1,0 +1,7 @@
+<nav class="glass" style="display:flex;gap:6px;padding:8px;border-radius:14px">
+  {% for r in rounds %}
+  <a href="?round={{ r.id }}" class="chip {% if r.id == active %}chip-open{% endif %}" style="text-decoration:none">
+    {{ r.label }} · <span class="mono">{{ r.points }}p</span>
+  </a>
+  {% endfor %}
+</nav>

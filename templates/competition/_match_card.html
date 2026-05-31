@@ -1,0 +1,34 @@
+{% load icons %}
+<article class="glass" style="border-radius:20px;padding:14px;position:relative">
+  <header style="display:flex;justify-content:space-between;align-items:center">
+    <span class="mono" style="color:var(--text-faint);font-size:11px">Grupo {{ match.group }}</span>
+    <span class="chip chip-{{ match.status }}">{{ match.status }}</span>
+  </header>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+      <span style="font-size:34px">{{ match.home.flag }}</span>
+      <strong style="font-size:13px">{{ match.home.name }}</strong>
+    </div>
+    <div class="display" style="font-size:22px;min-width:60px;text-align:center">
+      {% if match.has_result %}{{ match.result_home }}–{{ match.result_away }}{% else %}VS{% endif %}
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+      <span style="font-size:34px">{{ match.away.flag }}</span>
+      <strong style="font-size:13px">{{ match.away.name }}</strong>
+    </div>
+  </div>
+  <footer style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+    <span class="mono" style="font-size:11px;color:var(--text-faint)">
+      {% icon "cal" width=11 height=11 %} {{ match.kickoff|date:"d M · H:i" }}
+    </span>
+    {% if match.editable %}
+      <a class="btn btn-primary" href="{% url 'competicion:predict' match.id %}" data-modal-url="{% url 'competicion:predict' match.id %}" style="padding:6px 12px;font-size:12px">Pronosticar</a>
+    {% elif match.status == 'done' %}
+      {% with mp=my_preds|default:None %}
+        {% if mp %}<span class="chip chip-done">+{{ match.id|stringformat:'s' }} pts</span>{% endif %}
+      {% endwith %}
+    {% else %}
+      <span class="chip">Cerrado</span>
+    {% endif %}
+  </footer>
+</article>

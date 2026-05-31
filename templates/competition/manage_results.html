@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block main %}
+<h1 class="display" style="font-size:28px">Resultados oficiales</h1>
+<p style="color:var(--text-dim)">Confirma los marcadores. Al confirmar se recalculan los puntos.</p>
+{% include "partials/_round_selector.html" with rounds=rounds active=active_round %}
+{% if pending %}
+<h2 class="eyebrow" style="margin-top:18px">PENDIENTES DE FINALIZAR · {{ pending|length }}</h2>
+<div style="display:flex;flex-direction:column;gap:8px">
+  {% for m in pending %}
+  <div class="glass" style="display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
+    <span class="mono" style="color:var(--text-faint)">Grupo {{ m.group }}</span>
+    <span>{{ m.home.flag }} {{ m.home.name }} vs {{ m.away.flag }} {{ m.away.name }}</span>
+    <span class="chip chip-{{ m.status }}">{{ m.status }}</span>
+    <a class="btn btn-primary" href="{% url 'competicion:official' m.id %}" style="padding:6px 12px;font-size:12px">Finalizar</a>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% if upcoming %}
+<h2 class="eyebrow" style="margin-top:18px">PRÓXIMOS · {{ upcoming|length }}</h2>
+<div style="display:flex;flex-direction:column;gap:8px">
+  {% for m in upcoming %}
+  <div class="glass" style="display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
+    <span class="mono" style="color:var(--text-faint)">Grupo {{ m.group }}</span>
+    <span>{{ m.home.flag }} {{ m.home.name }} vs {{ m.away.flag }} {{ m.away.name }}</span>
+    <span class="mono" style="font-size:11px">{{ m.kickoff|date:"d M · H:i" }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% if done %}
+<h2 class="eyebrow" style="margin-top:18px">FINALIZADOS · {{ done|length }}</h2>
+<div style="display:flex;flex-direction:column;gap:8px">
+  {% for m in done %}
+  <div class="glass" style="display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
+    <span class="mono" style="color:var(--text-faint)">Grupo {{ m.group }}</span>
+    <span>{{ m.home.flag }} {{ m.home.name }} {{ m.result_home }}–{{ m.result_away }} {{ m.away.flag }} {{ m.away.name }}</span>
+    <span class="chip chip-done">Final</span>
+    <a class="btn btn-ghost" href="{% url 'competicion:official' m.id %}" style="padding:6px 12px;font-size:12px">Editar</a>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
