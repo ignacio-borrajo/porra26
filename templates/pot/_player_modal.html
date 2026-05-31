@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block main %}
+<section class="glass pop" style="max-width:520px;margin:6vh auto;padding:28px;border-radius:24px">
+  <h1 class="display" style="font-size:22px">{% if player %}{{ player.name }}{% else %}Nuevo jugador{% endif %}</h1>
+  <form method="post">
+    {% csrf_token %}
+    {% for f in form %}
+      <div class="field" style="margin-top:14px">
+        <label>{{ f.label }}</label>
+        {{ f }}
+        {% for e in f.errors %}<p style="color:var(--c-red)">{{ e }}</p>{% endfor %}
+      </div>
+    {% endfor %}
+    {% if not player %}
+    <p class="mono" style="font-size:11px;color:var(--text-faint);margin-top:14px">
+      Se generará una contraseña temporal y se mostrará en pantalla. Compártela por canal privado.
+    </p>
+    {% endif %}
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+      <a class="btn btn-ghost" href="{% url 'pot:manage_players' %}">Cancelar</a>
+      <button class="btn btn-primary" type="submit">{% if player %}Guardar{% else %}Crear jugador{% endif %}</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

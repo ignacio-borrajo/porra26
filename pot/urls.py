@@ -1,18 +1,13 @@
 from django.urls import path
-from django.http import HttpResponse
-
-
-def _stub(request, *a, **kw):
-    return HttpResponse("stub")
-
+from . import views
 
 urlpatterns = [
-    path("jugadores/", _stub, name="manage_players"),
-    path("jugadores/nuevo/", _stub, name="player_new"),
-    path("jugadores/<int:pk>/", _stub, name="player_edit"),
-    path("jugadores/<int:pk>/reset/", _stub, name="player_reset"),
-    path("jugadores/<int:pk>/baja/", _stub, name="player_toggle_active"),
-    path("jugadores/<int:pk>/pago/", _stub, name="player_toggle_payment"),
-    path("premios/", _stub, name="prizes"),
-    path("auditoria/", _stub, name="audit"),
+    path("jugadores/", views.ManagePlayersView.as_view(), name="manage_players"),
+    path("jugadores/nuevo/", views.PlayerFormView.as_view(), name="player_new"),
+    path("jugadores/<int:pk>/", views.PlayerFormView.as_view(), name="player_edit"),
+    path("jugadores/<int:pk>/reset/", views.ResetPasswordView.as_view(), name="player_reset"),
+    path("jugadores/<int:pk>/baja/", views.TogglePlayerActiveView.as_view(), name="player_toggle_active"),
+    path("jugadores/<int:pk>/pago/", views.TogglePaymentView.as_view(), name="player_toggle_payment"),
+    path("premios/", views.PrizesSettingsView.as_view(), name="prizes"),
+    path("auditoria/", views.AuditLogView.as_view(), name="audit"),
 ]

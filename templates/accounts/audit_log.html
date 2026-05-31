@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block main %}
+<h1 class="display" style="font-size:28px">Auditoría</h1>
+<div class="glass" style="padding:18px;border-radius:16px">
+  {% for log in logs %}
+  <div style="display:grid;grid-template-columns:1fr 2fr 2fr 1fr;gap:14px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+    <span class="mono">{{ log.created_at|date:"d M H:i" }}</span>
+    <span><strong>{{ log.action }}</strong> · {{ log.target_type }}#{{ log.target_id }}</span>
+    <span>{{ log.actor.name|default:"—" }}</span>
+    <span class="mono" style="color:var(--text-faint)">{{ log.payload|stringformat:"s"|truncatechars:40 }}</span>
+  </div>
+  {% empty %}<p>Sin eventos todavía.</p>{% endfor %}
+</div>
+{% endblock %}
