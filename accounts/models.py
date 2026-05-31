@@ -5,12 +5,34 @@ from .managers import UserManager
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    ROLE_CHOICES = [("jugador", "Jugador"), ("gestor", "Gestor")]
+    DEPT_CHOICES = [
+        ("nominas", "Nóminas"),
+        ("gestion", "Gestión"),
+        ("financiera", "Financiera"),
+        ("pesca", "Pesca"),
+    ]
+    SEDE_CHOICES = [
+        ("ourense", "Ourense"),
+        ("vigo", "Vigo"),
+        ("asturias", "Asturias"),
+        ("madrid", "Madrid"),
+        ("barcelona", "Barcelona"),
+        ("latam", "Latinoamérica"),
+    ]
+    PUESTO_CHOICES = [
+        ("desarrollo", "Desarrollo"),
+        ("sistemas", "Sistemas"),
+        ("consultoria", "Consultoría"),
+        ("administracion", "Administración"),
+    ]
 
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=120)
-    dept = models.CharField(max_length=80, blank=True)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="jugador")
+    dept = models.CharField(max_length=20, choices=DEPT_CHOICES, blank=True)
+    sede = models.CharField(max_length=20, choices=SEDE_CHOICES, blank=True)
+    puesto = models.CharField(max_length=20, choices=PUESTO_CHOICES, blank=True)
+    is_jugador = models.BooleanField(default=True)
+    is_gestor = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     must_change_password = models.BooleanField(default=True)

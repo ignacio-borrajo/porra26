@@ -9,7 +9,7 @@ from accounts.validators import validate_email_domain
 class PlayerForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ["name", "email", "dept", "role"]
+        fields = ["name", "email", "dept"]
 
     def clean_email(self):
         email = self.cleaned_data["email"].lower().strip()
