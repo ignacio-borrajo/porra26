@@ -1,0 +1,44 @@
+{% load icons %}
+<header class="glass" style="border-radius:0;border-left:none;border-right:none;border-top:none;padding:12px clamp(16px,3vw,40px);display:flex;align-items:center;gap:18px;flex-shrink:0;z-index:20">
+  <a href="{% url 'competicion:dashboard' %}" class="logo" style="text-decoration:none;color:inherit;font-size:17px">
+    <span class="logo-mark" style="width:30px;height:30px;font-size:13px"><span>26</span></span>
+    PORRA<span class="grad-text">26</span>
+  </a>
+  <nav style="display:flex;gap:4px;margin-left:12px">
+    <a href="{% url 'competicion:dashboard' %}" class="nav-item">
+      {% icon "ball" width=17 height=17 %} Competición
+    </a>
+    <a href="{% url 'stats:dashboard' %}" class="nav-item">
+      {% icon "chart" width=17 height=17 %} Estadísticas
+    </a>
+    {% if user.role == 'gestor' %}
+    <a href="{% url 'pot:manage_players' %}" class="nav-item">
+      {% icon "users" width=17 height=17 %} Jugadores
+    </a>
+    <a href="{% url 'competicion:manage_results' %}" class="nav-item">
+      {% icon "whistle" width=17 height=17 %} Resultados
+    </a>
+    {% endif %}
+  </nav>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
+    <span class="chip" style="color:var(--c-gold);border-color:oklch(from var(--c-gold) l c h / 0.35);padding:5px 11px">
+      {% icon "euro" width=12 height=12 %} Bote {{ pot_total|default:0 }} €
+    </span>
+    <button class="btn btn-ghost" data-theme-toggle style="width:40px;height:40px;padding:0;border-radius:12px" title="Cambiar tema">
+      {% icon "sun" width=18 height=18 %}
+    </button>
+    <div style="display:flex;align-items:center;gap:9px;padding-left:6px">
+      <span class="avatar" data-name="{{ user.name }}">{{ user.initials }}</span>
+      <div style="line-height:1.2">
+        <div style="font-size:13px;font-weight:700">{{ user.name }}</div>
+        <div class="mono" style="font-size:10.5px;color:var(--text-faint);text-transform:capitalize">{{ user.role }}</div>
+      </div>
+      <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">
+        {% csrf_token %}
+        <button class="btn btn-ghost" type="submit" style="width:38px;height:38px;padding:0;border-radius:11px;margin-left:4px" title="Salir">
+          {% icon "logout" width=16 height=16 %}
+        </button>
+      </form>
+    </div>
+  </div>
+</header>

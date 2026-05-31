@@ -1,0 +1,5 @@
+{% if messages %}
+<div id="dj-messages" aria-live="polite" hidden>
+  {% for message in messages %}<span data-msg="{{ message|escape }}" data-tag="{{ message.tags }}"></span>{% endfor %}
+</div>
+{% endif %}
