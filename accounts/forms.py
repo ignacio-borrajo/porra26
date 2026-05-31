@@ -54,9 +54,9 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ["name", "dept", "sede", "puesto"]
-        widgets = {
-            "name": forms.TextInput(attrs={"class": "input"}),
-            "dept": forms.Select(attrs={"class": "input"}),
-            "sede": forms.Select(attrs={"class": "input"}),
-            "puesto": forms.Select(attrs={"class": "input"}),
-        }
+
+    def clean_name(self):
+        value = (self.cleaned_data.get("name") or "").strip()
+        if not value:
+            raise forms.ValidationError("El nombre es obligatorio.")
+        return value
