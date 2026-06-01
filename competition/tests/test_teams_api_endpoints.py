@@ -97,3 +97,77 @@ def test_pendientes_requires_token(client):
     MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
     res = client.get(reverse("competicion:api:cierres_pendientes"))
     assert res.status_code == 401
+
+
+import hashlib
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_pdf_endpoint_returns_pdf(client):
+    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
+    res = client.get(reverse("competicion:api:cierre_pdf", args=[m.id]), **AUTH)
+    assert res.status_code == 200
+    assert res["Content-Type"] == "application/pdf"
+    assert "attachment" in res["Content-Disposition"]
+    assert m.teams_slug in res["Content-Disposition"]
+    assert bytes(res.content).startswith(b"%PDF-")
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_pdf_endpoint_creates_report_and_updates(client):
+    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
+    res = client.get(reverse("competicion:api:cierre_pdf", args=[m.id]), **AUTH)
+    assert res.status_code == 200
+    report = BetsClosingReport.objects.get(match=m)
+    assert report.attempts == 1
+    assert report.generated_at is not None
+    expected_sha = hashlib.sha256(bytes(res.content)).hexdigest()
+    assert report.last_sha256 == expected_sha
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_pdf_endpoint_increments_attempts(client):
+    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
+    url = reverse("competicion:api:cierre_pdf", args=[m.id])
+    client.get(url, **AUTH)
+    client.get(url, **AUTH)
+    client.get(url, **AUTH)
+    assert BetsClosingReport.objects.get(match=m).attempts == 3
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_pdf_endpoint_404_if_not_closed(client):
+    m = MatchFactory(kickoff=timezone.now() + timedelta(hours=6))
+    res = client.get(reverse("competicion:api:cierre_pdf", args=[m.id]), **AUTH)
+    assert res.status_code == 404
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_pdf_endpoint_404_unknown_match(client):
+    res = client.get(reverse("competicion:api:cierre_pdf", args=[999_999]), **AUTH)
+    assert res.status_code == 404
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_pdf_endpoint_requires_token(client):
+    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
+    res = client.get(reverse("competicion:api:cierre_pdf", args=[m.id]))
+    assert res.status_code == 401
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_pdf_endpoint_accepts_gestor_session(client):
+    from accounts.tests.factories import GestorFactory
+
+    gestor = GestorFactory()
+    client.force_login(gestor)
+    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
+    res = client.get(reverse("competicion:api:cierre_pdf", args=[m.id]))
+    assert res.status_code == 200

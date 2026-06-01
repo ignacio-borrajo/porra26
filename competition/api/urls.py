@@ -6,4 +6,5 @@ app_name = "api"
 
 urlpatterns = [
     path("cierres-pendientes/", views.cierres_pendientes, name="cierres_pendientes"),
+    path("cierres/<int:match_id>/pdf/", views.cierre_pdf, name="cierre_pdf"),
 ]
