@@ -1,15 +1,20 @@
-const STATE = { wrap: null, escListener: null };
+const STATE = { wrap: null, escListener: null, dirty: false };
 
-function close() {
+function close({ reloadIfDirty = true } = {}) {
   if (!STATE.wrap) return;
+  const shouldReload = reloadIfDirty && STATE.dirty;
   STATE.wrap.remove();
   document.removeEventListener("keydown", STATE.escListener);
   STATE.wrap = null;
   STATE.escListener = null;
+  if (shouldReload) {
+    STATE.dirty = false;
+    window.location.reload();
+  }
 }
 
 function mount(html) {
-  close();
+  close({ reloadIfDirty: false });
   const wrap = document.createElement("div");
   wrap.className = "ovl";
   wrap.innerHTML = html;
@@ -42,6 +47,7 @@ async function onSubmit(event) {
   });
   const next = res.headers.get("X-Modal-Next");
   if (next) {
+    STATE.dirty = true;
     await openModal(next);
     return;
   }
