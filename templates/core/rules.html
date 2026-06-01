@@ -26,8 +26,20 @@
       {# Ejemplo 1: Marcador exacto #}
       <article class="rules-example-card" data-variant="exact">
         <header class="eyebrow" style="color:var(--c-lime)">Marcador exacto</header>
-        <div class="rules-example-score">
-          <span>🇪🇸 España</span><strong>2 — 1</strong><span>Argentina 🇦🇷</span>
+        <div class="match-card-teams">
+          <div class="team-side">
+            <span class="team-flag">🇪🇸</span>
+            <strong class="team-name display">España</strong>
+          </div>
+          <div class="match-score">
+            <span class="score-bubble">2</span>
+            <span class="score-sep">:</span>
+            <span class="score-bubble">1</span>
+          </div>
+          <div class="team-side">
+            <span class="team-flag">🇦🇷</span>
+            <strong class="team-name display">Argentina</strong>
+          </div>
         </div>
         <p>Tu apuesta: <strong>2-1</strong></p>
         <span class="chip" style="color:var(--c-lime);border-color:oklch(from var(--c-lime) l c h / 0.4)">+3 pts · exacto</span>
@@ -35,8 +47,20 @@
       {# Ejemplo 2: Solo el resultado #}
       <article class="rules-example-card" data-variant="partial">
         <header class="eyebrow" style="color:var(--c-cyan)">Solo el resultado</header>
-        <div class="rules-example-score">
-          <span>🇪🇸 España</span><strong>3 — 2</strong><span>Argentina 🇦🇷</span>
+        <div class="match-card-teams">
+          <div class="team-side">
+            <span class="team-flag">🇪🇸</span>
+            <strong class="team-name display">España</strong>
+          </div>
+          <div class="match-score">
+            <span class="score-bubble">3</span>
+            <span class="score-sep">:</span>
+            <span class="score-bubble">2</span>
+          </div>
+          <div class="team-side">
+            <span class="team-flag">🇦🇷</span>
+            <strong class="team-name display">Argentina</strong>
+          </div>
         </div>
         <p>Tu apuesta: <strong>2-1</strong></p>
         <span class="chip" style="color:var(--c-cyan);border-color:oklch(from var(--c-cyan) l c h / 0.4)">+1 pt</span>
@@ -44,8 +68,20 @@
       {# Ejemplo 3: Fallo #}
       <article class="rules-example-card" data-variant="miss">
         <header class="eyebrow" style="color:var(--text-faint)">Fallo</header>
-        <div class="rules-example-score">
-          <span>🇪🇸 España</span><strong>1 — 2</strong><span>Argentina 🇦🇷</span>
+        <div class="match-card-teams">
+          <div class="team-side">
+            <span class="team-flag">🇪🇸</span>
+            <strong class="team-name display">España</strong>
+          </div>
+          <div class="match-score">
+            <span class="score-bubble">1</span>
+            <span class="score-sep">:</span>
+            <span class="score-bubble">2</span>
+          </div>
+          <div class="team-side">
+            <span class="team-flag">🇦🇷</span>
+            <strong class="team-name display">Argentina</strong>
+          </div>
         </div>
         <p>Tu apuesta: <strong>2-1</strong></p>
         <span class="chip">0 pts</span>

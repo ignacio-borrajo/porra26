@@ -49,6 +49,10 @@ def test_rules_renders_points_card(client):
     assert "Marcador exacto" in content
     assert "Solo el resultado" in content
     assert "Fallo" in content
+    # Las mini-tarjetas reutilizan el patrón visual de /competicion/:
+    # bandera arriba, nombre debajo, score-bubble : score-bubble.
+    assert content.count('class="match-card-teams"') == 3
+    assert content.count('class="score-bubble"') == 6   # 3 ejemplos × 2 bubbles
     # Tabla de rondas con puntos
     assert "Fase de grupos" in content
     assert "Dieciseisavos" in content

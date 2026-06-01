@@ -618,18 +618,16 @@ select.input {
 .rules-example-card[data-variant="miss"] {
   opacity: 0.85;
 }
-.rules-example-score {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-family: 'Geist Mono', monospace;
-  font-size: 14px;
+.rules-example-card .match-card-teams {
+  /* Compacta el patrón de /competicion/ para que quepa en la mini-tarjeta. */
+  gap: 6px;
 }
-.rules-example-score strong {
-  font-family: Sora, sans-serif;
-  font-size: 22px;
-  letter-spacing: -0.02em;
+.rules-example-card .team-flag { font-size: 28px; }
+.rules-example-card .team-name { font-size: 12px; }
+.rules-example-card .score-bubble {
+  min-width: 30px;
+  height: 38px;
+  font-size: 20px;
 }
 .rules-example-card p {
   margin: 0;
@@ -834,7 +832,6 @@ select.input {
 }
 
 @media (max-width: 560px) {
-  .rules-example-score { flex-direction: column; gap: 4px; }
   .rules-table thead { display: none; }
   .rules-table tr { display: flex; flex-direction: column; padding: 8px 0; border-bottom: 1px solid var(--border); }
   .rules-table td { border: none; padding: 2px 0; }
