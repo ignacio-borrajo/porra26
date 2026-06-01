@@ -117,6 +117,10 @@ class PredictView(LoginRequiredMixin, View):
             messages.error(request, "Las apuestas para este partido están cerradas.")
             return redirect("competicion:dashboard")
         from competition.services.matchday_gate import is_matchday_open
+        from competition.services.predictions import (
+            next_pending_match,
+            pending_matches_count,
+        )
 
         if not is_matchday_open(m.round_id, m.matchday):
             messages.error(
@@ -125,7 +129,18 @@ class PredictView(LoginRequiredMixin, View):
             )
             return redirect("competicion:dashboard")
         pred = Prediction.objects.filter(player=request.user, match=m).first()
-        return render(request, "competition/_predict_modal.html", {"match": m, "pred": pred})
+        pending_count = pending_matches_count(request.user)
+        has_next = next_pending_match(request.user, after_match=m) is not None
+        return render(
+            request,
+            "competition/_predict_modal.html",
+            {
+                "match": m,
+                "pred": pred,
+                "pending_count": pending_count,
+                "has_next": has_next,
+            },
+        )
 
     def post(self, request, match_id):
         m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
