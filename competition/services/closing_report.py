@@ -222,7 +222,7 @@ def build_closing_pdf(match: Match) -> bytes:
 
     flow = []
     flow.append(Paragraph(
-        f"{match.home.name} vs {match.away.name}",
+        f"{match.home.name} <font color='#888888'>vs</font> {match.away.name}",
         styles["title"],
     ))
     from datetime import timedelta as _td
