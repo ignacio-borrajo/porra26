@@ -13,13 +13,34 @@ from competition.services.standings import standings
 
 class CompetitionView(LoginRequiredMixin, View):
     def get(self, request):
+        from competition.services.matchday_gate import (
+            is_matchday_open,
+            previous_matchday_close_info,
+        )
+
         rounds = list(Round.objects.all())
         active_id = request.GET.get("round", rounds[0].id if rounds else "groups")
-        matches = list(
-            Match.objects.filter(round_id=active_id)
-            .select_related("home", "away", "round")
-            .order_by("kickoff")
+
+        matchdays = sorted(
+            Match.objects.filter(round_id=active_id, matchday__isnull=False)
+            .values_list("matchday", flat=True)
+            .distinct()
         )
+        active_md = None
+        if matchdays:
+            requested = request.GET.get("matchday")
+            if requested and requested.isdigit() and int(requested) in matchdays:
+                active_md = int(requested)
+            else:
+                active_md = _default_matchday(active_id, matchdays)
+
+        match_qs = Match.objects.filter(round_id=active_id).select_related(
+            "home", "away", "round"
+        )
+        if active_md is not None:
+            match_qs = match_qs.filter(matchday=active_md)
+        matches = list(match_qs.order_by("kickoff"))
+
         my_preds = {
             p.match_id: p for p in Prediction.objects.filter(player=request.user, match__in=matches)
         }
@@ -33,18 +54,59 @@ class CompetitionView(LoginRequiredMixin, View):
                 done_matches.append(m)
             else:
                 open_matches.append(m)
+
+        matchday_state = []
+        locked = False
+        locked_last_match = None
+        locked_last_kickoff = None
+        if active_md is not None:
+            for md in matchdays:
+                matchday_state.append(
+                    {
+                        "matchday": md,
+                        "open": is_matchday_open(active_id, md),
+                        "active": md == active_md,
+                    }
+                )
+            locked = not is_matchday_open(active_id, active_md)
+            if locked:
+                locked_last_match, locked_last_kickoff = previous_matchday_close_info(
+                    active_id, active_md
+                )
+
         return render(
             request,
             "competition/dashboard.html",
             {
                 "rounds": rounds,
                 "active_round": active_id,
+                "matchdays": matchdays,
+                "active_matchday": active_md,
+                "matchday_state": matchday_state,
+                "locked": locked,
+                "locked_last_match": locked_last_match,
+                "locked_last_kickoff": locked_last_kickoff,
                 "open_matches": open_matches,
                 "live_matches": live_matches,
                 "done_matches": done_matches,
                 "standings": standings()[:50],
             },
         )
+
+
+def _default_matchday(round_id: str, matchdays: list[int]) -> int:
+    """Jornada por defecto: la primera con algún partido sin resolver; si no, la última."""
+    if not matchdays:
+        return 1
+    for md in matchdays:
+        any_active = (
+            Match.objects.filter(round_id=round_id, matchday=md)
+            .filter(result_home__isnull=True)
+            .exists()
+        )
+        if any_active:
+            return md
+    return matchdays[-1]
 
 
 class PredictView(LoginRequiredMixin, View):

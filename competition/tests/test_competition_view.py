@@ -3,9 +3,16 @@ from datetime import timedelta
 import pytest
 from django.urls import reverse
 from django.utils import timezone
+from freezegun import freeze_time
 
 from accounts.tests.factories import GestorFactory, UserFactory
-from competition.tests.factories import MatchFactory, RoundFactory
+from competition.services.resolve import resolve_match
+from competition.tests.factories import (
+    MatchFactory,
+    PredictionFactory,
+    RoundFactory,
+    TeamFactory,
+)
 
 
 @pytest.mark.django_db
@@ -73,3 +80,139 @@ def test_predict_forbidden_for_non_jugador(client):
     m = MatchFactory(round=grp, kickoff=timezone.now() + timedelta(days=1))
     r = client.post(reverse("competicion:predict", args=[m.id]), {"home": 1, "away": 0})
     assert r.status_code == 403
+
+
+@pytest.mark.django_db
+def test_detail_redirects_when_match_still_editable(client):
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    m = MatchFactory(round=grp, kickoff=timezone.now() + timedelta(days=1))
+    r = client.get(reverse("competicion:detail", args=[m.id]))
+    assert r.status_code == 302
+
+
+@pytest.mark.django_db
+def test_detail_lists_all_predictions_when_match_closed(client):
+    me = UserFactory(must_change_password=False, name="Ana")
+    bettor = UserFactory(must_change_password=False, name="Bruno")
+    UserFactory(must_change_password=False, name="Carla")  # jugadora sin apuesta
+    client.force_login(me)
+    grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    m = MatchFactory(round=grp, kickoff=timezone.now() + timedelta(minutes=30))  # closed
+    PredictionFactory(player=me, match=m, home=2, away=1)
+    PredictionFactory(player=bettor, match=m, home=0, away=0)
+
+    r = client.get(reverse("competicion:detail", args=[m.id]))
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert "Ana" in body
+    assert "Bruno" in body
+    assert "Carla" in body  # presente como "no apostó"
+    assert "2-1" in body
+    assert "0-0" in body
+    assert "no apostó" in body
+    # Sin resultado oficial: ningún chip de puntos
+    assert "pts" not in body
+
+
+@pytest.mark.django_db
+def test_detail_shows_points_and_exact_when_match_done(client):
+    me = UserFactory(must_change_password=False, name="Ana")
+    other = UserFactory(must_change_password=False, name="Bruno")
+    failed = UserFactory(must_change_password=False, name="Carla")
+    client.force_login(me)
+    grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    m = MatchFactory(round=grp, kickoff=timezone.now() - timedelta(hours=3))
+    PredictionFactory(player=me, match=m, home=2, away=1)  # exacto
+    PredictionFactory(player=other, match=m, home=3, away=2)  # acierta resultado (1)
+    PredictionFactory(player=failed, match=m, home=0, away=2)  # falla
+    resolve_match(m, home=2, away=1, actor=me)
+
+    r = client.get(reverse("competicion:detail", args=[m.id]))
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert "+3 pts" in body
+    assert "exacto" in body
+    assert "+1 pts" in body
+    assert "0 pts" in body
+
+
+@pytest.mark.django_db
+def test_detail_requires_login(client):
+    grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    m = MatchFactory(round=grp, kickoff=timezone.now() - timedelta(hours=3))
+    r = client.get(reverse("competicion:detail", args=[m.id]))
+    assert r.status_code == 302
+
+
+@pytest.mark.django_db
+def test_dashboard_shows_matchday_subselector_for_groups(client):
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    grp = RoundFactory(id="groups", points=3, label="Grupos", short="G", order=1)
+    for md in (1, 2, 3):
+        MatchFactory(
+            round=grp,
+            matchday=md,
+            home=TeamFactory(),
+            away=TeamFactory(),
+            kickoff=timezone.now() + timedelta(days=md),
+        )
+    r = client.get(reverse("competicion:dashboard") + "?round=groups")
+    body = r.content.decode()
+    assert "J1" in body
+    assert "J2" in body
+    assert "J3" in body
+
+
+@pytest.mark.django_db
+def test_dashboard_filters_by_matchday(client):
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    grp = RoundFactory(id="groups", points=3, label="Grupos", short="G", order=1)
+    j1_home = TeamFactory(code="J1H", name="J1HomeTeam")
+    j2_home = TeamFactory(code="J2H", name="J2HomeTeam")
+    MatchFactory(
+        round=grp,
+        matchday=1,
+        home=j1_home,
+        away=TeamFactory(),
+        kickoff=timezone.now() + timedelta(days=1),
+    )
+    MatchFactory(
+        round=grp,
+        matchday=2,
+        home=j2_home,
+        away=TeamFactory(),
+        kickoff=timezone.now() + timedelta(days=8),
+    )
+    r = client.get(reverse("competicion:dashboard") + "?round=groups&matchday=1")
+    body = r.content.decode()
+    assert "J1HomeTeam" in body
+    assert "J2HomeTeam" not in body
+
+
+@pytest.mark.django_db
+def test_dashboard_shows_locked_banner_for_blocked_matchday(client):
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    grp = RoundFactory(id="groups", points=3, label="Grupos", short="G", order=1)
+    with freeze_time("2026-06-09 10:00:00", tz_offset=0):
+        MatchFactory(
+            round=grp,
+            matchday=1,
+            home=TeamFactory(),
+            away=TeamFactory(),
+            kickoff=timezone.now() + timedelta(days=2),
+        )
+        MatchFactory(
+            round=grp,
+            matchday=2,
+            home=TeamFactory(),
+            away=TeamFactory(),
+            kickoff=timezone.now() + timedelta(days=9),
+        )
+        r = client.get(reverse("competicion:dashboard") + "?round=groups&matchday=2")
+        body = r.content.decode().lower()
+        assert "bloqueada" in body or "se desbloquea" in body
