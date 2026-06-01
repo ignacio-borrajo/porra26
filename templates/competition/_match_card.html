@@ -1,6 +1,6 @@
 {% load icons %}
 {% with st=match.status %}
-{% if match.predictions_open %}
+{% if match.predictions_open and request.user.is_jugador %}
 <a href="{% url 'competicion:predict' match.id %}" data-modal-url="{% url 'competicion:predict' match.id %}" class="match-card glass rise{% if st == 'closing' %} match-card-closing{% endif %}">
 {% elif match.editable %}
 <a class="match-card glass rise" style="cursor:not-allowed">
@@ -72,7 +72,7 @@
       <span class="chip chip-open">
         {% icon "check" width=11 height=11 %} Apostaste {{ match.my_pred.home }}-{{ match.my_pred.away }}
       </span>
-    {% elif match.predictions_open %}
+    {% elif match.predictions_open and request.user.is_jugador %}
       <span class="chip chip-accent">
         {% icon "edit" width=11 height=11 %} Pronosticar
       </span>

@@ -83,6 +83,18 @@ def test_predict_forbidden_for_non_jugador(client):
 
 
 @pytest.mark.django_db
+def test_dashboard_does_not_link_non_jugador_to_predict(client):
+    gestor_puro = GestorFactory(must_change_password=False, is_jugador=False)
+    client.force_login(gestor_puro)
+    grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    m = MatchFactory(round=grp, kickoff=timezone.now() + timedelta(days=1))
+    r = client.get(reverse("competicion:dashboard"))
+    assert r.status_code == 200
+    predict_url = reverse("competicion:predict", args=[m.id])
+    assert predict_url.encode() not in r.content
+
+
+@pytest.mark.django_db
 def test_detail_redirects_when_match_still_editable(client):
     u = UserFactory(must_change_password=False)
     client.force_login(u)
