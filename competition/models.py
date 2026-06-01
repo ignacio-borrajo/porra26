@@ -3,6 +3,8 @@ from datetime import timedelta
 from django.db import models
 from django.utils import timezone
 
+BET_CLOSE_HOURS = 2
+
 
 class Team(models.Model):
     code = models.CharField(primary_key=True, max_length=3)
@@ -60,7 +62,7 @@ class Match(models.Model):
         now = timezone.now()
         if self.has_result:
             return "done"
-        close_at = self.kickoff - timedelta(hours=2)
+        close_at = self.kickoff - timedelta(hours=BET_CLOSE_HOURS)
         if now >= self.kickoff:
             return "live"
         if now >= close_at:
