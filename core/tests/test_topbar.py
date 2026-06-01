@@ -19,6 +19,5 @@ def test_rules_active_class_on_rules_page(client):
     r = client.get(reverse("core:rules"))
     content = r.content.decode("utf-8")
     href = reverse("core:rules")
-    # El enlace activo lleva clase is-active. Comprobamos que ambos coinciden en la cadena.
-    assert f'href="{href}" class="nav-item is-active"' in content or \
-           (f'href="{href}"' in content and "is-active" in content)
+    # El enlace activo lleva clase is-active en el mismo elemento.
+    assert f'href="{href}" class="nav-item is-active"' in content
