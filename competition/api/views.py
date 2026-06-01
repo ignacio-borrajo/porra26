@@ -1,4 +1,5 @@
 import hashlib
+import json as _json
 from datetime import timedelta
 
 from django.db import transaction
@@ -6,7 +7,9 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils import timezone as _tz
+from django.views.decorators.http import require_POST
 
+from accounts.models import AuditLog
 from competition.api.auth import require_teams_api_token
 from competition.models import BET_CLOSE_HOURS, BetsClosingReport, Match
 from competition.services.closing_report import build_closing_pdf
@@ -74,3 +77,32 @@ def cierre_pdf(request, match_id: int):
     filename = f"cierre-{match.teams_slug}.pdf"
     resp["Content-Disposition"] = f'attachment; filename="{filename}"'
     return resp
+
+
+@require_POST
+@require_teams_api_token
+def cierre_marcar_enviado(request, match_id: int):
+    match = get_object_or_404(Match, pk=match_id)
+    try:
+        body = _json.loads(request.body.decode("utf-8")) if request.body else {}
+    except _json.JSONDecodeError:
+        body = {}
+    teams_message_id = body.get("teams_message_id", "")
+
+    with transaction.atomic():
+        report, _ = BetsClosingReport.objects.select_for_update().get_or_create(match=match)
+        if report.sent_at is not None:
+            return JsonResponse(
+                {"already_sent": True, "sent_at": report.sent_at.isoformat()}
+            )
+        report.sent_at = _tz.now()
+        report.save(update_fields=["sent_at"])
+        AuditLog.objects.create(
+            actor=None,
+            action="bets_pdf_sent",
+            target_type="match",
+            target_id=str(match.id),
+            payload={"teams_message_id": teams_message_id} if teams_message_id else {},
+        )
+
+    return JsonResponse({"sent_at": report.sent_at.isoformat()})
