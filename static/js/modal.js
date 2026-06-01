@@ -68,3 +68,15 @@ document.addEventListener("click", (event) => {
   event.preventDefault();
   openModal(trigger.dataset.modalUrl);
 });
+
+document.addEventListener("click", (event) => {
+  const step = event.target.closest("[data-step]");
+  if (!step) return;
+  const input = step.parentElement.querySelector("input[name]");
+  if (!input) return;
+  const min = parseInt(input.dataset.min ?? "0", 10);
+  const max = parseInt(input.dataset.max ?? "99", 10);
+  const cur = parseInt(input.value, 10) || 0;
+  const next = Math.max(min, Math.min(max, cur + parseInt(step.dataset.step, 10)));
+  input.value = String(next);
+});
