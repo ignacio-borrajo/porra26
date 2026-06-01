@@ -83,3 +83,16 @@ def test_rules_renders_pot_card(client):
     assert "240" in content
     assert "144" in content
     assert "96" in content
+
+
+@pytest.mark.django_db
+def test_rules_renders_tiebreak_and_access(client):
+    client.force_login(UserFactory())
+    r = client.get(reverse("core:rules"))
+    content = r.content.decode("utf-8")
+    assert "Cómo se decide quién gana" in content
+    assert "Más puntos" in content
+    assert "Más marcadores exactos" in content
+    assert "Acceso a la app" in content
+    assert "Sin recuperación automática" in content
+    assert "Última actualización del reglamento" in content
