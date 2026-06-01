@@ -157,6 +157,25 @@ class PredictView(LoginRequiredMixin, View):
         Prediction.objects.update_or_create(
             player=request.user, match=m, defaults={"home": h, "away": a}
         )
+        if request.POST.get("chain") == "1":
+            from django.http import HttpResponse
+            from django.urls import reverse
+
+            from competition.services.predictions import next_pending_match
+
+            nxt = next_pending_match(request.user, after_match=m)
+            if nxt is not None:
+                resp = HttpResponse(status=204)
+                resp["X-Modal-Next"] = reverse(
+                    "competicion:predict", args=[nxt.id]
+                )
+                return resp
+            messages.success(
+                request, "¡Has apostado todos los partidos disponibles!"
+            )
+            resp = HttpResponse(status=200)
+            resp["X-Modal-Redirect"] = reverse("competicion:dashboard")
+            return resp
         messages.success(request, f"Pronóstico guardado · {m.home.name} {h}–{a} {m.away.name}")
         return redirect("competicion:dashboard")
 
