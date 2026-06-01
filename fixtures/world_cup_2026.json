@@ -1,6 +1,866 @@
 [
-  {"model":"competition.match","pk":1,"fields":{"round":"groups","group":"A","matchday":1,"home":"MEX","away":"USA","kickoff":"2026-06-11T18:00:00Z"}},
-  {"model":"competition.match","pk":2,"fields":{"round":"groups","group":"A","matchday":1,"home":"CAN","away":"JPN","kickoff":"2026-06-11T21:00:00Z"}},
-  {"model":"competition.match","pk":3,"fields":{"round":"groups","group":"B","matchday":1,"home":"ESP","away":"POR","kickoff":"2026-06-12T18:00:00Z"}},
-  {"model":"competition.match","pk":4,"fields":{"round":"groups","group":"B","matchday":1,"home":"ARG","away":"BRA","kickoff":"2026-06-12T21:00:00Z"}}
+  {
+    "model": "competition.match",
+    "pk": 1,
+    "fields": {
+      "round": "groups",
+      "group": "A",
+      "matchday": 1,
+      "home": "MEX",
+      "away": "RSA",
+      "kickoff": "2026-06-11T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 2,
+    "fields": {
+      "round": "groups",
+      "group": "A",
+      "matchday": 1,
+      "home": "KOR",
+      "away": "CZE",
+      "kickoff": "2026-06-12T02:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 3,
+    "fields": {
+      "round": "groups",
+      "group": "A",
+      "matchday": 2,
+      "home": "CZE",
+      "away": "RSA",
+      "kickoff": "2026-06-18T16:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 4,
+    "fields": {
+      "round": "groups",
+      "group": "A",
+      "matchday": 2,
+      "home": "MEX",
+      "away": "KOR",
+      "kickoff": "2026-06-19T01:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 5,
+    "fields": {
+      "round": "groups",
+      "group": "A",
+      "matchday": 3,
+      "home": "RSA",
+      "away": "KOR",
+      "kickoff": "2026-06-25T01:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 6,
+    "fields": {
+      "round": "groups",
+      "group": "A",
+      "matchday": 3,
+      "home": "CZE",
+      "away": "MEX",
+      "kickoff": "2026-06-25T01:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 7,
+    "fields": {
+      "round": "groups",
+      "group": "B",
+      "matchday": 1,
+      "home": "CAN",
+      "away": "BIH",
+      "kickoff": "2026-06-12T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 8,
+    "fields": {
+      "round": "groups",
+      "group": "B",
+      "matchday": 1,
+      "home": "QAT",
+      "away": "SUI",
+      "kickoff": "2026-06-13T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 9,
+    "fields": {
+      "round": "groups",
+      "group": "B",
+      "matchday": 2,
+      "home": "SUI",
+      "away": "BIH",
+      "kickoff": "2026-06-18T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 10,
+    "fields": {
+      "round": "groups",
+      "group": "B",
+      "matchday": 2,
+      "home": "CAN",
+      "away": "QAT",
+      "kickoff": "2026-06-18T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 11,
+    "fields": {
+      "round": "groups",
+      "group": "B",
+      "matchday": 3,
+      "home": "SUI",
+      "away": "CAN",
+      "kickoff": "2026-06-24T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 12,
+    "fields": {
+      "round": "groups",
+      "group": "B",
+      "matchday": 3,
+      "home": "BIH",
+      "away": "QAT",
+      "kickoff": "2026-06-24T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 13,
+    "fields": {
+      "round": "groups",
+      "group": "C",
+      "matchday": 1,
+      "home": "BRA",
+      "away": "MAR",
+      "kickoff": "2026-06-13T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 14,
+    "fields": {
+      "round": "groups",
+      "group": "C",
+      "matchday": 1,
+      "home": "HAI",
+      "away": "SCO",
+      "kickoff": "2026-06-14T01:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 15,
+    "fields": {
+      "round": "groups",
+      "group": "C",
+      "matchday": 2,
+      "home": "SCO",
+      "away": "MAR",
+      "kickoff": "2026-06-19T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 16,
+    "fields": {
+      "round": "groups",
+      "group": "C",
+      "matchday": 2,
+      "home": "BRA",
+      "away": "HAI",
+      "kickoff": "2026-06-20T00:30:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 17,
+    "fields": {
+      "round": "groups",
+      "group": "C",
+      "matchday": 3,
+      "home": "MAR",
+      "away": "HAI",
+      "kickoff": "2026-06-24T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 18,
+    "fields": {
+      "round": "groups",
+      "group": "C",
+      "matchday": 3,
+      "home": "SCO",
+      "away": "BRA",
+      "kickoff": "2026-06-24T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 19,
+    "fields": {
+      "round": "groups",
+      "group": "D",
+      "matchday": 1,
+      "home": "USA",
+      "away": "PAR",
+      "kickoff": "2026-06-13T01:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 20,
+    "fields": {
+      "round": "groups",
+      "group": "D",
+      "matchday": 1,
+      "home": "AUS",
+      "away": "TUR",
+      "kickoff": "2026-06-14T04:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 21,
+    "fields": {
+      "round": "groups",
+      "group": "D",
+      "matchday": 2,
+      "home": "USA",
+      "away": "AUS",
+      "kickoff": "2026-06-19T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 22,
+    "fields": {
+      "round": "groups",
+      "group": "D",
+      "matchday": 2,
+      "home": "TUR",
+      "away": "PAR",
+      "kickoff": "2026-06-20T03:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 23,
+    "fields": {
+      "round": "groups",
+      "group": "D",
+      "matchday": 3,
+      "home": "TUR",
+      "away": "USA",
+      "kickoff": "2026-06-26T02:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 24,
+    "fields": {
+      "round": "groups",
+      "group": "D",
+      "matchday": 3,
+      "home": "PAR",
+      "away": "AUS",
+      "kickoff": "2026-06-26T02:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 25,
+    "fields": {
+      "round": "groups",
+      "group": "E",
+      "matchday": 1,
+      "home": "GER",
+      "away": "CUW",
+      "kickoff": "2026-06-14T17:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 26,
+    "fields": {
+      "round": "groups",
+      "group": "E",
+      "matchday": 1,
+      "home": "CIV",
+      "away": "ECU",
+      "kickoff": "2026-06-14T23:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 27,
+    "fields": {
+      "round": "groups",
+      "group": "E",
+      "matchday": 2,
+      "home": "GER",
+      "away": "CIV",
+      "kickoff": "2026-06-20T20:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 28,
+    "fields": {
+      "round": "groups",
+      "group": "E",
+      "matchday": 2,
+      "home": "ECU",
+      "away": "CUW",
+      "kickoff": "2026-06-21T00:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 29,
+    "fields": {
+      "round": "groups",
+      "group": "E",
+      "matchday": 3,
+      "home": "CUW",
+      "away": "CIV",
+      "kickoff": "2026-06-25T20:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 30,
+    "fields": {
+      "round": "groups",
+      "group": "E",
+      "matchday": 3,
+      "home": "ECU",
+      "away": "GER",
+      "kickoff": "2026-06-25T20:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 31,
+    "fields": {
+      "round": "groups",
+      "group": "F",
+      "matchday": 1,
+      "home": "NED",
+      "away": "JPN",
+      "kickoff": "2026-06-14T20:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 32,
+    "fields": {
+      "round": "groups",
+      "group": "F",
+      "matchday": 1,
+      "home": "SWE",
+      "away": "TUN",
+      "kickoff": "2026-06-15T02:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 33,
+    "fields": {
+      "round": "groups",
+      "group": "F",
+      "matchday": 2,
+      "home": "NED",
+      "away": "SWE",
+      "kickoff": "2026-06-20T17:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 34,
+    "fields": {
+      "round": "groups",
+      "group": "F",
+      "matchday": 2,
+      "home": "TUN",
+      "away": "JPN",
+      "kickoff": "2026-06-21T04:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 35,
+    "fields": {
+      "round": "groups",
+      "group": "F",
+      "matchday": 3,
+      "home": "TUN",
+      "away": "NED",
+      "kickoff": "2026-06-25T23:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 36,
+    "fields": {
+      "round": "groups",
+      "group": "F",
+      "matchday": 3,
+      "home": "JPN",
+      "away": "SWE",
+      "kickoff": "2026-06-25T23:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 37,
+    "fields": {
+      "round": "groups",
+      "group": "G",
+      "matchday": 1,
+      "home": "BEL",
+      "away": "EGY",
+      "kickoff": "2026-06-15T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 38,
+    "fields": {
+      "round": "groups",
+      "group": "G",
+      "matchday": 1,
+      "home": "IRN",
+      "away": "NZL",
+      "kickoff": "2026-06-16T01:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 39,
+    "fields": {
+      "round": "groups",
+      "group": "G",
+      "matchday": 2,
+      "home": "BEL",
+      "away": "IRN",
+      "kickoff": "2026-06-21T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 40,
+    "fields": {
+      "round": "groups",
+      "group": "G",
+      "matchday": 2,
+      "home": "NZL",
+      "away": "EGY",
+      "kickoff": "2026-06-22T01:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 41,
+    "fields": {
+      "round": "groups",
+      "group": "G",
+      "matchday": 3,
+      "home": "NZL",
+      "away": "BEL",
+      "kickoff": "2026-06-27T03:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 42,
+    "fields": {
+      "round": "groups",
+      "group": "G",
+      "matchday": 3,
+      "home": "EGY",
+      "away": "IRN",
+      "kickoff": "2026-06-27T03:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 43,
+    "fields": {
+      "round": "groups",
+      "group": "H",
+      "matchday": 1,
+      "home": "ESP",
+      "away": "CPV",
+      "kickoff": "2026-06-15T16:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 44,
+    "fields": {
+      "round": "groups",
+      "group": "H",
+      "matchday": 1,
+      "home": "KSA",
+      "away": "URU",
+      "kickoff": "2026-06-15T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 45,
+    "fields": {
+      "round": "groups",
+      "group": "H",
+      "matchday": 2,
+      "home": "ESP",
+      "away": "KSA",
+      "kickoff": "2026-06-21T16:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 46,
+    "fields": {
+      "round": "groups",
+      "group": "H",
+      "matchday": 2,
+      "home": "URU",
+      "away": "CPV",
+      "kickoff": "2026-06-21T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 47,
+    "fields": {
+      "round": "groups",
+      "group": "H",
+      "matchday": 3,
+      "home": "CPV",
+      "away": "KSA",
+      "kickoff": "2026-06-27T00:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 48,
+    "fields": {
+      "round": "groups",
+      "group": "H",
+      "matchday": 3,
+      "home": "URU",
+      "away": "ESP",
+      "kickoff": "2026-06-27T00:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 49,
+    "fields": {
+      "round": "groups",
+      "group": "I",
+      "matchday": 1,
+      "home": "FRA",
+      "away": "SEN",
+      "kickoff": "2026-06-16T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 50,
+    "fields": {
+      "round": "groups",
+      "group": "I",
+      "matchday": 1,
+      "home": "IRQ",
+      "away": "NOR",
+      "kickoff": "2026-06-16T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 51,
+    "fields": {
+      "round": "groups",
+      "group": "I",
+      "matchday": 2,
+      "home": "FRA",
+      "away": "IRQ",
+      "kickoff": "2026-06-22T21:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 52,
+    "fields": {
+      "round": "groups",
+      "group": "I",
+      "matchday": 2,
+      "home": "NOR",
+      "away": "SEN",
+      "kickoff": "2026-06-23T00:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 53,
+    "fields": {
+      "round": "groups",
+      "group": "I",
+      "matchday": 3,
+      "home": "NOR",
+      "away": "FRA",
+      "kickoff": "2026-06-26T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 54,
+    "fields": {
+      "round": "groups",
+      "group": "I",
+      "matchday": 3,
+      "home": "SEN",
+      "away": "IRQ",
+      "kickoff": "2026-06-26T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 55,
+    "fields": {
+      "round": "groups",
+      "group": "J",
+      "matchday": 1,
+      "home": "ARG",
+      "away": "ALG",
+      "kickoff": "2026-06-17T01:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 56,
+    "fields": {
+      "round": "groups",
+      "group": "J",
+      "matchday": 1,
+      "home": "AUT",
+      "away": "JOR",
+      "kickoff": "2026-06-17T04:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 57,
+    "fields": {
+      "round": "groups",
+      "group": "J",
+      "matchday": 2,
+      "home": "ARG",
+      "away": "AUT",
+      "kickoff": "2026-06-22T17:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 58,
+    "fields": {
+      "round": "groups",
+      "group": "J",
+      "matchday": 2,
+      "home": "JOR",
+      "away": "ALG",
+      "kickoff": "2026-06-23T03:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 59,
+    "fields": {
+      "round": "groups",
+      "group": "J",
+      "matchday": 3,
+      "home": "ALG",
+      "away": "AUT",
+      "kickoff": "2026-06-28T02:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 60,
+    "fields": {
+      "round": "groups",
+      "group": "J",
+      "matchday": 3,
+      "home": "JOR",
+      "away": "ARG",
+      "kickoff": "2026-06-28T02:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 61,
+    "fields": {
+      "round": "groups",
+      "group": "K",
+      "matchday": 1,
+      "home": "POR",
+      "away": "COD",
+      "kickoff": "2026-06-17T17:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 62,
+    "fields": {
+      "round": "groups",
+      "group": "K",
+      "matchday": 1,
+      "home": "UZB",
+      "away": "COL",
+      "kickoff": "2026-06-18T02:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 63,
+    "fields": {
+      "round": "groups",
+      "group": "K",
+      "matchday": 2,
+      "home": "POR",
+      "away": "UZB",
+      "kickoff": "2026-06-23T17:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 64,
+    "fields": {
+      "round": "groups",
+      "group": "K",
+      "matchday": 2,
+      "home": "COL",
+      "away": "COD",
+      "kickoff": "2026-06-24T02:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 65,
+    "fields": {
+      "round": "groups",
+      "group": "K",
+      "matchday": 3,
+      "home": "COL",
+      "away": "POR",
+      "kickoff": "2026-06-27T23:30:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 66,
+    "fields": {
+      "round": "groups",
+      "group": "K",
+      "matchday": 3,
+      "home": "COD",
+      "away": "UZB",
+      "kickoff": "2026-06-27T23:30:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 67,
+    "fields": {
+      "round": "groups",
+      "group": "L",
+      "matchday": 1,
+      "home": "ENG",
+      "away": "CRO",
+      "kickoff": "2026-06-17T20:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 68,
+    "fields": {
+      "round": "groups",
+      "group": "L",
+      "matchday": 1,
+      "home": "GHA",
+      "away": "PAN",
+      "kickoff": "2026-06-17T23:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 69,
+    "fields": {
+      "round": "groups",
+      "group": "L",
+      "matchday": 2,
+      "home": "ENG",
+      "away": "GHA",
+      "kickoff": "2026-06-23T20:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 70,
+    "fields": {
+      "round": "groups",
+      "group": "L",
+      "matchday": 2,
+      "home": "PAN",
+      "away": "CRO",
+      "kickoff": "2026-06-23T23:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 71,
+    "fields": {
+      "round": "groups",
+      "group": "L",
+      "matchday": 3,
+      "home": "PAN",
+      "away": "ENG",
+      "kickoff": "2026-06-27T21:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 72,
+    "fields": {
+      "round": "groups",
+      "group": "L",
+      "matchday": 3,
+      "home": "CRO",
+      "away": "GHA",
+      "kickoff": "2026-06-27T21:00:00Z"
+    }
+  }
 ]
