@@ -97,9 +97,28 @@ Ver `DESIGN_SPEC.md` §6.
 
 ---
 
+## Fase 7 — Cierre de apuestas → PDF → Teams
+
+**Objetivo:** dejar constancia automática en el canal de Teams de la empresa de todas las apuestas realizadas para cada partido, en cuanto se cierra la ventana de pronósticos (kickoff − 2 h). Ver spec completa en [`docs/superpowers/specs/2026-06-01-cierre-apuestas-teams-design.md`](superpowers/specs/2026-06-01-cierre-apuestas-teams-design.md).
+
+Patrón **pull**: Django expone endpoints autenticados con token Bearer y un *Scheduled cloud flow* de Power Automate los sondea cada 10 min, descarga el PDF y lo publica en el canal. Compatible con el plan free de PythonAnywhere (no necesita tráfico saliente).
+
+- [ ] Modelo `BetsClosingReport` (1‑1 con `Match`) + migración.
+- [ ] Endpoints `/api/teams/cierres-pendientes`, `/api/teams/cierres/<id>/pdf`, `/api/teams/cierres/<id>/marcar-enviado` con decorador Bearer + sesión gestor.
+- [ ] Generación del PDF con ReportLab: cabecera + bloque partido + resumen estadístico + tabla de pronósticos + clasificación general.
+- [ ] UI en página de Resultados: botón "📄 PDF cierre" por partido + tabla "Estado de envíos a Teams".
+- [ ] Variable `TEAMS_API_TOKEN` en `.env` y documentada en `DEPLOY.md`/`RUNBOOK.md`.
+- [ ] `docs/TEAMS_FLOW.md` con instrucciones paso a paso para configurar el Flow en Power Automate.
+- [ ] Tests: 401 sin token, filtrado de pendientes, idempotencia de marcar-enviado, contenido del PDF.
+
+**Hecho cuando:** al cerrarse un partido (`kickoff − 2 h`), el canal de Teams recibe automáticamente un mensaje con el PDF adjunto en ≤ 10 min, y reintenta solo si falló.
+
+---
+
 ## Orden de prioridad si hay que recortar
 
 1. Login + Competición + pronósticos + clasificación (el corazón del producto).
 2. Panel de gestor de resultados (sin esto la porra no avanza).
 3. Gestión de jugadores y pagos.
 4. Estadísticas (gran valor, pero secundario al juego en sí).
+5. Cierre de apuestas → Teams (mejora operativa: auditoría externa; no bloquea el juego).
