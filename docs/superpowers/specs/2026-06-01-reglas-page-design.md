@@ -60,15 +60,16 @@ Los jugadores y gestores necesitan un único sitio interno donde consultar cómo
 
 ### 4.3 Pequeño refactor: extraer `BET_CLOSE_HOURS`
 
-Hoy la ventana de cierre vive como literal `timedelta(hours=2)` en `competition/models.py` (líneas 63 y 68). Para que la página de Reglas y la lógica real **no puedan divergir**, extraer:
+Hoy la ventana "las apuestas cierran 2 h antes del saque" vive como literal `timedelta(hours=2)` en `competition/models.py` línea 63. Para que la página de Reglas y la lógica real **no puedan divergir**, extraer arriba del módulo:
 
 ```python
 # competition/models.py
 BET_CLOSE_HOURS = 2
-BET_CLOSE_WINDOW = timedelta(hours=BET_CLOSE_HOURS)
 ```
 
-y reemplazar los dos `timedelta(hours=2)` actuales por `BET_CLOSE_WINDOW`. La vista de Reglas importa `BET_CLOSE_HOURS` y lo pasa en el contexto.
+y reemplazar el literal de la línea 63 por `timedelta(hours=BET_CLOSE_HOURS)`. La vista de Reglas importa `BET_CLOSE_HOURS` y lo pasa en el contexto.
+
+> **No tocar la línea 68.** Ese `timedelta(hours=2)` define una regla distinta (cuánto antes del cierre el partido entra en estado `closing` con cuenta atrás visible). Mismo número hoy, pero distinto concepto: fusionarlos acoplaría dos ventanas independientes.
 
 No hay cambios de esquema (`Round`, `PotSettings`, `Prize` se usan tal cual).
 
