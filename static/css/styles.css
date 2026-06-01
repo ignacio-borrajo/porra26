@@ -7,6 +7,18 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
 
+/* Polyfill de banderas para Windows (Edge/Chrome): Segoe UI Emoji no
+   renderiza los pares "regional indicator" como bandera. Cargamos una
+   webfont con SOLO los glifos de bandera y unicode-range restringido,
+   así no afecta al resto del texto. */
+@font-face {
+  font-family: 'Twemoji Country Flags';
+  unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067,
+                 U+E006C, U+E006E, U+E0073-E0074, U+E0077, U+E007F;
+  src: url('https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1/dist/TwemojiCountryFlags.woff2') format('woff2');
+  font-display: swap;
+}
+
 :root {
   /* --- Acentos multicolor Mundial 26 (fijos en ambos temas) --- */
   --c-pink:   oklch(0.68 0.24 5);     /* rosa/magenta */
@@ -22,9 +34,9 @@
   --accent: var(--c-blue);
   --accent-2: var(--c-cyan);
 
-  --font-display: 'Sora', system-ui, sans-serif;
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, monospace;
+  --font-display: 'Twemoji Country Flags', 'Sora', system-ui, sans-serif;
+  --font-sans: 'Twemoji Country Flags', 'Inter', system-ui, sans-serif;
+  --font-mono: 'Twemoji Country Flags', 'Geist Mono', ui-monospace, monospace;
 
   --r-sm: 10px;
   --r-md: 16px;
