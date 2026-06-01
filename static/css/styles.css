@@ -663,11 +663,11 @@ select.input {
 
 .rules-timeline {
   list-style: none;
-  margin: 0;
-  padding: 16px 8px;
+  margin: 4px 0 8px;
+  padding: 28px 8px 24px;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
+  gap: 10px;
   position: relative;
   background:
     linear-gradient(90deg,
@@ -681,12 +681,19 @@ select.input {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 14px;
   text-align: center;
+}
+.rules-timeline .chip {
+  /* Tapa el gradiente que pasa por detrás para que no se vea atravesando la pill. */
+  background: var(--surface-solid);
+  position: relative;
+  z-index: 1;
 }
 .rules-timeline-hint {
   font-family: 'Geist Mono', monospace;
-  font-size: 10px;
+  font-size: 11px;
+  line-height: 1.35;
   color: var(--text-faint);
 }
 
@@ -819,12 +826,14 @@ select.input {
         oklch(from var(--c-yellow) l c h / 0.6) 35%,
         oklch(from var(--text-faint) l c h / 0.5) 55%,
         oklch(from var(--c-red) l c h / 0.6) 75%,
-        oklch(from var(--c-cyan) l c h / 0.6) 100%) 50% 0 / 2px 100% no-repeat;
-    padding: 12px 8px 12px 24px;
+        oklch(from var(--c-cyan) l c h / 0.6) 100%) 14px 0 / 2px 100% no-repeat;
+    padding: 18px 8px 18px 36px;
+    gap: 18px;
   }
   .rules-timeline li {
     flex-direction: row;
     justify-content: flex-start;
+    align-items: center;
     gap: 12px;
     text-align: left;
   }
