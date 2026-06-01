@@ -130,5 +130,45 @@
     </p>
   </section>
 
+  <section class="glass" style="padding:24px;border-radius:var(--r-lg);display:flex;flex-direction:column;gap:18px">
+    <header style="display:flex;flex-direction:column;gap:4px">
+      <span class="eyebrow">03 · El bote y los premios</span>
+      <h2 style="margin:0;font-family:Sora,sans-serif;font-weight:700;font-size:22px">El bote y los premios</h2>
+    </header>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+      <div class="glass" style="padding:14px 16px;border-radius:var(--r-md);display:flex;flex-direction:column;gap:4px">
+        <strong style="font-family:Sora,sans-serif;font-size:28px">{{ pot_per_player|floatformat:"-2" }} €</strong>
+        <span style="font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.12em">Aportación por jugador</span>
+      </div>
+      <div class="glass" style="padding:14px 16px;border-radius:var(--r-md);display:flex;flex-direction:column;gap:4px">
+        <strong style="font-family:Sora,sans-serif;font-size:28px;color:var(--c-gold)">{{ pot_total|default:0 }} €</strong>
+        <span style="font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.12em">Bote total</span>
+      </div>
+      <div class="glass" style="padding:14px 16px;border-radius:var(--r-md);display:flex;flex-direction:column;gap:4px">
+        <strong style="font-family:Sora,sans-serif;font-size:28px">3</strong>
+        <span style="font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.12em">Premios al final del torneo</span>
+      </div>
+    </div>
+
+    <ul class="rules-medals" role="list">
+      {% for prize in pot_prizes %}
+      <li data-position="{{ prize.position }}">
+        <span class="rules-medal-badge">{{ prize.position }}º</span>
+        <strong>{{ prize.amount|floatformat:"-2" }} €</strong>
+        <span class="rules-medal-label">{{ prize.label }}</span>
+      </li>
+      {% empty %}
+      <li data-position="1"><span class="rules-medal-badge">1º</span><strong>—</strong></li>
+      <li data-position="2"><span class="rules-medal-badge">2º</span><strong>—</strong></li>
+      <li data-position="3"><span class="rules-medal-badge">3º</span><strong>—</strong></li>
+      {% endfor %}
+    </ul>
+
+    <p style="font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint);margin:0">
+      El gestor marca quién ha pagado — solo los jugadores con el pago confirmado entran en el bote.
+    </p>
+  </section>
+
 </div>
 {% endblock %}

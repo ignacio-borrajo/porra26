@@ -1,9 +1,12 @@
+from decimal import Decimal
+
 import pytest
 from django.urls import reverse
 
 from accounts.tests.factories import UserFactory
 from competition.tests.factories import RoundFactory
 from pot.models import PotSettings
+from pot.tests.factories import PrizeFactory
 
 
 @pytest.mark.django_db
@@ -66,3 +69,17 @@ def test_rules_renders_close_card(client):
     assert "01:23:45" in content   # cuenta atrás del estado closing
     assert "1 — 0" in content       # marcador en vivo
     assert "2 — 1" in content       # marcador final
+
+
+@pytest.mark.django_db
+def test_rules_renders_pot_card(client):
+    PrizeFactory(scope="global", position=1, amount=Decimal("240"), label="1er premio")
+    PrizeFactory(scope="global", position=2, amount=Decimal("144"), label="2º premio")
+    PrizeFactory(scope="global", position=3, amount=Decimal("96"), label="3er premio")
+    client.force_login(UserFactory())
+    r = client.get(reverse("core:rules"))
+    content = r.content.decode("utf-8")
+    assert "El bote y los premios" in content
+    assert "240" in content
+    assert "144" in content
+    assert "96" in content
