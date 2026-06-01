@@ -97,21 +97,32 @@ Ver `DESIGN_SPEC.md` §6.
 
 ---
 
-## Fase 7 — Cierre de apuestas → PDF → Teams
+## Fase 7 — Cierre de apuestas → PDF → Teams (vía email)
 
-**Objetivo:** dejar constancia automática en el canal de Teams de la empresa de todas las apuestas realizadas para cada partido, en cuanto se cierra la ventana de pronósticos (kickoff − 2 h). Ver spec completa en [`docs/superpowers/specs/2026-06-01-cierre-apuestas-teams-design.md`](superpowers/specs/2026-06-01-cierre-apuestas-teams-design.md).
+**Objetivo:** dejar constancia automática en el chat de Teams de la empresa de todas las apuestas realizadas para cada partido, en cuanto se cierra la ventana de pronósticos (kickoff − 2 h).
 
-Patrón **pull**: Django expone endpoints autenticados con token Bearer y un *Scheduled cloud flow* de Power Automate los sondea cada 10 min, descarga el PDF y lo publica en el canal. Compatible con el plan free de PythonAnywhere (no necesita tráfico saliente).
+Specs:
+- Original (HTTP-pull): [`docs/superpowers/specs/2026-06-01-cierre-apuestas-teams-design.md`](superpowers/specs/2026-06-01-cierre-apuestas-teams-design.md).
+- Final (email-push, sin connectores premium): [`docs/superpowers/specs/2026-06-01-cierre-apuestas-email-design.md`](superpowers/specs/2026-06-01-cierre-apuestas-email-design.md).
 
-- [ ] Modelo `BetsClosingReport` (1‑1 con `Match`) + migración.
-- [ ] Endpoints `/api/teams/cierres-pendientes`, `/api/teams/cierres/<id>/pdf`, `/api/teams/cierres/<id>/marcar-enviado` con decorador Bearer + sesión gestor.
-- [ ] Generación del PDF con ReportLab: cabecera + bloque partido + resumen estadístico + tabla de pronósticos + clasificación general.
-- [ ] UI en página de Resultados: botón "📄 PDF cierre" por partido + tabla "Estado de envíos a Teams".
-- [ ] Variable `TEAMS_API_TOKEN` en `.env` y documentada en `DEPLOY.md`/`RUNBOOK.md`.
-- [ ] `docs/TEAMS_FLOW.md` con instrucciones paso a paso para configurar el Flow en Power Automate.
-- [ ] Tests: 401 sin token, filtrado de pendientes, idempotencia de marcar-enviado, contenido del PDF.
+**Por qué dos specs**: el primer intento usaba Power Automate sondeando tres endpoints HTTP de Django. Al desplegar descubrimos que el conector HTTP de Power Automate es **premium** (≈ €12/usuario/mes) y la organización no quiere pagar premium. La reescritura usa solo conectores estándar: PythonAnywhere envía un email con el PDF adjunto vía SMTP cada vez que un partido se cierra, y un flow con trigger Outlook + OneDrive + Teams lo publica en el chat.
 
-**Hecho cuando:** al cerrarse un partido (`kickoff − 2 h`), el canal de Teams recibe automáticamente un mensaje con el PDF adjunto en ≤ 10 min, y reintenta solo si falló.
+Backend ya implementado (modelo, PDF, endpoint `/pdf` para descarga manual, sección "Estado de envíos") sigue valiendo tal cual; solo cambia el "transporte" del PDF al chat.
+
+- [x] Modelo `BetsClosingReport` (1‑1 con `Match`) + migración.
+- [x] Generación del PDF con ReportLab (`build_closing_pdf`).
+- [x] UI gestor: botón "📄 PDF" + sección "Estado de envíos a Teams".
+- [x] Endpoint `/api/teams/cierres/<id>/pdf` (descarga manual desde la UI).
+- [ ] Service `send_closure_email(match)` con SMTP + tests.
+- [ ] Management command `send_pending_closures` + tests.
+- [ ] Eliminar endpoint `marcar-enviado` (ya no se consume desde fuera).
+- [ ] PythonAnywhere Hacker plan ($5/mes) + scheduled task cada 10 min.
+- [ ] `docs/TEAMS_FLOW.md` reescrito con la versión email-driven.
+- [ ] `DEPLOY.md` y `RUNBOOK.md` actualizados (sección SMTP + diagnóstico).
+
+Plan de implementación: [`docs/superpowers/plans/2026-06-01-cierre-apuestas-email.md`](superpowers/plans/2026-06-01-cierre-apuestas-email.md).
+
+**Hecho cuando:** al cerrarse un partido (`kickoff − 2 h`), en ≤ 10 min llega al chat de Teams un mensaje con el PDF accesible vía OneDrive, y reintenta automáticamente si el envío falló.
 
 ---
 
