@@ -31,3 +31,22 @@ def test_rules_context_has_required_keys(client):
     assert "pot_prizes" in ctx
     assert ctx["bet_close_hours"] == 2
     assert "rules_updated_at" in ctx
+
+
+@pytest.mark.django_db
+def test_rules_renders_points_card(client):
+    RoundFactory(id="groups", label="Fase de grupos", short="GRP", points=3, order=1)
+    RoundFactory(id="r32", label="Dieciseisavos", short="R32", points=5, order=2)
+    client.force_login(UserFactory())
+    r = client.get(reverse("core:rules"))
+    content = r.content.decode("utf-8")
+    assert "Cómo funciona la porra" in content
+    assert "Sistema de puntos" in content
+    # Ejemplos
+    assert "Marcador exacto" in content
+    assert "Solo el resultado" in content
+    assert "Fallo" in content
+    # Tabla de rondas con puntos
+    assert "Fase de grupos" in content
+    assert "Dieciseisavos" in content
+    assert "+3 pts" in content or ">3<" in content

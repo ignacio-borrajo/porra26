@@ -1,7 +1,75 @@
 {% extends "base.html" %}
+{% load icons %}
 {% block title %}Reglas · PORRA 26{% endblock %}
 {% block main %}
-<div style="max-width:880px;margin:0 auto">
-  <h1>Reglas</h1>
+{# Mantener sincronizado con docs/DATA_MODEL.md §2, §3, §5 — cambios de reglas se reflejan también aquí. #}
+<div style="max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:24px">
+
+  <header class="stagger" style="display:flex;flex-direction:column;gap:8px">
+    <span class="eyebrow">MUNDIAL 2026 · REGLAS</span>
+    <h1 style="font-family:Sora,sans-serif;font-weight:800;letter-spacing:-0.03em;font-size:clamp(32px,4vw,44px);margin:0">
+      Cómo funciona la porra
+    </h1>
+    <p style="color:var(--text-dim);font-size:16px;margin:0">
+      Todo lo que necesitas saber para jugar — y para no quedarte fuera del bote.
+    </p>
+  </header>
+
+  <section class="glass" style="padding:24px;border-radius:var(--r-lg);display:flex;flex-direction:column;gap:18px">
+    <header style="display:flex;flex-direction:column;gap:4px">
+      <span class="eyebrow">01 · Sistema de puntos</span>
+      <h2 style="margin:0;font-family:Sora,sans-serif;font-weight:700;font-size:22px">Cuánto se gana en cada partido</h2>
+      <p style="color:var(--text-dim);margin:0">Cada partido te da puntos según lo cerca que estés del resultado.</p>
+    </header>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+      {# Ejemplo 1: Marcador exacto #}
+      <article class="rules-example-card" data-variant="exact">
+        <header class="eyebrow" style="color:var(--c-lime)">Marcador exacto</header>
+        <div class="rules-example-score">
+          <span>🇪🇸 España</span><strong>2 — 1</strong><span>Argentina 🇦🇷</span>
+        </div>
+        <p>Tu apuesta: <strong>2-1</strong></p>
+        <span class="chip" style="color:var(--c-lime);border-color:oklch(from var(--c-lime) l c h / 0.4)">+3 pts · exacto</span>
+      </article>
+      {# Ejemplo 2: Solo el resultado #}
+      <article class="rules-example-card" data-variant="partial">
+        <header class="eyebrow" style="color:var(--c-cyan)">Solo el resultado</header>
+        <div class="rules-example-score">
+          <span>🇪🇸 España</span><strong>3 — 2</strong><span>Argentina 🇦🇷</span>
+        </div>
+        <p>Tu apuesta: <strong>2-1</strong></p>
+        <span class="chip" style="color:var(--c-cyan);border-color:oklch(from var(--c-cyan) l c h / 0.4)">+1 pt</span>
+      </article>
+      {# Ejemplo 3: Fallo #}
+      <article class="rules-example-card" data-variant="miss">
+        <header class="eyebrow" style="color:var(--text-faint)">Fallo</header>
+        <div class="rules-example-score">
+          <span>🇪🇸 España</span><strong>1 — 2</strong><span>Argentina 🇦🇷</span>
+        </div>
+        <p>Tu apuesta: <strong>2-1</strong></p>
+        <span class="chip">0 pts</span>
+      </article>
+    </div>
+
+    <table class="rules-table">
+      <thead>
+        <tr><th scope="col">Ronda</th><th scope="col">Puntos por marcador exacto</th></tr>
+      </thead>
+      <tbody>
+        {% for r in rounds %}
+        <tr>
+          <td><span class="chip" data-round="{{ r.id }}">{{ r.label }}</span></td>
+          <td><strong style="font-family:Sora,sans-serif;font-weight:700;font-size:20px">{{ r.points }}</strong> <span style="font-family:'Geist Mono',monospace;color:var(--text-faint);font-size:12px">pts</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <p style="font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint);margin:0">
+      Acertar solo el resultado (1·X·2) siempre vale 1 punto, sea cual sea la ronda.
+    </p>
+  </section>
+
 </div>
 {% endblock %}
