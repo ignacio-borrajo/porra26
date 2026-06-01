@@ -31,11 +31,20 @@ async function onSubmit(event) {
   event.preventDefault();
   const form = event.currentTarget;
   const data = new FormData(form);
+  const submitter = event.submitter;
+  if (submitter && submitter.name) {
+    data.append(submitter.name, submitter.value || "");
+  }
   const res = await fetch(form.action, {
     method: "POST",
     body: data,
     headers: { "X-Modal": "1" },
   });
+  const next = res.headers.get("X-Modal-Next");
+  if (next) {
+    await openModal(next);
+    return;
+  }
   const redirect = res.headers.get("X-Modal-Redirect");
   if (redirect) {
     window.location.assign(redirect);
