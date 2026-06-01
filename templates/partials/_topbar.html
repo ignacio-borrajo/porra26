@@ -35,7 +35,7 @@
       {% icon "sun" width=18 height=18 %}
     </button>
     <a href="{% url 'accounts:my_account' %}" style="display:flex;align-items:center;gap:9px;padding-left:6px;text-decoration:none;color:inherit;border-radius:11px;padding:4px 6px{% if request.resolver_match.namespace == 'accounts' and request.resolver_match.url_name == 'my_account' %};background:var(--surface-hi){% endif %}" title="Mi cuenta">
-      <span class="avatar" data-name="{{ user.name }}">{{ user.initials }}</span>
+      {% include "partials/_avatar.html" with u=user size=32 %}
       <div class="topbar-user-meta" style="line-height:1.2">
         <div style="font-size:13px;font-weight:700">{{ user.name }}</div>
         <div style="display:flex;gap:4px;margin-top:2px">

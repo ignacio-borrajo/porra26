@@ -67,7 +67,10 @@ PORRA 26 está pensada para correr en el plan **free de PythonAnywhere** (MySQL 
       application = get_wsgi_application()
       ```
     - Virtualenv: `/home/<tu-usuario>/.virtualenvs/porra26`
-    - Static files mapping: URL `/static/` → directorio `/home/<tu-usuario>/apuestas-interna/staticfiles/`
+    - Static files mapping (añadir las dos entradas):
+      - URL `/static/` → directorio `/home/<tu-usuario>/apuestas-interna/staticfiles/`
+      - URL `/media/` → directorio `/home/<tu-usuario>/apuestas-interna/media/` (los avatares subidos por los jugadores)
+    - Asegura que el directorio `media/` existe: `mkdir -p ~/apuestas-interna/media/avatars`
 11. Pulsa **Reload**.
 
 ## 3. Redeploys

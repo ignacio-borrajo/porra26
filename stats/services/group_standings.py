@@ -22,6 +22,7 @@ class GroupRow:
     avg: float
     top_name: str
     top_pts: int
+    top_user_id: int | None = None
 
 
 def group_standings(dimension: Dimension) -> list[GroupRow]:
@@ -65,9 +66,9 @@ def _row_for(key: str, label: str, members) -> GroupRow:
     avg = (total / players) if players else 0.0
     if members:
         top = max(members, key=lambda r: (r.pts, -r.player_id))
-        top_name, top_pts = top.name, top.pts
+        top_name, top_pts, top_user_id = top.name, top.pts, top.player_id
     else:
-        top_name, top_pts = "", 0
+        top_name, top_pts, top_user_id = "", 0, None
     return GroupRow(
         key=key,
         label=label,
@@ -76,4 +77,5 @@ def _row_for(key: str, label: str, members) -> GroupRow:
         avg=avg,
         top_name=top_name,
         top_pts=top_pts,
+        top_user_id=top_user_id,
     )

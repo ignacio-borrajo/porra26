@@ -23,3 +23,8 @@ def test_chart_data_returns_json(client):
     r = client.get(reverse("stats:chart_data"))
     assert r.status_code == 200
     assert r["Content-Type"].startswith("application/json")
+    data = r.json()
+    assert "history" in data
+    assert "me" in data
+    assert "players" in data
+    assert isinstance(data["players"], dict)

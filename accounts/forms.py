@@ -2,12 +2,17 @@ from django import forms
 from django.contrib.auth import authenticate
 
 from .models import User
+from .services.avatar import UnidentifiedImageError, process_avatar
 from .validators import validate_email_domain
+
+MAX_AVATAR_BYTES = 2 * 1024 * 1024
+
+INPUT_ATTRS = {"class": "input"}
 
 
 class LoginForm(forms.Form):
-    email = forms.EmailField(label="Correo")
-    password = forms.CharField(label="Contraseña", widget=forms.PasswordInput)
+    email = forms.EmailField(label="Correo", widget=forms.EmailInput(attrs=INPUT_ATTRS))
+    password = forms.CharField(label="Contraseña", widget=forms.PasswordInput(attrs=INPUT_ATTRS))
 
     def clean_email(self):
         email = self.cleaned_data["email"].lower().strip()
@@ -23,9 +28,20 @@ class LoginForm(forms.Form):
 
 
 class ChangePasswordForm(forms.Form):
-    current = forms.CharField(label="Contraseña actual", widget=forms.PasswordInput)
-    new1 = forms.CharField(label="Nueva contraseña", widget=forms.PasswordInput, min_length=10)
-    new2 = forms.CharField(label="Repite la contraseña", widget=forms.PasswordInput, min_length=10)
+    current = forms.CharField(
+        label="Contraseña actual",
+        widget=forms.PasswordInput(attrs=INPUT_ATTRS),
+    )
+    new1 = forms.CharField(
+        label="Nueva contraseña",
+        widget=forms.PasswordInput(attrs=INPUT_ATTRS),
+        min_length=10,
+    )
+    new2 = forms.CharField(
+        label="Repite la contraseña",
+        widget=forms.PasswordInput(attrs=INPUT_ATTRS),
+        min_length=10,
+    )
 
     def __init__(self, user, *args, **kwargs):
         self.user = user
@@ -52,10 +68,37 @@ class ChangePasswordForm(forms.Form):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ["name", "dept", "sede", "puesto"]
+        fields = ["name", "sede", "puesto", "dept", "avatar"]
+        labels = {
+            "name": "Nombre",
+            "sede": "Sede",
+            "puesto": "Puesto",
+            "dept": "Departamento",
+            "avatar": "Foto de perfil",
+        }
+        widgets = {
+            "name": forms.TextInput(attrs=INPUT_ATTRS),
+            "sede": forms.Select(attrs=INPUT_ATTRS),
+            "puesto": forms.Select(attrs=INPUT_ATTRS),
+            "dept": forms.Select(attrs=INPUT_ATTRS),
+            "avatar": forms.FileInput(
+                attrs={"class": "avatar-input", "accept": "image/jpeg,image/png,image/webp"}
+            ),
+        }
 
     def clean_name(self):
         value = (self.cleaned_data.get("name") or "").strip()
         if not value:
             raise forms.ValidationError("El nombre es obligatorio.")
         return value
+
+    def clean_avatar(self):
+        f = self.cleaned_data.get("avatar")
+        if not f or not hasattr(f, "size"):
+            return f
+        if f.size > MAX_AVATAR_BYTES:
+            raise forms.ValidationError("La foto no puede pesar más de 2 MB.")
+        try:
+            return process_avatar(f)
+        except (UnidentifiedImageError, OSError):
+            raise forms.ValidationError("El archivo no es una imagen válida.")

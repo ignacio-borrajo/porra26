@@ -1,0 +1,11 @@
+{% load avatar_extras %}
+{% with s=size|default:32 %}
+{% if u.avatar %}
+  <img class="avatar" src="{{ u.avatar.url }}" alt="{{ u.name }}"
+       width="{{ s }}" height="{{ s }}"
+       style="width:{{ s }}px;height:{{ s }}px">
+{% else %}
+  <span class="avatar"
+        style="width:{{ s }}px;height:{{ s }}px;--hue:{{ u|avatar_hue }};--avatar-size:{{ s }}px">{{ u.initials }}</span>
+{% endif %}
+{% endwith %}

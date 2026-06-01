@@ -10,20 +10,42 @@
 
   <div class="glass" style="padding:24px;border-radius:24px">
     <h2 class="display" style="font-size:18px;margin:0 0 14px">Datos personales</h2>
-    <div class="field" style="margin-top:6px">
-      <label>Correo</label>
-      <input type="email" value="{{ user.email }}" disabled style="opacity:.7;cursor:not-allowed">
-      <p style="font-size:12px;color:var(--text-faint);margin:6px 0 0">Para cambiar el correo, contacta con un gestor.</p>
-    </div>
-    <form method="post" novalidate style="margin-top:8px">
+    <form method="post" enctype="multipart/form-data" novalidate>
       {% csrf_token %}
       <input type="hidden" name="action" value="profile">
-      {% for f in profile_form %}
-        <div class="field" style="margin-top:14px">
-          <label>{{ f.label }}</label>
-          {{ f }}
-          {% for e in f.errors %}<p style="color:var(--c-red);font-size:12px;margin:4px 0 0">{{ e }}</p>{% endfor %}
+
+      <div class="avatar-edit">
+        <div class="avatar-preview" id="avatar-preview">
+          {% include "partials/_avatar.html" with u=user size=96 %}
         </div>
+        <div class="avatar-actions">
+          <label class="btn btn-ghost" for="id_avatar" style="cursor:pointer">Cambiar foto</label>
+          {{ profile_form.avatar }}
+          {% if user.avatar %}
+            <label class="check">
+              <input type="checkbox" name="avatar-clear" id="avatar-clear">
+              Quitar foto
+            </label>
+          {% endif %}
+          <p class="hint">JPG, PNG o WebP. Máx 2 MB. Se recorta cuadrado.</p>
+          {% for e in profile_form.avatar.errors %}<p style="color:var(--c-red);font-size:12px;margin:4px 0 0">{{ e }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:14px">
+        <label>Correo</label>
+        <input class="input" type="email" value="{{ user.email }}" disabled style="opacity:.7;cursor:not-allowed">
+        <p style="font-size:12px;color:var(--text-faint);margin:6px 0 0">Para cambiar el correo, contacta con un gestor.</p>
+      </div>
+
+      {% for f in profile_form %}
+        {% if f.name != 'avatar' %}
+          <div class="field" style="margin-top:14px">
+            <label>{{ f.label }}</label>
+            {{ f }}
+            {% for e in f.errors %}<p style="color:var(--c-red);font-size:12px;margin:4px 0 0">{{ e }}</p>{% endfor %}
+          </div>
+        {% endif %}
       {% endfor %}
       {% if profile_form.non_field_errors %}<p style="color:var(--c-red)">{{ profile_form.non_field_errors|join:' ' }}</p>{% endif %}
       <button type="submit" class="btn btn-primary" style="margin-top:18px">Guardar cambios</button>
@@ -59,4 +81,20 @@
   </div>
 
 </section>
+
+<script>
+  (function () {
+    var input = document.getElementById("id_avatar");
+    var preview = document.getElementById("avatar-preview");
+    if (!input || !preview) return;
+    input.addEventListener("change", function () {
+      var f = input.files && input.files[0];
+      if (!f) return;
+      var url = URL.createObjectURL(f);
+      preview.innerHTML = '<img class="avatar" src="' + url + '" width="96" height="96" style="width:96px;height:96px">';
+      var clearCb = document.getElementById("avatar-clear");
+      if (clearCb) clearCb.checked = false;
+    });
+  })();
+</script>
 {% endblock %}

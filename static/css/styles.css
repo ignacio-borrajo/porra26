@@ -845,3 +845,44 @@ select.input {
   .rules-table tr { display: flex; flex-direction: column; padding: 8px 0; border-bottom: 1px solid var(--border); }
   .rules-table td { border: none; padding: 2px 0; }
 }
+
+/* ============================================================
+   Avatar (foto de perfil + fallback de iniciales)
+   ============================================================ */
+
+.avatar {
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 2px 8px -2px oklch(0 0 0 / 0.4);
+  overflow: hidden;
+}
+span.avatar {
+  background: linear-gradient(
+    135deg,
+    oklch(0.62 0.19 var(--hue, 250)),
+    oklch(0.66 0.20 calc(var(--hue, 250) + 60))
+  );
+  font-size: calc(var(--avatar-size, 32px) * 0.36);
+}
+img.avatar { object-fit: cover; }
+
+/* /mi-cuenta/ — bloque de edición del avatar */
+.avatar-edit {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.avatar-edit .avatar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.avatar-input { display: none; }
+.hint { font-size: 12px; color: var(--text-faint); margin: 4px 0 0; }

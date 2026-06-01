@@ -1,7 +1,17 @@
+import uuid
+from pathlib import Path
+
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 
 from .managers import UserManager
+
+
+def avatar_upload_to(instance, filename):
+    ext = Path(filename).suffix.lower() or ".jpg"
+    return f"avatars/{instance.id}_{uuid.uuid4().hex[:8]}{ext}"
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -31,6 +41,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     dept = models.CharField(max_length=20, choices=DEPT_CHOICES, blank=True)
     sede = models.CharField(max_length=20, choices=SEDE_CHOICES, blank=True)
     puesto = models.CharField(max_length=20, choices=PUESTO_CHOICES, blank=True)
+    avatar = models.ImageField(upload_to=avatar_upload_to, blank=True, null=True)
     is_jugador = models.BooleanField(default=True)
     is_gestor = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -75,3 +86,9 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f"{self.action} on {self.target_type}#{self.target_id} by {self.actor_id}"
+
+
+@receiver(pre_delete, sender=User)
+def _delete_avatar_file(sender, instance, **kwargs):
+    if instance.avatar:
+        instance.avatar.delete(save=False)

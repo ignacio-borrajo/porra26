@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load icons %}
+{% load icons avatar_extras %}
 {% block main %}
 <header class="rise" style="margin-bottom:18px">
   <div class="eyebrow">MUNDIAL 2026</div>
@@ -27,7 +27,7 @@
       <span class="display" style="font-size:22px">{{ r.avg|floatformat:1 }}</span>
       <div style="display:flex;align-items:center;gap:8px">
         {% if r.top_name %}
-          <span class="avatar" data-name="{{ r.top_name }}" style="width:28px;height:28px;font-size:11px">{{ r.top_name|slice:":2"|upper }}</span>
+          {% include "partials/_avatar.html" with u=top_users|get_item:r.top_user_id size=28 %}
           <strong style="font-size:13px">{{ r.top_name }}</strong>
           <span class="chip" style="padding:0 6px;font-size:10px">{{ r.top_pts }} pts</span>
         {% else %}

@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import View
 
+from accounts.models import User
 from stats.services.group_standings import group_standings
 from stats.services.history import per_player_history
 from stats.services.kpis import donut, kpis
@@ -23,7 +24,19 @@ class StatsView(LoginRequiredMixin, View):
 class ChartDataView(LoginRequiredMixin, View):
     def get(self, request):
         h = per_player_history()
-        return JsonResponse({"history": h, "me": request.user.id})
+        users = User.objects.in_bulk(list(h.keys()))
+        players = {
+            pid: {
+                "name": u.name,
+                "initials": u.initials,
+                "hue": (ord(str(pid)[-1]) * 47) % 360,
+                "avatar_url": u.avatar.url if u.avatar else None,
+            }
+            for pid, u in users.items()
+        }
+        return JsonResponse(
+            {"history": h, "me": request.user.id, "players": players}
+        )
 
 
 class RankingsView(LoginRequiredMixin, View):
@@ -36,6 +49,8 @@ class RankingsView(LoginRequiredMixin, View):
             tab = "sede"
         rows = group_standings(tab)
         my_group = getattr(request.user, tab, "") or "__none__"
+        top_ids = [r.top_user_id for r in rows if r.top_user_id]
+        top_users = User.objects.in_bulk(top_ids) if top_ids else {}
         return render(
             request,
             "stats/rankings.html",
@@ -44,5 +59,6 @@ class RankingsView(LoginRequiredMixin, View):
                 "rows": rows,
                 "tabs": [(k, self.TAB_LABELS[k]) for k in self.VALID_TABS],
                 "my_group": my_group,
+                "top_users": top_users,
             },
         )

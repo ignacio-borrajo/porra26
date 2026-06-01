@@ -81,3 +81,4 @@ def test_group_standings_records_top_player(finished_match):
     rows = {r.key: r for r in group_standings("sede")}
     assert rows["vigo"].top_name == "Ana"
     assert rows["vigo"].top_pts == 3
+    assert rows["vigo"].top_user_id == a.id

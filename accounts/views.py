@@ -86,11 +86,26 @@ class MyAccountView(LoginRequiredMixin, View):
         return HttpResponseBadRequest("acción no válida")
 
     def _post_profile(self, request):
-        form = ProfileForm(request.POST, instance=request.user)
+        old_avatar_name = (
+            request.user.avatar.name if request.user.avatar else ""
+        )
+        form = ProfileForm(request.POST, request.FILES, instance=request.user)
         if not form.is_valid():
             return self._render(request, profile_form=form)
         changed = list(form.changed_data)
+        wants_clear = bool(
+            request.POST.get("avatar-clear") and not request.FILES.get("avatar")
+        )
+        new_avatar = form.cleaned_data.get("avatar")
         form.save()
+        if new_avatar and old_avatar_name:
+            request.user.avatar.storage.delete(old_avatar_name)
+        if wants_clear and request.user.avatar:
+            request.user.avatar.delete(save=False)
+            request.user.avatar = None
+            request.user.save(update_fields=["avatar"])
+            if "avatar" not in changed:
+                changed.append("avatar")
         if changed:
             AuditLog.objects.create(
                 actor=request.user,
