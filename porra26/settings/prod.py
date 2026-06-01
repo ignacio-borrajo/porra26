@@ -6,15 +6,17 @@ DEBUG = False
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 ALLOWED_HOSTS = os.environ["DJANGO_ALLOWED_HOSTS"].split(",")
 
+# SQLite en producción: válido para uso interno de baja concurrencia
+# (PythonAnywhere free no incluye MySQL). Si en el futuro se migra a MySQL,
+# basta con definir las variables MYSQL_* y restaurar el bloque mysql.
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": os.environ["MYSQL_NAME"],
-        "USER": os.environ["MYSQL_USER"],
-        "PASSWORD": os.environ["MYSQL_PASSWORD"],
-        "HOST": os.environ["MYSQL_HOST"],
-        "PORT": "3306",
-        "OPTIONS": {"charset": "utf8mb4"},
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": os.environ.get("SQLITE_PATH", str(BASE_DIR / "db.sqlite3")),  # noqa: F405
+        "OPTIONS": {
+            "timeout": 20,
+            "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;",
+        },
     }
 }
 
