@@ -84,6 +84,10 @@ class Match(models.Model):
 
         return is_matchday_open(self.round_id, self.matchday)
 
+    @property
+    def teams_slug(self) -> str:
+        return f"{self.home_id.lower()}-vs-{self.away_id.lower()}-{self.kickoff:%Y-%m-%d}"
+
 
 class Prediction(models.Model):
     player = models.ForeignKey(
@@ -103,3 +107,23 @@ class Prediction(models.Model):
 
     def __str__(self):
         return f"{self.player_id} → {self.match_id}"
+
+
+class BetsClosingReport(models.Model):
+    match = models.OneToOneField(
+        Match,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="closing_report",
+    )
+    generated_at = models.DateTimeField(null=True, blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    last_sha256 = models.CharField(max_length=64, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["sent_at"])]
+
+    def __str__(self):
+        return f"ClosingReport(match={self.match_id}, sent={self.sent_at is not None})"
