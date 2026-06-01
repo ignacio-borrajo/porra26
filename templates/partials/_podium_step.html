@@ -1,0 +1,22 @@
+{% load avatar_extras %}
+<div class="podium-slot podium-slot--{{ rank }} pop{% if me and row.player_id == me.id %} is-me{% endif %}">
+  <div class="podium-medal" aria-hidden="true">
+    {% if rank == 1 %}🥇{% elif rank == 2 %}🥈{% else %}🥉{% endif %}
+  </div>
+  {% if user %}
+    {% if rank == 1 %}
+      {% include "partials/_avatar.html" with u=user size=50 %}
+    {% else %}
+      {% include "partials/_avatar.html" with u=user size=42 %}
+    {% endif %}
+  {% endif %}
+  <div class="podium-info">
+    <div class="podium-name display{% if me and row.player_id == me.id %} is-me{% endif %}" title="{{ row.name }}">
+      {% if me and row.player_id == me.id %}Tú{% else %}{{ row.name }}{% endif %}
+    </div>
+    <div class="podium-pts mono grad-text">{{ row.pts }}</div>
+  </div>
+  <div class="podium-pedestal podium-pedestal--{{ rank }}">
+    <span class="podium-rank-number">{{ rank }}</span>
+  </div>
+</div>

@@ -1,0 +1,34 @@
+{% load icons avatar_extras %}
+<li class="leaderboard-row{% if me and r.player_id == me.id %} is-me{% endif %}">
+  <div class="leaderboard-row__pos mono">{{ r.position }}</div>
+  <div class="leaderboard-row__main">
+    <div class="leaderboard-row__top">
+      {% if user %}{% include "partials/_avatar.html" with u=user size=32 %}{% endif %}
+      <div class="leaderboard-row__id">
+        <div class="leaderboard-row__name-line">
+          <span class="leaderboard-row__name{% if me and r.player_id == me.id %} is-me{% endif %}" title="{{ r.name }}">
+            {% if me and r.player_id == me.id %}Tú · {% endif %}{{ r.name }}
+          </span>
+          {% if r.streak >= 3 %}
+          <span class="chip leaderboard-streak" title="Racha de {{ r.streak }} aciertos consecutivos">
+            {% icon "flame" width=10 height=10 %}{{ r.streak }}
+          </span>
+          {% endif %}
+        </div>
+        <div class="bar leaderboard-row__bar"><i style="width:{% widthratio r.pts max_pts 100 %}%"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="leaderboard-row__right">
+    <span class="leaderboard-row__hits mono" title="Aciertos · Exactos">
+      {{ r.hits }}·<span class="leaderboard-row__exacts">{{ r.exact_hits }}</span>
+    </span>
+    <span class="leaderboard-row__trend leaderboard-row__trend--{{ r.trend }}" aria-label="Tendencia {{ r.trend }}">
+      {% if r.trend == "up" %}{% icon "up" width=13 height=13 %}
+      {% elif r.trend == "down" %}{% icon "down" width=13 height=13 %}
+      {% else %}<span class="leaderboard-row__trend-flat"></span>
+      {% endif %}
+    </span>
+    <strong class="display mono leaderboard-row__pts{% if me and r.player_id == me.id %} is-me{% endif %}">{{ r.pts }}</strong>
+  </div>
+</li>

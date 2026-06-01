@@ -44,6 +44,6 @@
     <p class="glass" style="padding:18px;margin-top:18px">No hay partidos en esta ronda todavía.</p>
     {% endif %}
   </section>
-  <aside>{% include "partials/_leaderboard.html" with rows=standings me=request.user %}</aside>
+  <aside>{% include "partials/_leaderboard.html" with rows=standings me=request.user users=standings_users my_rank=my_rank max_pts=max_pts %}</aside>
 </div>
 {% endblock %}

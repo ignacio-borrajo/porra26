@@ -73,6 +73,11 @@ class CompetitionView(LoginRequiredMixin, View):
                     active_id, active_md
                 )
 
+        rows = standings()[:50]
+        users_by_id = User.objects.in_bulk([r.player_id for r in rows])
+        my_rank = next((r.position for r in rows if r.player_id == request.user.id), None)
+        max_pts = max((r.pts for r in rows), default=0) or 1
+
         return render(
             request,
             "competition/dashboard.html",
@@ -88,7 +93,10 @@ class CompetitionView(LoginRequiredMixin, View):
                 "open_matches": open_matches,
                 "live_matches": live_matches,
                 "done_matches": done_matches,
-                "standings": standings()[:50],
+                "standings": rows,
+                "standings_users": users_by_id,
+                "my_rank": my_rank,
+                "max_pts": max_pts,
             },
         )
 
