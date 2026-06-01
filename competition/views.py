@@ -151,11 +151,30 @@ class ManageResultsView(GestorRequiredMixin, View):
     def get(self, request):
         rounds = list(Round.objects.all())
         active_id = request.GET.get("round", rounds[0].id if rounds else "groups")
-        ms = list(
-            Match.objects.filter(round_id=active_id)
-            .select_related("home", "away", "round")
-            .order_by("kickoff")
+        matchdays = sorted(
+            Match.objects.filter(round_id=active_id, matchday__isnull=False)
+            .values_list("matchday", flat=True)
+            .distinct()
         )
+        active_md = None
+        if matchdays:
+            requested = request.GET.get("matchday")
+            if requested and requested.isdigit() and int(requested) in matchdays:
+                active_md = int(requested)
+            else:
+                active_md = _default_matchday(active_id, matchdays)
+
+        match_qs = Match.objects.filter(round_id=active_id).select_related(
+            "home", "away", "round"
+        )
+        if active_md is not None:
+            match_qs = match_qs.filter(matchday=active_md)
+        ms = list(match_qs.order_by("kickoff"))
+
+        matchday_state = [
+            {"matchday": md, "open": True, "active": md == active_md} for md in matchdays
+        ]
+
         pending, upcoming, done = [], [], []
         for m in ms:
             st = m.status
@@ -171,6 +190,9 @@ class ManageResultsView(GestorRequiredMixin, View):
             {
                 "rounds": rounds,
                 "active_round": active_id,
+                "matchdays": matchdays,
+                "active_matchday": active_md,
+                "matchday_state": matchday_state,
                 "pending": pending,
                 "upcoming": upcoming,
                 "done": done,
