@@ -247,6 +247,15 @@ def test_marcar_enviado_requires_token(client):
 
 @pytest.mark.django_db
 @override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_marcar_enviado_get_without_auth_returns_401_not_405(client):
+    """Auth se comprueba antes que el método HTTP — no leak de la existencia del endpoint."""
+    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
+    res = client.get(reverse("competicion:api:cierre_marcar_enviado", args=[m.id]))
+    assert res.status_code == 401
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
 def test_marcar_enviado_404_unknown_match(client):
     res = client.post(
         reverse("competicion:api:cierre_marcar_enviado", args=[999_999]),

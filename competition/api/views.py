@@ -34,13 +34,13 @@ def cierres_pendientes(request):
     """Devuelve los matches cuyo cierre ya pasó y que aún no se han enviado a Teams.
 
     El filtro `closing_report__sent_at__isnull=True` no nos vale por sí solo
-    porque deja fuera los matches sin BetsClosingReport. Filtramos en Python
-    para cubrir ambos casos en una única consulta con prefetch del OneToOne.
+    porque deja fuera los matches sin BetsClosingReport. Hacemos `select_related`
+    del OneToOne y filtramos en Python para cubrir ambos casos en una sola consulta.
     """
     now = timezone.now()
     qs = (
         Match.objects.filter(kickoff__lte=now + timedelta(hours=BET_CLOSE_HOURS))
-        .select_related("home", "away", "round")
+        .select_related("home", "away", "round", "closing_report")
         .order_by("kickoff")
     )
     pendientes = []
@@ -77,8 +77,8 @@ def cierre_pdf(request, match_id: int):
     return resp
 
 
-@require_POST
 @require_teams_api_token
+@require_POST
 def cierre_marcar_enviado(request, match_id: int):
     match = get_object_or_404(Match, pk=match_id)
     try:

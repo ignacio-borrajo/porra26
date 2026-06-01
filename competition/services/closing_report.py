@@ -162,7 +162,8 @@ def _predictions_table(match, styles) -> Table:
         p = preds.get(u.id)
         cell = f"{p.home} - {p.away}" if p else "—"
         data.append([u.name, cell])
-    table = Table(data, colWidths=[110 * mm, 40 * mm], repeatRows=1)
+    # Ancho útil A4 con márgenes 18 mm = 174 mm; reparto 60 % / 40 %.
+    table = Table(data, colWidths=[104 * mm, 70 * mm], repeatRows=1)
     table.setStyle(
         TableStyle(
             [
@@ -191,7 +192,8 @@ def _standings_table(styles) -> Table:
         data.append([str(r.position), r.name, str(r.pts)])
     if len(rows) > 20:
         data.append(["", f"… y {len(rows) - 20} jugadores más", ""])
-    table = Table(data, colWidths=[15 * mm, 110 * mm, 25 * mm], repeatRows=1)
+    # Ancho útil 174 mm: 15 + 134 + 25.
+    table = Table(data, colWidths=[15 * mm, 134 * mm, 25 * mm], repeatRows=1)
     table.setStyle(
         TableStyle(
             [
