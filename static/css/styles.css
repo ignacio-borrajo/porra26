@@ -835,4 +835,7 @@ select.input {
 
 @media (max-width: 560px) {
   .rules-example-score { flex-direction: column; gap: 4px; }
+  .rules-table thead { display: none; }
+  .rules-table tr { display: flex; flex-direction: column; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .rules-table td { border: none; padding: 2px 0; }
 }

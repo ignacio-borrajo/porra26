@@ -96,3 +96,18 @@ def test_rules_renders_tiebreak_and_access(client):
     assert "Acceso a la app" in content
     assert "Sin recuperación automática" in content
     assert "Última actualización del reglamento" in content
+
+
+@pytest.mark.django_db
+def test_rules_renders_placeholder_medals_when_no_prizes(client):
+    # Delete seed prizes so the {% empty %} branch fires.
+    from pot.models import Prize
+    Prize.objects.filter(scope="global").delete()
+    client.force_login(UserFactory())
+    r = client.get(reverse("core:rules"))
+    content = r.content.decode("utf-8")
+    # Three placeholder badges (1º, 2º, 3º) rendered.
+    for pos in ("1º", "2º", "3º"):
+        assert f">{pos}<" in content
+    # Em dash placeholder strong appears at least 3 times.
+    assert content.count(">—</strong>") >= 3

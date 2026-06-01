@@ -134,7 +134,10 @@ Calculados a partir de `kickoff`, el momento actual y el resultado. El cierre de
 
 Jugadores **activos** ordenados por:
 1. `pts` descendente.
-2. Desempate estable (el prototipo usa un orden secundario determinista). En producción, definir el criterio de desempate con el responsable (p. ej.: más exactos → más aciertos → orden alfabético).
+2. **Desempate (en este orden):**
+   1. Más marcadores exactos.
+   2. Más aciertos totales (resultado correcto, incluidos exactos).
+   3. Orden alfabético del nombre.
 
 Solo cuentan jugadores `active = true`. El podio destaca el top 3; el usuario actual va resaltado en toda la tabla.
 

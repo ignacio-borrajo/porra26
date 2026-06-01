@@ -20,6 +20,8 @@ def icon(name: str, width=18, height=18, **kw):
     if not raw:
         return ""
     attrs = f'width="{width}" height="{height}"'
-    extra = " ".join(f'{k}="{v}"' for k, v in kw.items())
+    # Convert underscores to hyphens in kwarg names so callers can pass
+    # e.g. aria_hidden="true" and get aria-hidden="true" in the output.
+    extra = " ".join(f'{k.replace("_", "-")}="{v}"' for k, v in kw.items())
     out = raw.replace("<svg", f"<svg {attrs} {extra}", 1)
     return mark_safe(out)
