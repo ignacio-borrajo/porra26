@@ -7,4 +7,5 @@ urlpatterns = [
     path("competicion/", include(("competition.urls", "competicion"), namespace="competicion")),
     path("stats/", include(("stats.urls", "stats"), namespace="stats")),
     path("gestion/", include(("pot.urls", "pot"), namespace="pot")),
+    path("reglas/", include(("core.urls", "core"), namespace="core")),
 ]
