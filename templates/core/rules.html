@@ -71,5 +71,64 @@
     </p>
   </section>
 
+  <section class="glass" style="padding:24px;border-radius:var(--r-lg);display:flex;flex-direction:column;gap:20px">
+    <header style="display:flex;flex-direction:column;gap:4px">
+      <span class="eyebrow">02 · Cuándo cierran las apuestas</span>
+      <h2 class="grad-text" style="margin:0;font-family:Sora,sans-serif;font-weight:700;font-size:clamp(22px,3vw,28px);line-height:1.2">
+        Las apuestas cierran {{ bet_close_hours }} horas antes del saque.
+      </h2>
+    </header>
+
+    <ol class="rules-timeline" role="list" aria-label="Estados del partido a lo largo del tiempo">
+      <li data-state="open">
+        <span class="chip" style="color:var(--c-lime);border-color:oklch(from var(--c-lime) l c h / 0.4)">Abierto</span>
+        <span class="rules-timeline-hint">apuestas abiertas</span>
+      </li>
+      <li data-state="closing">
+        <span class="chip" style="color:var(--c-yellow);border-color:oklch(from var(--c-yellow) l c h / 0.4)">Cerrando</span>
+        <span class="rules-timeline-hint">cuenta atrás</span>
+      </li>
+      <li data-state="closed" data-anchor="close">
+        <span class="chip">Cerrado</span>
+        <span class="rules-timeline-hint">kickoff − {{ bet_close_hours }}h</span>
+      </li>
+      <li data-state="live" data-anchor="kickoff">
+        <span class="chip" style="color:var(--c-red);border-color:oklch(from var(--c-red) l c h / 0.4)">En juego</span>
+        <span class="rules-timeline-hint">kickoff</span>
+      </li>
+      <li data-state="done">
+        <span class="chip" style="color:var(--c-cyan);border-color:oklch(from var(--c-cyan) l c h / 0.4)">Final</span>
+        <span class="rules-timeline-hint">resultado oficial</span>
+      </li>
+    </ol>
+
+    <div class="rules-state-grid">
+      <article class="rules-state-card" data-state="open">
+        <header><span class="chip" style="color:var(--c-lime);border-color:oklch(from var(--c-lime) l c h / 0.4)">Abierto</span></header>
+        <div class="rules-state-score"><span>🇪🇸</span><strong>VS</strong><span>🇦🇷</span></div>
+        <p>Cierra en 6 h</p>
+      </article>
+      <article class="rules-state-card" data-state="closing">
+        <header><span class="chip" style="color:var(--c-yellow);border-color:oklch(from var(--c-yellow) l c h / 0.4)">Cerrando</span></header>
+        <div class="rules-state-score"><span>🇪🇸</span><strong>VS</strong><span>🇦🇷</span></div>
+        <p style="font-family:'Geist Mono',monospace;color:var(--c-yellow)">01:23:45</p>
+      </article>
+      <article class="rules-state-card" data-state="live">
+        <header><span class="chip" style="color:var(--c-red);border-color:oklch(from var(--c-red) l c h / 0.4)">En juego</span></header>
+        <div class="rules-state-score"><span>🇪🇸</span><strong>1 — 0</strong><span>🇦🇷</span></div>
+        <p>Apuestas cerradas</p>
+      </article>
+      <article class="rules-state-card" data-state="done">
+        <header><span class="chip" style="color:var(--c-cyan);border-color:oklch(from var(--c-cyan) l c h / 0.4)">Final</span></header>
+        <div class="rules-state-score"><span>🇪🇸</span><strong>2 — 1</strong><span>🇦🇷</span></div>
+        <p>Tu apuesta 2-1 · +3 pts</p>
+      </article>
+    </div>
+
+    <p style="font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint);margin:0">
+      Una vez cerradas no podrás crear ni editar tu pronóstico — ni siquiera tras el pitido inicial.
+    </p>
+  </section>
+
 </div>
 {% endblock %}
