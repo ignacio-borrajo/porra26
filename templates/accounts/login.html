@@ -1,9 +1,10 @@
 {% extends "base.html" %}
-{% load icons %}
+{% load icons static %}
 {% block main %}
 <section class="glass pop" style="max-width:460px;margin:6vh auto;padding:32px;border-radius:24px">
-  <div class="eyebrow">PORRA 26 · MUNDIAL 2026</div>
-  <h1 class="display" style="font-size:34px;margin:4px 0 18px">Bienvenido de nuevo</h1>
+  <img src="{% static 'img/logo.png' %}" alt="EDISA · Mundial 2026 · Tu porra interna" style="display:block;margin:0 auto 14px;height:140px;width:auto">
+  <div class="eyebrow" style="text-align:center">PORRA 26 · MUNDIAL 2026</div>
+  <h1 class="display" style="font-size:34px;margin:4px 0 18px;text-align:center">Bienvenido de nuevo</h1>
   <form method="post" novalidate>
     {% csrf_token %}
     <div class="field"><label>Correo</label>

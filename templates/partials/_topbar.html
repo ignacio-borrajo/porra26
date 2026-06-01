@@ -1,8 +1,7 @@
-{% load icons %}
+{% load icons static %}
 <header class="glass" style="border-radius:0;border-left:none;border-right:none;border-top:none;padding:12px clamp(16px,3vw,40px);display:flex;align-items:center;gap:18px;flex-shrink:0;z-index:20">
-  <a href="{% url 'competicion:dashboard' %}" class="logo" style="text-decoration:none;color:inherit;font-size:17px">
-    <span class="logo-mark" style="width:30px;height:30px;font-size:13px"><span>26</span></span>
-    PORRA<span class="grad-text">26</span>
+  <a href="{% url 'competicion:dashboard' %}" class="logo" style="text-decoration:none;color:inherit" title="EDISA · Mundial 2026">
+    <img src="{% static 'img/logo.png' %}" alt="EDISA · Mundial 2026 · Tu porra interna" style="height:44px;width:auto;display:block">
   </a>
   {% with ns=request.resolver_match.namespace url_name=request.resolver_match.url_name %}
   <nav style="display:flex;gap:4px;margin-left:12px">
