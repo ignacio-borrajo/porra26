@@ -73,6 +73,15 @@ class Match(models.Model):
     def editable(self) -> bool:
         return self.status in ("open", "closing")
 
+    @property
+    def predictions_open(self) -> bool:
+        """True solo si el partido es editable Y su jornada está desbloqueada."""
+        if not self.editable:
+            return False
+        from competition.services.matchday_gate import is_matchday_open
+
+        return is_matchday_open(self.round_id, self.matchday)
+
 
 class Prediction(models.Model):
     player = models.ForeignKey(
