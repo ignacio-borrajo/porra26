@@ -1,9 +1,11 @@
 {% load icons %}
 {% with st=match.status %}
-{% if match.editable %}
+{% if match.predictions_open %}
 <a href="{% url 'competicion:predict' match.id %}" data-modal-url="{% url 'competicion:predict' match.id %}" class="match-card glass rise{% if st == 'closing' %} match-card-closing{% endif %}">
+{% elif match.editable %}
+<a class="match-card glass rise" style="cursor:not-allowed">
 {% else %}
-<article class="match-card glass rise{% if st == 'live' %} match-card-live{% endif %}">
+<a href="{% url 'competicion:detail' match.id %}" data-modal-url="{% url 'competicion:detail' match.id %}" class="match-card glass rise{% if st == 'live' %} match-card-live{% endif %}">
 {% endif %}
   <div class="match-card-head">
     <span class="eyebrow">{% if match.group|length <= 1 %}Grupo {{ match.group }}{% else %}{{ match.group }}{% endif %}</span>
@@ -70,15 +72,15 @@
       <span class="chip chip-open">
         {% icon "check" width=11 height=11 %} Apostaste {{ match.my_pred.home }}-{{ match.my_pred.away }}
       </span>
-    {% elif match.editable %}
+    {% elif match.predictions_open %}
       <span class="chip chip-accent">
         {% icon "edit" width=11 height=11 %} Pronosticar
       </span>
+    {% elif match.editable %}
+      <span class="chip" style="opacity:.7">
+        🔒 Jornada bloqueada
+      </span>
     {% endif %}
   </div>
-{% if match.editable %}
 </a>
-{% else %}
-</article>
-{% endif %}
 {% endwith %}

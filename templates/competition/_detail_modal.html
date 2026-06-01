@@ -1,0 +1,86 @@
+{% load icons %}
+{% with st=match.status %}
+<section class="glass pop" style="width:min(560px,100%);border-radius:24px;padding:24px;background:var(--surface-solid);max-height:88vh;display:flex;flex-direction:column">
+  <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+    <div>
+      <span class="eyebrow">
+        {% if match.group|length <= 1 %}Grupo {{ match.group }}{% else %}{{ match.group }}{% endif %}
+        · {{ match.kickoff|date:"D j M · H:i" }}
+      </span>
+      <h2 class="display" style="margin:4px 0 0;font-size:20px">
+        {% if st == 'done' %}Resultado y apuestas
+        {% elif st == 'live' %}Apuestas del partido en juego
+        {% else %}Apuestas cerradas{% endif %}
+      </h2>
+    </div>
+    <button type="button" data-modal-close class="btn btn-ghost" style="width:36px;height:36px;padding:0;border-radius:12px">{% icon "x" width=14 %}</button>
+  </header>
+
+  <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin:14px 0 6px">
+    <div style="text-align:center">
+      <div style="font-size:42px">{{ match.home.flag }}</div>
+      <strong class="display" style="font-size:14px">{{ match.home.name }}</strong>
+    </div>
+    <div class="match-score" style="display:flex;align-items:center;gap:6px">
+      {% if has_result %}
+        <span class="score-bubble">{{ match.result_home }}</span>
+        <span class="score-sep">:</span>
+        <span class="score-bubble">{{ match.result_away }}</span>
+      {% else %}
+        <span class="match-vs display">VS</span>
+      {% endif %}
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:42px">{{ match.away.flag }}</div>
+      <strong class="display" style="font-size:14px">{{ match.away.name }}</strong>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
+    <span class="eyebrow">Apuestas · {{ rows|length }}</span>
+    <span class="chip
+      {% if st == 'closed' %}chip-closed
+      {% elif st == 'live' %}chip-live
+      {% elif st == 'done' %}chip-done{% endif %}">
+      {% if st == 'live' %}<span class="dot dot-pulse"></span>{% endif %}
+      {% if st == 'closed' %}Cerrado
+      {% elif st == 'live' %}En juego
+      {% elif st == 'done' %}Finalizado{% endif %}
+    </span>
+  </div>
+
+  <ul style="list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:6px;overflow:auto;min-height:0">
+    {% for r in rows %}
+    <li style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;{% if r.is_me %}background:oklch(from var(--accent) l c h / 0.12);{% else %}background:var(--surface-hi);{% endif %}{% if r.no_pred %}opacity:.55;{% endif %}">
+      <strong style="font-size:13px">{{ r.name }}{% if r.is_me %} · tú{% endif %}</strong>
+      <span class="mono" style="font-size:13px;min-width:42px;text-align:center">
+        {% if r.no_pred %}—{% else %}{{ r.home }}-{{ r.away }}{% endif %}
+      </span>
+      {% if has_result %}
+        {% if r.no_pred %}
+          <span class="chip" style="font-size:10px">no apostó</span>
+        {% elif r.exact %}
+          <span class="chip chip-earned-full">+{{ r.earned }} pts · exacto</span>
+        {% elif r.hit %}
+          <span class="chip chip-earned-partial">+{{ r.earned }} pts</span>
+        {% else %}
+          <span class="chip">0 pts</span>
+        {% endif %}
+      {% else %}
+        {% if r.no_pred %}
+          <span class="chip" style="font-size:10px">no apostó</span>
+        {% else %}
+          <span class="chip chip-closed">pendiente</span>
+        {% endif %}
+      {% endif %}
+    </li>
+    {% empty %}
+    <li style="color:var(--text-faint);padding:10px">Nadie ha apostado este partido.</li>
+    {% endfor %}
+  </ul>
+
+  <div style="display:flex;justify-content:flex-end;margin-top:14px">
+    <button type="button" data-modal-close class="btn btn-ghost">Cerrar</button>
+  </div>
+</section>
+{% endwith %}
