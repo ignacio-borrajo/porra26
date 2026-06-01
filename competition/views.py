@@ -182,6 +182,15 @@ class ManageResultsView(GestorRequiredMixin, View):
                 pending.append(m)
             else:
                 upcoming.append(m)
+
+        from competition.models import BetsClosingReport
+
+        reports = list(
+            BetsClosingReport.objects
+            .select_related("match__home", "match__away", "match__round")
+            .order_by("-match__kickoff")
+        )
+
         return render(
             request,
             "competition/manage_results.html",
@@ -194,6 +203,7 @@ class ManageResultsView(GestorRequiredMixin, View):
                 "pending": pending,
                 "upcoming": upcoming,
                 "done": done,
+                "reports": reports,
             },
         )
 
