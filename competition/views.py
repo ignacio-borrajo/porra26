@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
 from accounts.mixins import GestorRequiredMixin
+from accounts.models import User
 from competition.models import Match, Prediction, Round
 from competition.services.resolve import resolve_match
 from competition.services.standings import standings
@@ -54,6 +55,14 @@ class PredictView(LoginRequiredMixin, View):
         if not m.editable:
             messages.error(request, "Las apuestas para este partido están cerradas.")
             return redirect("competicion:dashboard")
+        from competition.services.matchday_gate import is_matchday_open
+
+        if not is_matchday_open(m.round_id, m.matchday):
+            messages.error(
+                request,
+                f"La J{m.matchday} se desbloqueará cuando termine la J{m.matchday - 1}.",
+            )
+            return redirect("competicion:dashboard")
         pred = Prediction.objects.filter(player=request.user, match=m).first()
         return render(request, "competition/_predict_modal.html", {"match": m, "pred": pred})
 
@@ -61,8 +70,8 @@ class PredictView(LoginRequiredMixin, View):
         m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
         if not request.user.is_jugador:
             raise PermissionDenied("Solo los jugadores pueden pronosticar.")
-        if not m.editable:
-            raise PermissionDenied("Apuestas cerradas")
+        if not m.predictions_open:
+            raise PermissionDenied("Apuestas cerradas o jornada bloqueada.")
         try:
             h = max(0, int(request.POST.get("home", 0)))
             a = max(0, int(request.POST.get("away", 0)))
@@ -123,3 +132,74 @@ class ResultOfficialView(GestorRequiredMixin, View):
         resolve_match(m, home=h, away=a, actor=request.user)
         messages.success(request, f"Resultado confirmado · {m.home.name} {h}–{a} {m.away.name}")
         return redirect("competicion:manage_results")
+
+
+class MatchDetailView(LoginRequiredMixin, View):
+    """Modal con todas las apuestas de un partido cuyo plazo ya está cerrado."""
+
+    def get(self, request, match_id):
+        m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
+        if m.editable:
+            return redirect("competicion:dashboard")
+
+        preds = list(
+            Prediction.objects.filter(match=m).select_related("player").order_by("player__name")
+        )
+        round_points = m.round.points
+        has_result = m.has_result
+
+        rows = []
+        for p in preds:
+            earned = p.earned or 0
+            rows.append(
+                {
+                    "name": p.player.name,
+                    "is_me": p.player_id == request.user.id,
+                    "home": p.home,
+                    "away": p.away,
+                    "earned": earned,
+                    "exact": has_result and earned >= round_points,
+                    "hit": has_result and earned > 0,
+                    "no_pred": False,
+                }
+            )
+
+        bettor_ids = {p.player_id for p in preds}
+        absent = (
+            User.objects.filter(is_active=True, is_jugador=True)
+            .exclude(id__in=bettor_ids)
+            .order_by("name")
+        )
+        for u in absent:
+            rows.append(
+                {
+                    "name": u.name,
+                    "is_me": u.id == request.user.id,
+                    "home": None,
+                    "away": None,
+                    "earned": 0,
+                    "exact": False,
+                    "hit": False,
+                    "no_pred": True,
+                }
+            )
+
+        if has_result:
+            rows.sort(
+                key=lambda r: (
+                    r["no_pred"],
+                    -r["earned"],
+                    r["name"].lower(),
+                )
+            )
+
+        return render(
+            request,
+            "competition/_detail_modal.html",
+            {
+                "match": m,
+                "rows": rows,
+                "has_result": has_result,
+                "round_points": round_points,
+            },
+        )
