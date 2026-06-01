@@ -7,16 +7,16 @@
 
     {% if locked %}
     <div class="glass" style="padding:14px 16px;margin-top:14px;border-radius:14px;border:1px dashed var(--accent)">
-      <strong>🔒 Jornada J{{ active_matchday }} bloqueada</strong>
+      <strong>🔒 Jornada {{ active_matchday }} bloqueada</strong>
       {% if locked_last_match and locked_last_kickoff %}
       <p style="margin:4px 0 0;color:var(--text-dim);font-size:13px">
-        Se desbloqueará cuando termine la J{{ active_matchday|add:"-1" }}
+        Se desbloqueará cuando termine la Jornada {{ active_matchday|add:"-1" }}
         (último partido: <strong>{{ locked_last_match.home.name }} vs {{ locked_last_match.away.name }}</strong>
         el <span class="mono">{{ locked_last_kickoff|date:"D j M · H:i" }}</span>).
       </p>
       {% else %}
       <p style="margin:4px 0 0;color:var(--text-dim);font-size:13px">
-        Se desbloqueará cuando termine la J{{ active_matchday|add:"-1" }}.
+        Se desbloqueará cuando termine la Jornada {{ active_matchday|add:"-1" }}.
       </p>
       {% endif %}
     </div>

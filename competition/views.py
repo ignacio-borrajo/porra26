@@ -121,7 +121,7 @@ class PredictView(LoginRequiredMixin, View):
         if not is_matchday_open(m.round_id, m.matchday):
             messages.error(
                 request,
-                f"La J{m.matchday} se desbloqueará cuando termine la J{m.matchday - 1}.",
+                f"La Jornada {m.matchday} se desbloqueará cuando termine la Jornada {m.matchday - 1}.",
             )
             return redirect("competicion:dashboard")
         pred = Prediction.objects.filter(player=request.user, match=m).first()
