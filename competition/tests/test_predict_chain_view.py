@@ -7,7 +7,6 @@ from django.utils import timezone
 from accounts.tests.factories import UserFactory
 from competition.tests.factories import (
     MatchFactory,
-    PredictionFactory,
     RoundFactory,
 )
 
