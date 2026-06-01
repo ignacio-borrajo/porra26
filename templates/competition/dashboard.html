@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block main %}
-<div style="display:grid;grid-template-columns:1fr 380px;gap:24px">
+<div class="dashboard-grid">
   <section>
     {% include "partials/_round_selector.html" with rounds=rounds active=active_round %}
     {% include "partials/_matchday_selector.html" %}

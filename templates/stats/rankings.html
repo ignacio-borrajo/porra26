@@ -13,13 +13,13 @@
   {% endfor %}
 </nav>
 
-<div class="glass rise" style="border-radius:22px;overflow:hidden">
-  <div style="display:grid;grid-template-columns:60px 1fr 100px 110px 110px 1.6fr;padding:14px 18px;font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.18em;border-bottom:1px solid var(--border)">
+<div class="glass rise table-scroll" style="border-radius:22px">
+  <div class="table-row" style="display:grid;grid-template-columns:60px 1fr 100px 110px 110px 1.6fr;padding:14px 18px;font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.18em;border-bottom:1px solid var(--border)">
     <span>#</span><span>Grupo</span><span>Jugadores</span><span>Total</span><span>Media</span><span>Líder</span>
   </div>
   <div class="stagger">
   {% for r in rows %}
-    <div style="display:grid;grid-template-columns:60px 1fr 100px 110px 110px 1.6fr;padding:14px 18px;align-items:center;border-bottom:1px solid var(--border);{% if r.key == my_group %}background:oklch(from var(--accent) l c h / 0.12);{% endif %}{% if r.key == '__none__' %}opacity:0.55;{% endif %}">
+    <div class="table-row" style="display:grid;grid-template-columns:60px 1fr 100px 110px 110px 1.6fr;padding:14px 18px;align-items:center;border-bottom:1px solid var(--border);{% if r.key == my_group %}background:oklch(from var(--accent) l c h / 0.12);{% endif %}{% if r.key == '__none__' %}opacity:0.55;{% endif %}">
       <span class="mono" style="font-size:13px;color:var(--text-faint)">{{ forloop.counter }}</span>
       <strong style="font-size:14px">{{ r.label }}{% if r.key == my_group %} · tú{% endif %}</strong>
       <span class="mono" style="font-size:13px">{{ r.players }}</span>

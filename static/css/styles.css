@@ -79,7 +79,6 @@
 html, body {
   margin: 0;
   padding: 0;
-  height: 100%;
 }
 
 body {
@@ -87,10 +86,11 @@ body {
   background: var(--bg-0);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
-  overflow: hidden;
+  min-height: 100vh;
+  /* Sin overflow:hidden — el documento debe poder scrollear verticalmente
+     en pantallas pequeñas para mostrar listas largas (partidos, jugadores,
+     rankings). El fondo ambiente es position:fixed, así que no se mueve. */
 }
-
-#root { height: 100vh; }
 
 /* ---------------- Fondo ambiente animado ---------------- */
 .ambient {
@@ -417,10 +417,83 @@ a.match-card:hover {
   *, *::before, *::after { animation-duration: 0.001s !important; transition-duration: 0.05s !important; }
 }
 
+/* ---------------- Layout responsive ---------------- */
+
+/* Dashboard de competición: lista + clasificación */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+}
+.leaderboard-aside {
+  padding: 18px;
+  border-radius: 20px;
+  position: sticky;
+  /* Deja hueco para el topbar sticky encima. */
+  top: 88px;
+  max-height: calc(100vh - 110px);
+  overflow: auto;
+}
+/* Por debajo de ~1000px apilamos el sidebar bajo los partidos para que
+   ambos puedan crecer y la página pueda scrollear de forma natural. */
+@media (max-width: 1000px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .leaderboard-aside {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+/* Topbar: en pantallas pequeñas permitimos que envuelva en varias filas.
+   La barra de navegación pasa a una segunda línea y puede scrollear
+   horizontalmente si no cabe; el bloque de usuario se compacta. */
+.topbar { position: sticky; top: 0; }
+@media (max-width: 860px) {
+  .topbar { flex-wrap: wrap; row-gap: 10px; }
+  .topbar-nav {
+    order: 3;
+    width: 100%;
+    margin-left: 0 !important;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .topbar-nav::-webkit-scrollbar { display: none; }
+  .topbar-nav .nav-item { flex-shrink: 0; }
+  .topbar-actions { margin-left: auto; }
+  .topbar-user-meta { display: none; }
+}
+
 /* Estadísticas: apila gráfico y comparativa en pantallas estrechas */
 @media (max-width: 920px) {
   .stats-grid { grid-template-columns: 1fr !important; }
 }
+/* KPIs de estadísticas: 4 columnas → 2 → 1 según ancho */
+.stats-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+@media (max-width: 860px) {
+  .stats-kpis { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 460px) {
+  .stats-kpis { grid-template-columns: 1fr; }
+}
+
+/* Tablas con grid de columnas fijas: en pantallas pequeñas habilitamos
+   scroll horizontal en lugar de aplastar las columnas. */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-scroll > .table-row,
+.table-scroll > .glass > .table-row { min-width: 720px; }
+
+/* Encabezados y filas grid genéricas (manage_players, rankings, audit_log,
+   manage_results) usan la clase .table-row para mantener un ancho mínimo. */
+@media (max-width: 760px) {
+  .table-row { min-width: 720px; }
+}
+
+/* Selectores de ronda/jornada: permitir wrap si no caben */
+.glass[aria-label="Jornadas"],
+.round-selector { flex-wrap: wrap; }
 
 /* Scroll interno sin barras visibles (gráfico de evolución con todos los jugadores) */
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }

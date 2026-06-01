@@ -12,12 +12,12 @@
 <form method="get" style="margin-bottom:12px">
   <input class="input" type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o correo" style="max-width:360px">
 </form>
-<div class="glass" style="border-radius:16px;overflow:hidden">
-  <div style="display:grid;grid-template-columns:2.4fr 1.6fr 0.8fr 1fr 1.1fr 90px;padding:14px;font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.18em;border-bottom:1px solid var(--border)">
+<div class="glass table-scroll" style="border-radius:16px">
+  <div class="table-row" style="display:grid;grid-template-columns:2.4fr 1.6fr 0.8fr 1fr 1.1fr 90px;padding:14px;font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.18em;border-bottom:1px solid var(--border)">
     <span>Jugador</span><span>Organización</span><span>Puntos</span><span>Pago</span><span>Estado</span><span></span>
   </div>
   {% for p in players %}
-  <div style="display:grid;grid-template-columns:2.4fr 1.6fr 0.8fr 1fr 1.1fr 90px;padding:14px;align-items:center;border-bottom:1px solid var(--border);{% if not p.is_active %}opacity:0.5{% endif %}">
+  <div class="table-row" style="display:grid;grid-template-columns:2.4fr 1.6fr 0.8fr 1fr 1.1fr 90px;padding:14px;align-items:center;border-bottom:1px solid var(--border);{% if not p.is_active %}opacity:0.5{% endif %}">
     <div>
       <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
         <strong>{{ p.name }}</strong>
