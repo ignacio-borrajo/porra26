@@ -102,3 +102,26 @@ python manage.py shell
 - **Sin SMTP saliente libre.** Sin recordatorios por email; las contraseñas temporales se entregan en pantalla al gestor.
 - **MySQL ≈ 512 MB.** Suficiente para ~50 jugadores y ~120 partidos.
 - **Dominio:** `<tu-usuario>.pythonanywhere.com` (sin custom domain).
+
+## 7. Token de integración con Teams
+
+La aplicación expone endpoints en `/competicion/api/teams/` que consume un Flow de Power Automate (ver `docs/TEAMS_FLOW.md`). Protegidos con un token Bearer.
+
+1. Genera un token aleatorio de 64+ caracteres:
+
+   ```bash
+   python -c "import secrets; print(secrets.token_urlsafe(48))"
+   ```
+
+2. En el `.env` de PythonAnywhere añade:
+
+   ```
+   TEAMS_API_TOKEN=<token generado>
+   PORRA_BASE_URL=https://porra26.pythonanywhere.com
+   ```
+
+3. Recarga la web app desde el panel de PythonAnywhere.
+
+4. Configura el flow siguiendo `docs/TEAMS_FLOW.md` pegando el mismo token en sus tres acciones HTTP.
+
+Si `TEAMS_API_TOKEN` queda vacío, los endpoints siguen respondiendo pero **rechazan toda autenticación Bearer**: nunca se debe arrancar producción sin token configurado.

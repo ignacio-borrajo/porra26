@@ -46,3 +46,14 @@ python manage.py axes_reset
 ## Verificar quota de PythonAnywhere
 
 Desde el panel: **Account** → **Tarpit & CPU usage**.
+
+## Verificar envíos a Teams
+
+Cada lunes, abre `/competicion/resultados/` como gestor y revisa la sección **"Estado de envíos a Teams"**:
+
+- Todos los partidos cerrados desde la semana pasada deben aparecer con ✓ en Generado y ✓ en Enviado.
+- Si algún partido aparece con ⏳ (ámbar) o solo Generado ✓ pero Enviado —, significa que el flow no consiguió publicar:
+  1. Abre https://make.powerautomate.com y revisa el historial del flow `PORRA 26 · Cierre apuestas a Teams`.
+  2. Si el error es del conector de Teams, reintenta la ejecución desde Power Automate.
+  3. Si el error es de autenticación contra la app, comprueba que `TEAMS_API_TOKEN` coincide en ambos sitios (ver `docs/DEPLOY.md`).
+  4. Como solución manual de emergencia, descarga el PDF con el botón "📄 PDF" y súbelo a Teams a mano.
