@@ -151,19 +151,22 @@ def test_dashboard_shows_matchday_subselector_for_groups(client):
     u = UserFactory(must_change_password=False)
     client.force_login(u)
     grp = RoundFactory(id="groups", points=3, label="Grupos", short="G", order=1)
+    # Varios partidos por jornada para verificar que el sub-selector
+    # no se duplica (regresión: .distinct() arrastra el ordering por kickoff).
     for md in (1, 2, 3):
-        MatchFactory(
-            round=grp,
-            matchday=md,
-            home=TeamFactory(),
-            away=TeamFactory(),
-            kickoff=timezone.now() + timedelta(days=md),
-        )
+        for _ in range(4):
+            MatchFactory(
+                round=grp,
+                matchday=md,
+                home=TeamFactory(),
+                away=TeamFactory(),
+                kickoff=timezone.now() + timedelta(days=md, hours=_),
+            )
     r = client.get(reverse("competicion:dashboard") + "?round=groups")
     body = r.content.decode()
-    assert "J1" in body
-    assert "J2" in body
-    assert "J3" in body
+    assert body.count("matchday=1") == 1
+    assert body.count("matchday=2") == 1
+    assert body.count("matchday=3") == 1
 
 
 @pytest.mark.django_db

@@ -23,6 +23,7 @@ class CompetitionView(LoginRequiredMixin, View):
 
         matchdays = sorted(
             Match.objects.filter(round_id=active_id, matchday__isnull=False)
+            .order_by("matchday")
             .values_list("matchday", flat=True)
             .distinct()
         )
@@ -151,6 +152,7 @@ class ManageResultsView(GestorRequiredMixin, View):
         active_id = request.GET.get("round", rounds[0].id if rounds else "groups")
         matchdays = sorted(
             Match.objects.filter(round_id=active_id, matchday__isnull=False)
+            .order_by("matchday")
             .values_list("matchday", flat=True)
             .distinct()
         )
