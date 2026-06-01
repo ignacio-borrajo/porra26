@@ -49,4 +49,4 @@ def test_rules_renders_points_card(client):
     # Tabla de rondas con puntos
     assert "Fase de grupos" in content
     assert "Dieciseisavos" in content
-    assert "+3 pts" in content or ">3<" in content
+    assert ">5</strong>" in content   # points cell for r32 — unique to the table row
