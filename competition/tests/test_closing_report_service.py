@@ -1,7 +1,10 @@
+import io
+
+import pdfplumber
 import pytest
 
 from accounts.tests.factories import UserFactory
-from competition.services.closing_report import compute_closing_stats
+from competition.services.closing_report import build_closing_pdf, compute_closing_stats
 from competition.tests.factories import MatchFactory, PredictionFactory
 
 
@@ -21,7 +24,7 @@ def test_stats_count_bets_and_absentees():
     match = MatchFactory()
     p1 = UserFactory(is_jugador=True, is_active=True, name="Ana")
     p2 = UserFactory(is_jugador=True, is_active=True, name="Beto")
-    p3 = UserFactory(is_jugador=True, is_active=True, name="Carla")
+    UserFactory(is_jugador=True, is_active=True, name="Carla")
     PredictionFactory(match=match, player=p1, home=2, away=1)
     PredictionFactory(match=match, player=p2, home=2, away=1)
     stats = compute_closing_stats(match)
@@ -33,7 +36,7 @@ def test_stats_count_bets_and_absentees():
 @pytest.mark.django_db
 def test_stats_most_popular_score():
     match = MatchFactory()
-    for i in range(3):
+    for _ in range(3):
         PredictionFactory(match=match, player=UserFactory(), home=2, away=1)
     PredictionFactory(match=match, player=UserFactory(), home=1, away=0)
     stats = compute_closing_stats(match)
@@ -72,13 +75,6 @@ def test_stats_empty_match():
     assert stats.bets_count == 0
     assert stats.most_popular == []
     assert stats.split_home == 0 and stats.split_draw == 0 and stats.split_away == 0
-
-
-import io
-
-import pdfplumber
-
-from competition.services.closing_report import build_closing_pdf
 
 
 @pytest.mark.django_db
@@ -154,7 +150,9 @@ def test_pdf_is_deterministic():
     with pdfplumber.open(io.BytesIO(pdf1)) as d1, pdfplumber.open(io.BytesIO(pdf2)) as d2:
         t1 = "\n".join(p.extract_text() or "" for p in d1.pages)
         t2 = "\n".join(p.extract_text() or "" for p in d2.pages)
+
     # Quitamos la hora del pie (cambia entre llamadas) y comparamos el resto.
     def strip_footer(t: str) -> str:
         return "\n".join(line for line in t.splitlines() if not line.startswith("Generado el"))
+
     assert strip_footer(t1) == strip_footer(t2)

@@ -1,3 +1,5 @@
+import hashlib
+import json
 from datetime import timedelta
 
 import pytest
@@ -5,6 +7,7 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts.models import AuditLog
 from competition.models import BetsClosingReport
 from competition.tests.factories import MatchFactory, TeamFactory
 
@@ -99,9 +102,6 @@ def test_pendientes_requires_token(client):
     assert res.status_code == 401
 
 
-import hashlib
-
-
 @pytest.mark.django_db
 @override_settings(TEAMS_API_TOKEN=TOKEN)
 def test_pdf_endpoint_returns_pdf(client):
@@ -173,11 +173,6 @@ def test_pdf_endpoint_accepts_gestor_session(client):
     assert res.status_code == 200
 
 
-import json
-
-from accounts.models import AuditLog
-
-
 @pytest.mark.django_db
 @override_settings(TEAMS_API_TOKEN=TOKEN)
 def test_marcar_enviado_marks_sent_and_creates_audit(client):
@@ -218,7 +213,9 @@ def test_marcar_enviado_creates_report_if_missing(client):
     assert not BetsClosingReport.objects.filter(match=m).exists()
     client.post(
         reverse("competicion:api:cierre_marcar_enviado", args=[m.id]),
-        data="{}", content_type="application/json", **AUTH,
+        data="{}",
+        content_type="application/json",
+        **AUTH,
     )
     assert BetsClosingReport.objects.filter(match=m, sent_at__isnull=False).exists()
 
@@ -229,7 +226,9 @@ def test_marcar_enviado_handles_empty_body(client):
     m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
     res = client.post(
         reverse("competicion:api:cierre_marcar_enviado", args=[m.id]),
-        data="", content_type="application/json", **AUTH,
+        data="",
+        content_type="application/json",
+        **AUTH,
     )
     assert res.status_code == 200
 
@@ -240,7 +239,8 @@ def test_marcar_enviado_requires_token(client):
     m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
     res = client.post(
         reverse("competicion:api:cierre_marcar_enviado", args=[m.id]),
-        data="{}", content_type="application/json",
+        data="{}",
+        content_type="application/json",
     )
     assert res.status_code == 401
 
@@ -250,6 +250,8 @@ def test_marcar_enviado_requires_token(client):
 def test_marcar_enviado_404_unknown_match(client):
     res = client.post(
         reverse("competicion:api:cierre_marcar_enviado", args=[999_999]),
-        data="{}", content_type="application/json", **AUTH,
+        data="{}",
+        content_type="application/json",
+        **AUTH,
     )
     assert res.status_code == 404

@@ -1,7 +1,24 @@
+import io
 from dataclasses import dataclass, field
+from datetime import timedelta
+
+from django.utils import timezone
+from reportlab.lib import colors
+from reportlab.lib.colors import HexColor
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import mm
+from reportlab.platypus import (
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
 
 from accounts.models import User
 from competition.models import Match, Prediction
+from competition.services.standings import standings
 
 
 @dataclass
@@ -20,12 +37,8 @@ class ClosingStats:
 
 
 def compute_closing_stats(match: Match) -> ClosingStats:
-    active_jugadores = list(
-        User.objects.filter(is_jugador=True, is_active=True).order_by("name")
-    )
-    preds = list(
-        Prediction.objects.filter(match=match).select_related("player")
-    )
+    active_jugadores = list(User.objects.filter(is_jugador=True, is_active=True).order_by("name"))
+    preds = list(Prediction.objects.filter(match=match).select_related("player"))
     bettor_ids = {p.player_id for p in preds}
     absent_names = [u.name for u in active_jugadores if u.id not in bettor_ids]
 
@@ -59,22 +72,6 @@ def compute_closing_stats(match: Match) -> ClosingStats:
         split_away=split_away,
     )
 
-
-import io
-
-from django.utils import timezone
-from reportlab.lib import colors
-from reportlab.lib.colors import HexColor
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import mm
-from reportlab.platypus import (
-    Paragraph,
-    SimpleDocTemplate,
-    Spacer,
-    Table,
-    TableStyle,
-)
 
 GRADIENT_STOPS = [HexColor("#FF7A00"), HexColor("#00C2FF"), HexColor("#7A5AF8")]
 
@@ -113,69 +110,80 @@ def _draw_header_band(canvas, doc):
 
 def _bullet_paragraphs(stats, styles):
     paras = []
-    paras.append(Paragraph(
-        f"• {stats.bets_count} de {stats.total_players} jugadores han apostado",
-        styles["bullet"],
-    ))
+    paras.append(
+        Paragraph(
+            f"• {stats.bets_count} de {stats.total_players} jugadores han apostado",
+            styles["bullet"],
+        )
+    )
     if stats.most_popular:
         items = " · ".join(f"{score} ({n})" for score, n in stats.most_popular)
-        label = "Marcador más popular" if len(stats.most_popular) == 1 else "Marcadores más populares (empate)"
+        label = (
+            "Marcador más popular"
+            if len(stats.most_popular) == 1
+            else "Marcadores más populares (empate)"
+        )
         paras.append(Paragraph(f"• {label}: {items}", styles["bullet"]))
     if stats.split_total:
         h = round(100 * stats.split_home / stats.split_total)
         d = round(100 * stats.split_draw / stats.split_total)
         a = 100 - h - d  # asegura que sumen 100
-        paras.append(Paragraph(
-            f"• Reparto 1 · X · 2: {h} % / {d} % / {a} %",
-            styles["bullet"],
-        ))
+        paras.append(
+            Paragraph(
+                f"• Reparto 1 · X · 2: {h} % / {d} % / {a} %",
+                styles["bullet"],
+            )
+        )
     if stats.absent_names:
         if len(stats.absent_names) <= 10:
-            paras.append(Paragraph(
-                "• Sin apostar: " + ", ".join(stats.absent_names),
-                styles["bullet"],
-            ))
+            paras.append(
+                Paragraph(
+                    "• Sin apostar: " + ", ".join(stats.absent_names),
+                    styles["bullet"],
+                )
+            )
         else:
-            paras.append(Paragraph(
-                f"• Sin apostar: {len(stats.absent_names)} jugadores",
-                styles["bullet"],
-            ))
+            paras.append(
+                Paragraph(
+                    f"• Sin apostar: {len(stats.absent_names)} jugadores",
+                    styles["bullet"],
+                )
+            )
     return paras
 
 
 def _predictions_table(match, styles) -> Table:
     preds = {
-        p.player_id: p
-        for p in Prediction.objects.filter(match=match).select_related("player")
+        p.player_id: p for p in Prediction.objects.filter(match=match).select_related("player")
     }
-    jugadores = list(
-        User.objects.filter(is_jugador=True, is_active=True).order_by("name")
-    )
+    jugadores = list(User.objects.filter(is_jugador=True, is_active=True).order_by("name"))
     data = [["Jugador", "Pronóstico"]]
     for u in jugadores:
         p = preds.get(u.id)
         cell = f"{p.home} - {p.away}" if p else "—"
         data.append([u.name, cell])
     table = Table(data, colWidths=[110 * mm, 40 * mm], repeatRows=1)
-    table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), HexColor("#EEEEEE")),
-        ("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 10),
-        ("FONT", (0, 1), (-1, -1), "Helvetica", 10),
-        ("ALIGN", (1, 0), (1, -1), "CENTER"),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, HexColor("#F8F8F8")]),
-        ("BOX", (0, 0), (-1, -1), 0.4, HexColor("#DDDDDD")),
-        ("INNERGRID", (0, 0), (-1, -1), 0.2, HexColor("#DDDDDD")),
-        ("LEFTPADDING", (0, 0), (-1, -1), 6),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-        ("TOPPADDING", (0, 0), (-1, -1), 4),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-    ]))
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), HexColor("#EEEEEE")),
+                ("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 10),
+                ("FONT", (0, 1), (-1, -1), "Helvetica", 10),
+                ("ALIGN", (1, 0), (1, -1), "CENTER"),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, HexColor("#F8F8F8")]),
+                ("BOX", (0, 0), (-1, -1), 0.4, HexColor("#DDDDDD")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.2, HexColor("#DDDDDD")),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ]
+        )
+    )
     return table
 
 
 def _standings_table(styles) -> Table:
-    from competition.services.standings import standings
-
     rows = standings()
     data = [["Pos", "Jugador", "Pts"]]
     shown = rows[:20]
@@ -184,20 +192,24 @@ def _standings_table(styles) -> Table:
     if len(rows) > 20:
         data.append(["", f"… y {len(rows) - 20} jugadores más", ""])
     table = Table(data, colWidths=[15 * mm, 110 * mm, 25 * mm], repeatRows=1)
-    table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), HexColor("#EEEEEE")),
-        ("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 10),
-        ("FONT", (0, 1), (-1, -1), "Helvetica", 10),
-        ("ALIGN", (0, 0), (0, -1), "CENTER"),
-        ("ALIGN", (2, 0), (2, -1), "RIGHT"),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, HexColor("#F8F8F8")]),
-        ("BOX", (0, 0), (-1, -1), 0.4, HexColor("#DDDDDD")),
-        ("INNERGRID", (0, 0), (-1, -1), 0.2, HexColor("#DDDDDD")),
-        ("LEFTPADDING", (0, 0), (-1, -1), 6),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-        ("TOPPADDING", (0, 0), (-1, -1), 4),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-    ]))
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), HexColor("#EEEEEE")),
+                ("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 10),
+                ("FONT", (0, 1), (-1, -1), "Helvetica", 10),
+                ("ALIGN", (0, 0), (0, -1), "CENTER"),
+                ("ALIGN", (2, 0), (2, -1), "RIGHT"),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, HexColor("#F8F8F8")]),
+                ("BOX", (0, 0), (-1, -1), 0.4, HexColor("#DDDDDD")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.2, HexColor("#DDDDDD")),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ]
+        )
+    )
     return table
 
 
@@ -213,21 +225,41 @@ def build_closing_pdf(match: Match) -> bytes:
     )
     base = getSampleStyleSheet()
     styles = {
-        "title": ParagraphStyle("title", parent=base["Heading1"], fontName="Helvetica-Bold", fontSize=16, leading=20),
-        "sub": ParagraphStyle("sub", parent=base["Normal"], fontName="Helvetica", fontSize=10, leading=14, textColor=HexColor("#555555")),
-        "h2": ParagraphStyle("h2", parent=base["Heading2"], fontName="Helvetica-Bold", fontSize=12, leading=16, spaceBefore=10, spaceAfter=4),
-        "bullet": ParagraphStyle("bullet", parent=base["Normal"], fontName="Helvetica", fontSize=10, leading=14),
+        "title": ParagraphStyle(
+            "title", parent=base["Heading1"], fontName="Helvetica-Bold", fontSize=16, leading=20
+        ),
+        "sub": ParagraphStyle(
+            "sub",
+            parent=base["Normal"],
+            fontName="Helvetica",
+            fontSize=10,
+            leading=14,
+            textColor=HexColor("#555555"),
+        ),
+        "h2": ParagraphStyle(
+            "h2",
+            parent=base["Heading2"],
+            fontName="Helvetica-Bold",
+            fontSize=12,
+            leading=16,
+            spaceBefore=10,
+            spaceAfter=4,
+        ),
+        "bullet": ParagraphStyle(
+            "bullet", parent=base["Normal"], fontName="Helvetica", fontSize=10, leading=14
+        ),
     }
     stats = compute_closing_stats(match)
 
     flow = []
-    flow.append(Paragraph(
-        f"{match.home.name} <font color='#888888'>vs</font> {match.away.name}",
-        styles["title"],
-    ))
-    from datetime import timedelta as _td
+    flow.append(
+        Paragraph(
+            f"{match.home.name} <font color='#888888'>vs</font> {match.away.name}",
+            styles["title"],
+        )
+    )
     kickoff_local = timezone.localtime(match.kickoff)
-    close_local = timezone.localtime(match.kickoff - _td(hours=2))
+    close_local = timezone.localtime(match.kickoff - timedelta(hours=2))
     sub = (
         f"{match.round.label} · Grupo {match.group} · "
         f"{kickoff_local:%d %b %Y, %H:%M} · Cierre {close_local:%H:%M}"

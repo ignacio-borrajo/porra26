@@ -6,7 +6,6 @@ from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.utils import timezone as _tz
 from django.views.decorators.http import require_POST
 
 from accounts.models import AuditLog
@@ -40,8 +39,7 @@ def cierres_pendientes(request):
     """
     now = timezone.now()
     qs = (
-        Match.objects
-        .filter(kickoff__lte=now + timedelta(hours=BET_CLOSE_HOURS))
+        Match.objects.filter(kickoff__lte=now + timedelta(hours=BET_CLOSE_HOURS))
         .select_related("home", "away", "round")
         .order_by("kickoff")
     )
@@ -59,7 +57,7 @@ def cierre_pdf(request, match_id: int):
         Match.objects.select_related("home", "away", "round"),
         pk=match_id,
     )
-    now = _tz.now()
+    now = timezone.now()
     if match.kickoff - timedelta(hours=BET_CLOSE_HOURS) > now:
         # todavía abierto → no hay PDF de cierre
         return JsonResponse({"detail": "Partido todavía no cerrado"}, status=404)
@@ -92,10 +90,8 @@ def cierre_marcar_enviado(request, match_id: int):
     with transaction.atomic():
         report, _ = BetsClosingReport.objects.select_for_update().get_or_create(match=match)
         if report.sent_at is not None:
-            return JsonResponse(
-                {"already_sent": True, "sent_at": report.sent_at.isoformat()}
-            )
-        report.sent_at = _tz.now()
+            return JsonResponse({"already_sent": True, "sent_at": report.sent_at.isoformat()})
+        report.sent_at = timezone.now()
         report.save(update_fields=["sent_at"])
         AuditLog.objects.create(
             actor=None,

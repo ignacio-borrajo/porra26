@@ -26,9 +26,11 @@ def test_betsclosingreport_is_one_to_one_with_match():
 
 @pytest.mark.django_db
 def test_match_teams_slug():
-    from competition.tests.factories import TeamFactory
     from datetime import datetime
+
     from django.utils import timezone
+
+    from competition.tests.factories import TeamFactory
 
     home = TeamFactory(code="ESP", name="España")
     away = TeamFactory(code="ARG", name="Argentina")

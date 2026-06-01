@@ -16,16 +16,14 @@ def _bearer_token_ok(request) -> bool:
     header = request.META.get("HTTP_AUTHORIZATION", "")
     if not header.startswith("Bearer "):
         return False
-    received = header[len("Bearer "):].strip()
+    received = header[len("Bearer ") :].strip()
     return secrets.compare_digest(received, expected)
 
 
 def _gestor_session_ok(request) -> bool:
     user = getattr(request, "user", None)
     return bool(
-        user
-        and getattr(user, "is_authenticated", False)
-        and getattr(user, "is_gestor", False)
+        user and getattr(user, "is_authenticated", False) and getattr(user, "is_gestor", False)
     )
 
 

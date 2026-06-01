@@ -186,9 +186,9 @@ class ManageResultsView(GestorRequiredMixin, View):
         from competition.models import BetsClosingReport
 
         reports = list(
-            BetsClosingReport.objects
-            .select_related("match__home", "match__away", "match__round")
-            .order_by("-match__kickoff")
+            BetsClosingReport.objects.select_related(
+                "match__home", "match__away", "match__round"
+            ).order_by("-match__kickoff")
         )
 
         return render(
