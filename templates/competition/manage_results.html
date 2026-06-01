@@ -8,10 +8,11 @@
 <h2 class="eyebrow" style="margin-top:18px">PENDIENTES DE FINALIZAR · {{ pending|length }}</h2>
 <div class="table-scroll" style="display:flex;flex-direction:column;gap:8px">
   {% for m in pending %}
-  <div class="glass table-row" style="display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
+  <div class="glass table-row" style="display:grid;grid-template-columns:auto 1fr auto auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
     <span class="mono" style="color:var(--text-faint)">Grupo {{ m.group }}</span>
     <span>{{ m.home.flag }} {{ m.home.name }} vs {{ m.away.flag }} {{ m.away.name }}</span>
     <span class="chip chip-{{ m.status }}">{{ m.status }}</span>
+    <a class="btn btn-ghost" href="{% url 'competicion:api:cierre_pdf' m.id %}" style="padding:6px 12px;font-size:12px" title="Descargar PDF de cierre">📄 PDF</a>
     <a class="btn btn-primary" href="{% url 'competicion:official' m.id %}" style="padding:6px 12px;font-size:12px">Finalizar</a>
   </div>
   {% endfor %}
@@ -34,13 +35,43 @@
 <h2 class="eyebrow" style="margin-top:18px">FINALIZADOS · {{ done|length }}</h2>
 <div class="table-scroll" style="display:flex;flex-direction:column;gap:8px">
   {% for m in done %}
-  <div class="glass table-row" style="display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
+  <div class="glass table-row" style="display:grid;grid-template-columns:auto 1fr auto auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
     <span class="mono" style="color:var(--text-faint)">Grupo {{ m.group }}</span>
     <span>{{ m.home.flag }} {{ m.home.name }} {{ m.result_home }}–{{ m.result_away }} {{ m.away.flag }} {{ m.away.name }}</span>
     <span class="chip chip-done">Final</span>
+    <a class="btn btn-ghost" href="{% url 'competicion:api:cierre_pdf' m.id %}" style="padding:6px 12px;font-size:12px" title="Descargar PDF de cierre">📄 PDF</a>
     <a class="btn btn-ghost" href="{% url 'competicion:official' m.id %}" style="padding:6px 12px;font-size:12px">Editar</a>
   </div>
   {% endfor %}
 </div>
+{% endif %}
+{% if reports %}
+<details style="margin-top:24px">
+  <summary class="eyebrow" style="cursor:pointer;list-style:none">ESTADO DE ENVÍOS A TEAMS · {{ reports|length }}</summary>
+  <div class="table-scroll" style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+    <div style="display:grid;grid-template-columns:1fr auto auto auto auto auto;gap:14px;padding:6px 14px;color:var(--text-faint);font-size:11px;text-transform:uppercase;letter-spacing:0.6px">
+      <span>Partido</span>
+      <span>Estado</span>
+      <span>Generado</span>
+      <span>Enviado</span>
+      <span>Intentos</span>
+      <span>Última generación</span>
+    </div>
+    {% for r in reports %}
+    <div class="glass table-row" style="display:grid;grid-template-columns:1fr auto auto auto auto auto;gap:14px;align-items:center;padding:10px 14px;border-radius:12px">
+      <span>{{ r.match.home.flag }} {{ r.match.home.name }} vs {{ r.match.away.flag }} {{ r.match.away.name }}</span>
+      <span class="chip chip-{{ r.match.status }}">{{ r.match.status }}</span>
+      <span title="{{ r.generated_at|default:'' }}">{% if r.generated_at %}✓{% else %}—{% endif %}</span>
+      <span>
+        {% if r.sent_at %}<span style="color:#16a34a">✓</span>
+        {% elif r.attempts %}<span style="color:#d97706">⏳</span>
+        {% else %}—{% endif %}
+      </span>
+      <span class="mono">{{ r.attempts }}</span>
+      <span class="mono" style="font-size:11px">{{ r.generated_at|date:"d M · H:i"|default:"—" }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</details>
 {% endif %}
 {% endblock %}

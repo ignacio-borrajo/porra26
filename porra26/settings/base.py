@@ -90,3 +90,5 @@ AXES_RESET_ON_SUCCESS = True
 # Fecha de la última publicación del reglamento (página /reglas/).
 # Actualizar a mano cuando se cambien las reglas de la porra.
 RULES_UPDATED_AT = date(2026, 6, 1)
+
+TEAMS_API_TOKEN = os.getenv("TEAMS_API_TOKEN", "")
