@@ -1,5 +1,5 @@
 <section class="glass pop" style="width:min(520px,100%);padding:28px;border-radius:24px;background:var(--surface-solid)">
-  <div class="eyebrow">PRONÓSTICO</div>
+  <div class="eyebrow">PRONÓSTICO · {{ pending_count }} pendiente{{ pending_count|pluralize }}</div>
   <h1 class="display" style="font-size:24px">¿Cómo va a quedar?</h1>
   <form method="post" action="{% url 'competicion:predict' match.id %}">
     {% csrf_token %}
@@ -28,9 +28,14 @@
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end">
+    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
       <button class="btn btn-ghost" type="button" data-modal-close>Cancelar</button>
+      {% if has_next %}
+      <button class="btn btn-ghost" type="submit">Guardar pronóstico</button>
+      <button class="btn btn-primary" type="submit" name="chain" value="1">Guardar y siguiente</button>
+      {% else %}
       <button class="btn btn-primary" type="submit">Guardar pronóstico</button>
+      {% endif %}
     </div>
   </form>
 </section>
