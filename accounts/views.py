@@ -53,7 +53,7 @@ class ChangePasswordView(LoginRequiredMixin, View):
             request.user.set_password(form.cleaned_data["new1"])
             request.user.must_change_password = False
             request.user.save(update_fields=["password", "must_change_password"])
-            login(request, request.user)
+            update_session_auth_hash(request, request.user)
             messages.success(request, "Contraseña actualizada.")
             return redirect("competicion:dashboard")
         return render(request, self.template_name, {"form": form})
