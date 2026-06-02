@@ -5,7 +5,6 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.tests.factories import GestorFactory
-from competition.models import Match
 from competition.tests.factories import (
     MatchFactory,
     RoundFactory,
