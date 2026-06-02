@@ -1,6 +1,8 @@
-# Despliegue en PythonAnywhere
+# Despliegue en PythonAnywhere (LEGACY)
 
-PORRA 26 está pensada para correr en el plan **free de PythonAnywhere** (MySQL incluida, sin tráfico saliente arbitrario, sin SMTP libre).
+> ⚠️ **Doc legacy.** La aplicación se desplegó originalmente en PythonAnywhere free pero **el despliegue actual está en Railway** (Postgres, Resend SMTP, Cron Service). Para el despliegue vigente consulta **[`docs/DEPLOY_RAILWAY.md`](DEPLOY_RAILWAY.md)**. Este documento se mantiene únicamente como referencia histórica y como ruta de rollback si Railway fallase.
+
+PORRA 26 originalmente estaba pensada para correr en el plan **free de PythonAnywhere** (MySQL incluida, sin tráfico saliente arbitrario, sin SMTP libre). La limitación de SMTP saliente (necesario para el flujo email-driven de Teams) fue la razón principal de migrar a Railway.
 
 ## 1. Pre-requisitos en local
 
