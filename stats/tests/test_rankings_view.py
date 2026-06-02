@@ -11,11 +11,19 @@ def test_rankings_requires_login(client):
 
 
 @pytest.mark.django_db
-def test_rankings_default_tab_is_sede(client):
+def test_rankings_default_tab_is_general(client):
     client.force_login(UserFactory())
     r = client.get(reverse("stats:rankings"))
     assert r.status_code == 200
-    assert b"Sede" in r.content
+    assert b"podium-slot--1" in r.content
+
+
+@pytest.mark.django_db
+def test_rankings_general_tab_renders_podium(client):
+    client.force_login(UserFactory())
+    r = client.get(reverse("stats:rankings") + "?tab=general")
+    assert r.status_code == 200
+    assert b"podium-slot--1" in r.content
 
 
 @pytest.mark.django_db
@@ -27,7 +35,8 @@ def test_rankings_accepts_puesto_tab(client):
 
 
 @pytest.mark.django_db
-def test_rankings_unknown_tab_falls_back_to_sede(client):
+def test_rankings_unknown_tab_falls_back_to_general(client):
     client.force_login(UserFactory())
     r = client.get(reverse("stats:rankings") + "?tab=hack")
     assert r.status_code == 200
+    assert b"podium-slot--1" in r.content

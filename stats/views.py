@@ -4,6 +4,7 @@ from django.shortcuts import render
 from django.views import View
 
 from accounts.models import User
+from competition.services.standings import standings
 from stats.services.group_standings import group_standings
 from stats.services.history import per_player_history
 from stats.services.kpis import donut, kpis
@@ -40,25 +41,47 @@ class ChartDataView(LoginRequiredMixin, View):
 
 
 class RankingsView(LoginRequiredMixin, View):
-    VALID_TABS = ("sede", "puesto", "dept")
-    TAB_LABELS = {"sede": "Sede", "puesto": "Puesto", "dept": "Departamento"}
+    VALID_TABS = ("general", "sede", "puesto", "dept")
+    TAB_LABELS = {
+        "general": "General",
+        "sede": "Sede",
+        "puesto": "Puesto",
+        "dept": "Departamento",
+    }
 
     def get(self, request):
-        tab = request.GET.get("tab", "sede")
+        tab = request.GET.get("tab", "general")
         if tab not in self.VALID_TABS:
-            tab = "sede"
-        rows = group_standings(tab)
-        my_group = getattr(request.user, tab, "") or "__none__"
-        top_ids = [r.top_user_id for r in rows if r.top_user_id]
-        top_users = User.objects.in_bulk(top_ids) if top_ids else {}
-        return render(
-            request,
-            "stats/rankings.html",
-            {
-                "tab": tab,
-                "rows": rows,
-                "tabs": [(k, self.TAB_LABELS[k]) for k in self.VALID_TABS],
-                "my_group": my_group,
-                "top_users": top_users,
-            },
-        )
+            tab = "general"
+        ctx = {
+            "tab": tab,
+            "tabs": [(k, self.TAB_LABELS[k]) for k in self.VALID_TABS],
+        }
+        if tab == "general":
+            rows = standings()[:50]
+            users_by_id = User.objects.in_bulk([r.player_id for r in rows])
+            my_rank = next(
+                (r.position for r in rows if r.player_id == request.user.id), None
+            )
+            max_pts = max((r.pts for r in rows), default=0) or 1
+            ctx.update(
+                {
+                    "standings": rows,
+                    "standings_users": users_by_id,
+                    "my_rank": my_rank,
+                    "max_pts": max_pts,
+                }
+            )
+        else:
+            rows = group_standings(tab)
+            my_group = getattr(request.user, tab, "") or "__none__"
+            top_ids = [r.top_user_id for r in rows if r.top_user_id]
+            top_users = User.objects.in_bulk(top_ids) if top_ids else {}
+            ctx.update(
+                {
+                    "rows": rows,
+                    "my_group": my_group,
+                    "top_users": top_users,
+                }
+            )
+        return render(request, "stats/rankings.html", ctx)
