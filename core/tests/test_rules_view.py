@@ -52,11 +52,11 @@ def test_rules_renders_points_card(client):
     # Las mini-tarjetas reutilizan el patrón visual de /competicion/:
     # bandera arriba, nombre debajo, score-bubble : score-bubble.
     assert content.count('class="match-card-teams"') == 3
-    assert content.count('class="score-bubble"') == 6   # 3 ejemplos × 2 bubbles
+    assert content.count('class="score-bubble"') == 6  # 3 ejemplos × 2 bubbles
     # Tabla de rondas con puntos
     assert "Fase de grupos" in content
     assert "Dieciseisavos" in content
-    assert ">5</strong>" in content   # points cell for r32 — unique to the table row
+    assert ">5</strong>" in content  # points cell for r32 — unique to the table row
 
 
 @pytest.mark.django_db
@@ -70,9 +70,9 @@ def test_rules_renders_close_card(client):
     for label in ("Abierto", "Cerrando", "Cerrado", "En juego", "Final"):
         assert label in content
     # Mini ejemplos de partido por estado: cuenta atrás, marcador en vivo y final
-    assert "01:23:45" in content   # cuenta atrás del estado closing
-    assert "1 — 0" in content       # marcador en vivo
-    assert "2 — 1" in content       # marcador final
+    assert "01:23:45" in content  # cuenta atrás del estado closing
+    assert "1 — 0" in content  # marcador en vivo
+    assert "2 — 1" in content  # marcador final
 
 
 @pytest.mark.django_db
@@ -106,6 +106,7 @@ def test_rules_renders_tiebreak_and_access(client):
 def test_rules_renders_placeholder_medals_when_no_prizes(client):
     # Delete seed prizes so the {% empty %} branch fires.
     from pot.models import Prize
+
     Prize.objects.filter(scope="global").delete()
     client.force_login(UserFactory())
     r = client.get(reverse("core:rules"))

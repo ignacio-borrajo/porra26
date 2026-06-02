@@ -4,9 +4,7 @@ from competition.models import Match
 
 
 def _candidates(user, after_match=None):
-    qs = Match.objects.filter(result_home__isnull=True).exclude(
-        predictions__player=user
-    )
+    qs = Match.objects.filter(result_home__isnull=True).exclude(predictions__player=user)
     if after_match is not None:
         qs = qs.exclude(pk=after_match.pk)
     return qs.select_related("round").order_by("kickoff", "pk")

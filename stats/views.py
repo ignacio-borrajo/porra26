@@ -35,9 +35,7 @@ class ChartDataView(LoginRequiredMixin, View):
             }
             for pid, u in users.items()
         }
-        return JsonResponse(
-            {"history": h, "me": request.user.id, "players": players}
-        )
+        return JsonResponse({"history": h, "me": request.user.id, "players": players})
 
 
 class RankingsView(LoginRequiredMixin, View):
@@ -60,9 +58,7 @@ class RankingsView(LoginRequiredMixin, View):
         if tab == "general":
             rows = standings()[:50]
             users_by_id = User.objects.in_bulk([r.player_id for r in rows])
-            my_rank = next(
-                (r.position for r in rows if r.player_id == request.user.id), None
-            )
+            my_rank = next((r.position for r in rows if r.player_id == request.user.id), None)
             max_pts = max((r.pts for r in rows), default=0) or 1
             ctx.update(
                 {

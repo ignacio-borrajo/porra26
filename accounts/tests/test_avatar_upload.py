@@ -50,7 +50,9 @@ def test_post_uploads_avatar(client):
 def test_post_oversize_rejected(client):
     user = UserFactory(name="Ana", sede="vigo", puesto="desarrollo", dept="gestion")
     client.force_login(user)
-    big = SimpleUploadedFile("big.png", b"\x89PNG" + b"x" * (3 * 1024 * 1024), content_type="image/png")
+    big = SimpleUploadedFile(
+        "big.png", b"\x89PNG" + b"x" * (3 * 1024 * 1024), content_type="image/png"
+    )
     r = client.post(reverse("accounts:my_account"), {**_profile_payload(), "avatar": big})
     assert r.status_code == 200
     user.refresh_from_db()
@@ -72,12 +74,16 @@ def test_post_invalid_type_rejected(client):
 def test_replacement_deletes_old_file(client):
     user = UserFactory(name="Ana", sede="vigo", puesto="desarrollo", dept="gestion")
     client.force_login(user)
-    client.post(reverse("accounts:my_account"), {**_profile_payload(), "avatar": _png(color=(10, 10, 10))})
+    client.post(
+        reverse("accounts:my_account"), {**_profile_payload(), "avatar": _png(color=(10, 10, 10))}
+    )
     user.refresh_from_db()
     old_path = Path(user.avatar.path)
     assert old_path.exists()
 
-    client.post(reverse("accounts:my_account"), {**_profile_payload(), "avatar": _png(color=(200, 0, 0))})
+    client.post(
+        reverse("accounts:my_account"), {**_profile_payload(), "avatar": _png(color=(200, 0, 0))}
+    )
     user.refresh_from_db()
     new_path = Path(user.avatar.path)
     assert new_path.exists()
