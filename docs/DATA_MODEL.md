@@ -75,10 +75,13 @@ Restricción: **un pronóstico por jugador y partido** (único `playerId+matchId
 ### Pot / Settings (Bote y configuración)
 | Campo | Tipo | Notas |
 |-------|------|-------|
-| `perPlayer` | int | aportación por jugador (prototipo: 10 €) |
-| `prizes` | int[] | reparto del top 3 (prototipo: [240, 144, 96] €) |
+| `perPlayer` | Decimal | aportación por jugador (prototipo: 10 €) |
+| `matchdayWinnerPrize` | Decimal | importe único que se entrega al jugador con más puntos en cada jornada de grupos y cada ronda KO |
+| `prizes` | Prize[] | filas con `scope="global"` y `position ∈ {1,2,3}` — el podio final |
 
 `total` = `perPlayer × nº de jugadores que pagan`. En el prototipo: 48 jugadores → 480 €.
+
+> El modelo `Prize` solo se usa para el podio final (top 3). Las filas con scope `matchday` o `round` quedaron retiradas en favor de `matchdayWinnerPrize` en PotSettings — un único importe para todas las jornadas/rondas.
 
 ---
 
