@@ -116,3 +116,28 @@ def test_rules_renders_placeholder_medals_when_no_prizes(client):
         assert f">{pos}<" in content
     # Em dash placeholder strong appears at least 3 times.
     assert content.count(">—</strong>") >= 3
+
+
+@pytest.mark.django_db
+def test_rules_shows_matchday_winner_prize_when_set(client):
+    s = PotSettings.load()
+    s.matchday_winner_prize = Decimal("18.00")
+    s.save()
+    client.force_login(UserFactory())
+    r = client.get(reverse("core:rules"))
+    content = r.content.decode("utf-8")
+    assert "Premio por ganador de jornada" in content
+    assert "18" in content
+    assert "rules-matchday-prize" in content
+
+
+@pytest.mark.django_db
+def test_rules_hides_matchday_winner_prize_when_zero(client):
+    s = PotSettings.load()
+    s.matchday_winner_prize = Decimal("0")
+    s.save()
+    client.force_login(UserFactory())
+    r = client.get(reverse("core:rules"))
+    content = r.content.decode("utf-8")
+    assert "rules-matchday-prize" not in content
+    assert "Premio por ganador de jornada" not in content

@@ -16,4 +16,5 @@ class RulesView(LoginRequiredMixin, TemplateView):
         ctx["pot_prizes"] = Prize.objects.filter(scope="global").order_by("position")
         ctx["bet_close_hours"] = BET_CLOSE_HOURS
         ctx["rules_updated_at"] = settings.RULES_UPDATED_AT
+        ctx["matchday_winner_prize"] = PotSettings.load().matchday_winner_prize
         return ctx

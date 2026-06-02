@@ -769,6 +769,44 @@ select.input {
   color: var(--text-dim);
 }
 
+.rules-matchday-prize {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  border: 1px solid oklch(from var(--c-cyan) l c h / 0.35);
+  background: oklch(from var(--c-cyan) l c h / 0.06);
+  align-items: center;
+}
+.rules-matchday-prize-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm, 10px);
+  background: oklch(from var(--c-cyan) l c h / 0.15);
+  color: var(--c-cyan);
+}
+.rules-matchday-prize-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rules-matchday-prize-body strong {
+  font-family: Sora, sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  color: var(--c-cyan);
+  line-height: 1.1;
+}
+.rules-matchday-prize-body p {
+  margin: 4px 0 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
 .rules-tiebreak {
   list-style: none;
   margin: 0;
