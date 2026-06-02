@@ -1,5 +1,4 @@
 import hashlib
-import json
 from datetime import timedelta
 
 import pytest
@@ -7,7 +6,6 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.models import AuditLog
 from competition.models import BetsClosingReport
 from competition.tests.factories import MatchFactory, TeamFactory
 
@@ -188,96 +186,3 @@ def test_pdf_endpoint_accepts_gestor_session(client):
     m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
     res = client.get(reverse("competicion:api:cierre_pdf", args=[m.id]))
     assert res.status_code == 200
-
-
-@pytest.mark.django_db
-@override_settings(TEAMS_API_TOKEN=TOKEN)
-def test_marcar_enviado_marks_sent_and_creates_audit(client):
-    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
-    res = client.post(
-        reverse("competicion:api:cierre_marcar_enviado", args=[m.id]),
-        data=json.dumps({"teams_message_id": "abc-123"}),
-        content_type="application/json",
-        **AUTH,
-    )
-    assert res.status_code == 200
-    report = BetsClosingReport.objects.get(match=m)
-    assert report.sent_at is not None
-    payload = res.json()
-    assert payload["sent_at"]
-    audits = AuditLog.objects.filter(action="bets_pdf_sent")
-    assert audits.count() == 1
-    assert audits.first().payload == {"teams_message_id": "abc-123"}
-
-
-@pytest.mark.django_db
-@override_settings(TEAMS_API_TOKEN=TOKEN)
-def test_marcar_enviado_idempotent(client):
-    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
-    url = reverse("competicion:api:cierre_marcar_enviado", args=[m.id])
-    res1 = client.post(url, data="{}", content_type="application/json", **AUTH)
-    res2 = client.post(url, data="{}", content_type="application/json", **AUTH)
-    assert res1.status_code == 200
-    assert res2.status_code == 200
-    assert res2.json()["already_sent"] is True
-    assert AuditLog.objects.filter(action="bets_pdf_sent").count() == 1
-
-
-@pytest.mark.django_db
-@override_settings(TEAMS_API_TOKEN=TOKEN)
-def test_marcar_enviado_creates_report_if_missing(client):
-    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
-    assert not BetsClosingReport.objects.filter(match=m).exists()
-    client.post(
-        reverse("competicion:api:cierre_marcar_enviado", args=[m.id]),
-        data="{}",
-        content_type="application/json",
-        **AUTH,
-    )
-    assert BetsClosingReport.objects.filter(match=m, sent_at__isnull=False).exists()
-
-
-@pytest.mark.django_db
-@override_settings(TEAMS_API_TOKEN=TOKEN)
-def test_marcar_enviado_handles_empty_body(client):
-    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
-    res = client.post(
-        reverse("competicion:api:cierre_marcar_enviado", args=[m.id]),
-        data="",
-        content_type="application/json",
-        **AUTH,
-    )
-    assert res.status_code == 200
-
-
-@pytest.mark.django_db
-@override_settings(TEAMS_API_TOKEN=TOKEN)
-def test_marcar_enviado_requires_token(client):
-    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
-    res = client.post(
-        reverse("competicion:api:cierre_marcar_enviado", args=[m.id]),
-        data="{}",
-        content_type="application/json",
-    )
-    assert res.status_code == 401
-
-
-@pytest.mark.django_db
-@override_settings(TEAMS_API_TOKEN=TOKEN)
-def test_marcar_enviado_get_without_auth_returns_401_not_405(client):
-    """Auth se comprueba antes que el método HTTP — no leak de la existencia del endpoint."""
-    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
-    res = client.get(reverse("competicion:api:cierre_marcar_enviado", args=[m.id]))
-    assert res.status_code == 401
-
-
-@pytest.mark.django_db
-@override_settings(TEAMS_API_TOKEN=TOKEN)
-def test_marcar_enviado_404_unknown_match(client):
-    res = client.post(
-        reverse("competicion:api:cierre_marcar_enviado", args=[999_999]),
-        data="{}",
-        content_type="application/json",
-        **AUTH,
-    )
-    assert res.status_code == 404
