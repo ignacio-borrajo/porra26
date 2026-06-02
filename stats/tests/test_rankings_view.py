@@ -93,7 +93,7 @@ def test_rankings_scope_param_changes_standings(client):
     r = client.get(reverse("stats:rankings") + "?tab=general&scope=groups:1")
     assert r.status_code == 200
     # El scope=groups:1 implica que la jornada 1 está activa
-    assert b'scope=groups:1' in r.content
+    assert b"scope=groups:1" in r.content
 
 
 @pytest.mark.django_db

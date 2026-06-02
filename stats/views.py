@@ -77,9 +77,7 @@ class RankingsView(LoginRequiredMixin, View):
             scope_max_pts = 1
             scope_label = None
             if scope is not None:
-                scope_rows = standings(
-                    round_id=scope.round_id, matchday=scope.matchday
-                )[:50]
+                scope_rows = standings(round_id=scope.round_id, matchday=scope.matchday)[:50]
                 scope_my_rank = next(
                     (r.position for r in scope_rows if r.player_id == request.user.id),
                     None,
