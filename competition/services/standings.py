@@ -19,13 +19,24 @@ class StandingRow:
     trend: str = "flat"  # "up" | "down" | "flat"
 
 
-def standings() -> list[StandingRow]:
+def standings(round_id: str | None = None, matchday: int | None = None) -> list[StandingRow]:
+    """Clasificación general o limitada a una ronda y/o jornada.
+
+    Con `round_id`/`matchday` solo se suman los puntos de las predicciones cuyo
+    partido cae dentro del scope. Para esos scopes locales no se calculan
+    `streak` ni `trend` (no aportan información útil de una sola jornada/ronda).
+    """
+    scoped = round_id is not None or matchday is not None
+    qs = Prediction.objects.filter(
+        player__is_active=True, player__is_jugador=True, earned__isnull=False
+    )
+    if round_id is not None:
+        qs = qs.filter(match__round_id=round_id)
+    if matchday is not None:
+        qs = qs.filter(match__matchday=matchday)
+
     rows = list(
-        Prediction.objects.filter(
-            player__is_active=True, player__is_jugador=True, earned__isnull=False
-        )
-        .values("player_id", "player__name", "player__email")
-        .annotate(
+        qs.values("player_id", "player__name", "player__email").annotate(
             pts=Sum("earned"),
             hits=Count("id", filter=Q(earned__gt=0)),
             exact_hits=Count("id", filter=Q(earned=F("match__round__points"))),
@@ -49,9 +60,13 @@ def standings() -> list[StandingRow]:
         key=lambda r: (-(r["pts"] or 0), -r["exact_hits"], -r["hits"], r["player__name"].lower())
     )
 
-    player_ids = [r["player_id"] for r in merged]
-    streaks = _compute_streaks(player_ids)
-    trends = _compute_trends(merged)
+    if scoped:
+        streaks: dict[int, int] = {}
+        trends: dict[int, str] = {}
+    else:
+        player_ids = [r["player_id"] for r in merged]
+        streaks = _compute_streaks(player_ids)
+        trends = _compute_trends(merged)
 
     out = []
     for i, r in enumerate(merged, start=1):

@@ -74,9 +74,24 @@ class CompetitionView(LoginRequiredMixin, View):
                 )
 
         rows = standings()[:50]
-        users_by_id = User.objects.in_bulk([r.player_id for r in rows])
         my_rank = next((r.position for r in rows if r.player_id == request.user.id), None)
         max_pts = max((r.pts for r in rows), default=0) or 1
+
+        scope_rows = standings(round_id=active_id, matchday=active_md)[:50]
+        scope_my_rank = next(
+            (r.position for r in scope_rows if r.player_id == request.user.id), None
+        )
+        scope_max_pts = max((r.pts for r in scope_rows), default=0) or 1
+        active_round_obj = next((r for r in rounds if r.id == active_id), None)
+        if active_md is not None:
+            scope_label = f"Jornada {active_md}"
+        elif active_round_obj is not None:
+            scope_label = active_round_obj.short or active_round_obj.label
+        else:
+            scope_label = "Ronda"
+
+        all_ids = {r.player_id for r in rows} | {r.player_id for r in scope_rows}
+        users_by_id = User.objects.in_bulk(all_ids)
 
         return render(
             request,
@@ -97,6 +112,10 @@ class CompetitionView(LoginRequiredMixin, View):
                 "standings_users": users_by_id,
                 "my_rank": my_rank,
                 "max_pts": max_pts,
+                "scope_standings": scope_rows,
+                "scope_my_rank": scope_my_rank,
+                "scope_max_pts": scope_max_pts,
+                "scope_label": scope_label,
             },
         )
 

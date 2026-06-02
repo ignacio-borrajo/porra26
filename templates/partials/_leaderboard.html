@@ -1,47 +1,34 @@
-{% load icons avatar_extras %}
+{% load icons %}
 <section class="glass leaderboard-aside leaderboard">
+  <input type="radio" name="lb-scope" id="lb-scope-global" class="lb-scope-input" checked>
+  <input type="radio" name="lb-scope" id="lb-scope-local" class="lb-scope-input">
+
   <header class="leaderboard-header">
     <div style="display:flex;align-items:center;gap:9px">
       {% icon "trophy" width=18 height=18 %}
       <h2 class="display" style="font-size:16px;margin:0">Clasificación</h2>
     </div>
-    {% if my_rank %}
-    <span class="chip chip-accent">Tú · #{{ my_rank }}</span>
-    {% endif %}
+    <div class="lb-scope-rank">
+      <span class="lb-scope-rank__global">
+        {% if my_rank %}<span class="chip chip-accent">Tú · #{{ my_rank }}</span>{% endif %}
+      </span>
+      <span class="lb-scope-rank__local">
+        {% if scope_my_rank %}<span class="chip chip-accent">Tú · #{{ scope_my_rank }}</span>{% endif %}
+      </span>
+    </div>
   </header>
 
-  {% if rows %}
-    {% with first=rows.0 second=rows.1 third=rows.2 %}
-    <div class="podium">
-      {# Orden visual: 2º, 1º, 3º (la cima en el centro y más alta) #}
-      {% if second %}
-        {% include "partials/_podium_step.html" with row=second rank=2 user=users|get_item:second.player_id me=me %}
-      {% else %}
-        <div class="podium-slot podium-slot--empty"></div>
-      {% endif %}
-      {% include "partials/_podium_step.html" with row=first rank=1 user=users|get_item:first.player_id me=me %}
-      {% if third %}
-        {% include "partials/_podium_step.html" with row=third rank=3 user=users|get_item:third.player_id me=me %}
-      {% else %}
-        <div class="podium-slot podium-slot--empty"></div>
-      {% endif %}
-    </div>
-    {% endwith %}
-
-    <div class="leaderboard-table-header">
-      <span class="eyebrow" style="font-size:9px;text-align:center">#</span>
-      <span class="eyebrow" style="font-size:9px">Jugador</span>
-      <span class="eyebrow" style="font-size:9px;text-align:right">Pts</span>
-    </div>
-
-    <ol class="leaderboard-list stagger no-scrollbar">
-      {% for r in rows %}
-        {% if forloop.counter > 3 %}
-          {% include "partials/_leaderboard_row.html" with r=r user=users|get_item:r.player_id me=me max_pts=max_pts %}
-        {% endif %}
-      {% endfor %}
-    </ol>
-  {% else %}
-    <p style="color:var(--text-faint);margin:12px 0 0">Sin jugadores todavía.</p>
+  {% if scope_label %}
+  <nav class="lb-tabs" aria-label="Ámbito de clasificación">
+    <label for="lb-scope-global" class="chip lb-tab" data-scope="global">Global</label>
+    <label for="lb-scope-local" class="chip lb-tab" data-scope="local">{{ scope_label }}</label>
+  </nav>
   {% endif %}
+
+  <div class="lb-pane lb-pane--global">
+    {% include "partials/_leaderboard_panel.html" with rows=rows users=users me=me max_pts=max_pts %}
+  </div>
+  <div class="lb-pane lb-pane--local">
+    {% include "partials/_leaderboard_panel.html" with rows=scope_rows users=users me=me max_pts=scope_max_pts %}
+  </div>
 </section>

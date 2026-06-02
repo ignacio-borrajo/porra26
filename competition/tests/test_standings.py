@@ -149,6 +149,71 @@ def test_streak_breaks_on_fail():
 
 
 @pytest.mark.django_db
+def test_standings_scope_by_round_filters_predictions():
+    grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    r16 = RoundFactory(id="r16", points=7, label="Octavos", short="OCT", order=3)
+    ana = UserFactory(name="Ana", email="ana@e.com")
+    luis = UserFactory(name="Luis", email="luis@e.com")
+    m_grp = MatchFactory(round=grp, matchday=1, result_home=1, result_away=0)
+    m_oct = MatchFactory(round=r16, matchday=None, result_home=2, result_away=1)
+    PredictionFactory(player=ana, match=m_grp, home=1, away=0, earned=3)
+    PredictionFactory(player=ana, match=m_oct, home=0, away=0, earned=0)
+    PredictionFactory(player=luis, match=m_grp, home=0, away=0, earned=0)
+    PredictionFactory(player=luis, match=m_oct, home=2, away=1, earned=7)
+
+    grp_rows = {r.name: r.pts for r in standings(round_id="groups")}
+    oct_rows = {r.name: r.pts for r in standings(round_id="r16")}
+    assert grp_rows["Ana"] == 3
+    assert grp_rows["Luis"] == 0
+    assert oct_rows["Ana"] == 0
+    assert oct_rows["Luis"] == 7
+
+
+@pytest.mark.django_db
+def test_standings_scope_by_matchday_filters_predictions():
+    grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    ana = UserFactory(name="Ana", email="ana@e.com")
+    m_j1 = MatchFactory(round=grp, matchday=1, result_home=1, result_away=0)
+    m_j2 = MatchFactory(round=grp, matchday=2, result_home=0, result_away=0)
+    PredictionFactory(player=ana, match=m_j1, home=1, away=0, earned=3)
+    PredictionFactory(player=ana, match=m_j2, home=0, away=0, earned=3)
+
+    j1 = {r.name: r.pts for r in standings(round_id="groups", matchday=1)}
+    j2 = {r.name: r.pts for r in standings(round_id="groups", matchday=2)}
+    assert j1["Ana"] == 3
+    assert j2["Ana"] == 3
+
+
+@pytest.mark.django_db
+def test_standings_scope_skips_streak_and_trend():
+    grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    ana = UserFactory(name="Ana", email="ana@e.com")
+    now = timezone.now()
+    m1 = MatchFactory(
+        round=grp,
+        matchday=1,
+        kickoff=now - timedelta(days=2),
+        finished_at=now - timedelta(days=2),
+        result_home=1,
+        result_away=0,
+    )
+    m2 = MatchFactory(
+        round=grp,
+        matchday=1,
+        kickoff=now - timedelta(days=1),
+        finished_at=now - timedelta(days=1),
+        result_home=1,
+        result_away=0,
+    )
+    PredictionFactory(player=ana, match=m1, home=1, away=0, earned=3)
+    PredictionFactory(player=ana, match=m2, home=1, away=0, earned=3)
+
+    scoped = next(r for r in standings(round_id="groups", matchday=1) if r.name == "Ana")
+    assert scoped.streak == 0
+    assert scoped.trend == "flat"
+
+
+@pytest.mark.django_db
 def test_trend_up_when_position_improved_after_last_match():
     groups = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
     leader = UserFactory(name="Leader", email="l@e.com")

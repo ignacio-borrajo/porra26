@@ -904,6 +904,37 @@ img.avatar { object-fit: cover; }
 }
 .leaderboard-header svg { color: var(--c-gold); }
 
+/* Tabs Global / Jornada-Ronda (radio CSS, sin JS) */
+.lb-scope-input { position: absolute; opacity: 0; pointer-events: none; }
+.lb-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: oklch(from var(--text) l c h / 0.04);
+  margin-bottom: 12px;
+}
+.lb-tab {
+  flex: 1;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+.lb-scope-rank__global,
+.lb-scope-rank__local { display: none; }
+.lb-pane { display: none; flex-direction: column; min-height: 0; }
+#lb-scope-global:checked ~ .lb-pane--global,
+#lb-scope-local:checked ~ .lb-pane--local { display: flex; }
+#lb-scope-global:checked ~ .leaderboard-header .lb-scope-rank__global,
+#lb-scope-local:checked ~ .leaderboard-header .lb-scope-rank__local { display: inline-flex; }
+#lb-scope-global:checked ~ .lb-tabs .lb-tab[data-scope="global"],
+#lb-scope-local:checked ~ .lb-tabs .lb-tab[data-scope="local"] {
+  background: oklch(from var(--accent) l c h / 0.16);
+  border-color: oklch(from var(--accent) l c h / 0.45);
+  color: var(--accent);
+}
+
 /* Podio top-3 — orden visual 2º · 1º · 3º */
 .podium {
   display: flex;

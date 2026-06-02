@@ -209,6 +209,45 @@ def test_dashboard_filters_by_matchday(client):
 
 
 @pytest.mark.django_db
+def test_dashboard_renders_scope_leaderboard_tab_for_matchday(client):
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    grp = RoundFactory(id="groups", points=3, label="Grupos", short="G", order=1)
+    MatchFactory(
+        round=grp,
+        matchday=1,
+        home=TeamFactory(),
+        away=TeamFactory(),
+        kickoff=timezone.now() + timedelta(days=1),
+    )
+    r = client.get(reverse("competicion:dashboard") + "?round=groups&matchday=1")
+    body = r.content.decode()
+    assert "lb-scope-global" in body
+    assert "lb-scope-local" in body
+    assert "Jornada 1" in body
+
+
+@pytest.mark.django_db
+def test_dashboard_scope_tab_uses_round_label_outside_groups(client):
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    RoundFactory(id="groups", points=3, label="Grupos", short="G", order=1)
+    r16 = RoundFactory(id="r16", points=7, label="Octavos", short="OCT", order=3)
+    MatchFactory(
+        round=r16,
+        matchday=None,
+        home=TeamFactory(),
+        away=TeamFactory(),
+        kickoff=timezone.now() + timedelta(days=20),
+    )
+    r = client.get(reverse("competicion:dashboard") + "?round=r16")
+    body = r.content.decode()
+    assert "lb-scope-local" in body
+    # Sin jornada activa: la pestaña usa el `short` (o label) de la ronda.
+    assert "OCT" in body
+
+
+@pytest.mark.django_db
 def test_dashboard_shows_locked_banner_for_blocked_matchday(client):
     u = UserFactory(must_change_password=False)
     client.force_login(u)
