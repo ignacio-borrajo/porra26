@@ -105,7 +105,9 @@ Specs:
 - Original (HTTP-pull): [`docs/superpowers/specs/2026-06-01-cierre-apuestas-teams-design.md`](superpowers/specs/2026-06-01-cierre-apuestas-teams-design.md).
 - Final (email-push, sin connectores premium): [`docs/superpowers/specs/2026-06-01-cierre-apuestas-email-design.md`](superpowers/specs/2026-06-01-cierre-apuestas-email-design.md).
 
-**Por qué dos specs**: el primer intento usaba Power Automate sondeando tres endpoints HTTP de Django. Al desplegar descubrimos que el conector HTTP de Power Automate es **premium** (≈ €12/usuario/mes) y la organización no quiere pagar premium. La reescritura usa solo conectores estándar: PythonAnywhere envía un email con el PDF adjunto vía SMTP cada vez que un partido se cierra, y un flow con trigger Outlook + OneDrive + Teams lo publica en el chat.
+**Por qué dos specs**: el primer intento usaba Power Automate sondeando tres endpoints HTTP de Django. Al desplegar descubrimos que el conector HTTP de Power Automate es **premium** (≈ €12/usuario/mes) y la organización no quiere pagar premium. La reescritura usa solo conectores estándar: Django envía un email con el PDF adjunto vía SMTP cada vez que un partido se cierra, y un flow con trigger Outlook + Teams lo publica en el chat.
+
+**Adaptación a Railway**: durante el despliegue migramos de PythonAnywhere a Railway porque PA no permite SMTP saliente sin Hacker plan ($5/mes) y porque Railway nos da SMTP saliente libre, Postgres gestionado y volumen persistente. El SMTP lo provee Resend (free tier, 100 envíos/día) por el puerto 2587. El "scheduled task de PA" pasa a ser un **Cron Service** dentro del mismo proyecto Railway (`*/10 * * * *`). Ver `docs/DEPLOY_RAILWAY.md` §14.
 
 Backend ya implementado (modelo, PDF, endpoint `/pdf` para descarga manual, sección "Estado de envíos") sigue valiendo tal cual; solo cambia el "transporte" del PDF al chat.
 
@@ -113,16 +115,17 @@ Backend ya implementado (modelo, PDF, endpoint `/pdf` para descarga manual, secc
 - [x] Generación del PDF con ReportLab (`build_closing_pdf`).
 - [x] UI gestor: botón "📄 PDF" + sección "Estado de envíos a Teams".
 - [x] Endpoint `/api/teams/cierres/<id>/pdf` (descarga manual desde la UI).
-- [ ] Service `send_closure_email(match)` con SMTP + tests.
-- [ ] Management command `send_pending_closures` + tests.
-- [ ] Eliminar endpoint `marcar-enviado` (ya no se consume desde fuera).
-- [ ] PythonAnywhere Hacker plan ($5/mes) + scheduled task cada 10 min.
-- [ ] `docs/TEAMS_FLOW.md` reescrito con la versión email-driven.
-- [ ] `DEPLOY.md` y `RUNBOOK.md` actualizados (sección SMTP + diagnóstico).
+- [x] Service `send_closure_email(match)` con SMTP + tests.
+- [x] Management command `send_pending_closures` + tests.
+- [x] Eliminar endpoint `marcar-enviado` (ya no se consume desde fuera).
+- [x] SMTP de Resend desde Railway en producción (puerto 2587).
+- [ ] Cron Service en Railway que ejecuta `send_pending_closures` cada 10 min.
+- [ ] `docs/TEAMS_FLOW.md` reescrito con la versión email-driven (Outlook trigger + Teams Post message in chat).
+- [ ] Power Automate flow configurado + regla Outlook que filtra `[Porra26]`.
 
 Plan de implementación: [`docs/superpowers/plans/2026-06-01-cierre-apuestas-email.md`](superpowers/plans/2026-06-01-cierre-apuestas-email.md).
 
-**Hecho cuando:** al cerrarse un partido (`kickoff − 2 h`), en ≤ 10 min llega al chat de Teams un mensaje con el PDF accesible vía OneDrive, y reintenta automáticamente si el envío falló.
+**Hecho cuando:** al cerrarse un partido (`kickoff − 2 h`), en ≤ 10 min llega al chat de Teams un mensaje con el PDF como adjunto, y reintenta automáticamente si el envío falló.
 
 ---
 
