@@ -176,6 +176,7 @@ Servicio web → **Settings → Domains → + Custom Domain**, añade `porra26.e
 
 - **Plan**: Railway cobra por uso (CPU/RAM/egress). Para ~50 jugadores el consumo es ínfimo, pero conviene monitorizar el primer mes.
 - **Egress**: cada PDF enviado por SMTP cuenta como tráfico saliente. Despreciable a este volumen.
+- **Puerto SMTP 587 bloqueado**: Railway no permite tráfico saliente por el 587 (medida antispam habitual en cloud providers). Usamos el **2587** de Resend, que es el mismo SMTP con STARTTLS pero por un puerto sin bloqueo. Si algún día migras de proveedor, comprueba sus puertos alternativos.
 - **SMTP de Resend (modo sin dominio)**: usando `onboarding@resend.dev` solo se puede enviar a la dirección con la que te registraste. Esto encaja con el flujo actual (la app se envía al buzón que vigila Power Automate). Si el día de mañana hay varios destinatarios o quieres un remitente "de marca", verifica un dominio (ver §12).
 - **Resend free tier**: 100 envíos/día, 3 000/mes. Una porra del Mundial con ~50 jugadores no se acerca. Si lo superas, el siguiente tier es de pago.
 - **Volumen `/app/media`**: redimensionable en caliente; los datos no se pierden entre deploys pero **sí se pierden si borras el servicio**. Inclúyelo en el backup si los avatares importan.
