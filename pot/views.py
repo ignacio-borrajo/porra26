@@ -8,7 +8,7 @@ from django.views import View
 from accounts.mixins import GestorRequiredMixin
 from accounts.models import AuditLog, User
 from pot.forms import PlayerForm, generate_temp_password
-from pot.models import Payment, Prize
+from pot.models import Payment, PotSettings, Prize
 
 
 class ManagePlayersView(GestorRequiredMixin, View):
@@ -156,26 +156,46 @@ class PrizesSettingsView(GestorRequiredMixin, View):
         return render(
             request,
             "pot/prizes_settings.html",
-            {"prizes": Prize.objects.all().select_related("round")},
+            {
+                "prizes": Prize.objects.filter(scope="global").order_by("position"),
+                "settings": PotSettings.load(),
+                "paid_count": Payment.objects.filter(paid=True).count(),
+            },
         )
 
     def post(self, request):
-        for prize in Prize.objects.all():
-            raw = request.POST.get(f"amount_{prize.id}")
-            if raw is None:
-                continue
+        from decimal import Decimal, InvalidOperation
+        from django.db import transaction
+
+        def _parse_decimal(raw):
             try:
-                prize.amount = max(0, int(raw))
-                prize.save(update_fields=["amount"])
-            except (ValueError, TypeError):
-                pass
-        AuditLog.objects.create(
-            actor=request.user,
-            action="prize_changed",
-            target_type="prize",
-            target_id="*",
-            payload={},
-        )
+                value = Decimal(raw)
+            except (TypeError, InvalidOperation):
+                return None
+            return value if value >= 0 else None
+
+        with transaction.atomic():
+            for prize in Prize.objects.filter(scope="global"):
+                raw = request.POST.get(f"amount_{prize.id}")
+                value = _parse_decimal(raw)
+                if value is not None:
+                    prize.amount = value
+                    prize.save(update_fields=["amount"])
+
+            mw_raw = request.POST.get("matchday_winner_prize")
+            mw_value = _parse_decimal(mw_raw)
+            if mw_value is not None:
+                settings_obj = PotSettings.load()
+                settings_obj.matchday_winner_prize = mw_value
+                settings_obj.save(update_fields=["matchday_winner_prize"])
+
+            AuditLog.objects.create(
+                actor=request.user,
+                action="prize_changed",
+                target_type="prize",
+                target_id="*",
+                payload={},
+            )
         messages.success(request, "Premios actualizados.")
         return redirect("pot:prizes")
 
