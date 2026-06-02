@@ -17,3 +17,20 @@ def test_load_returns_existing():
     s1.save()
     s2 = PotSettings.load()
     assert s2.per_player == 15
+
+
+from decimal import Decimal
+
+
+@pytest.mark.django_db
+def test_matchday_winner_prize_defaults_to_zero():
+    s = PotSettings.load()
+    assert s.matchday_winner_prize == Decimal("0")
+
+
+@pytest.mark.django_db
+def test_matchday_winner_prize_is_persisted():
+    s = PotSettings.load()
+    s.matchday_winner_prize = Decimal("25.50")
+    s.save()
+    assert PotSettings.load().matchday_winner_prize == Decimal("25.50")

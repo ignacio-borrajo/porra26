@@ -6,6 +6,9 @@ from django.db import models
 class PotSettings(models.Model):
     per_player = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("10.00"))
     allowed_email_domains = models.JSONField(default=list, blank=True)
+    matchday_winner_prize = models.DecimalField(
+        max_digits=8, decimal_places=2, default=Decimal("0")
+    )
 
     class Meta:
         verbose_name = "Pot settings"
