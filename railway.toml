@@ -7,14 +7,21 @@
 builder = "RAILPACK"
 
 [deploy]
-# El comando de arranque vive en el Procfile (web: collectstatic && gunicorn).
+# startCommand es autoritativo y sobreescribe lo que Railpack auto-detecte
+# (Railpack detecta Django y genera un `gunicorn porra26.wsgi:application ...`
+# por su cuenta, ignorando incluso el `web:` del Procfile).
+# bin/start-web.sh ejecuta collectstatic ANTES de arrancar gunicorn, así los
+# estáticos quedan en el FS del contenedor que sirve el tráfico. El Procfile
+# se mantiene como documentación pero no es el que manda.
+startCommand = "bash bin/start-web.sh"
+
 # preDeployCommand corre DESPUÉS del build, en un contenedor con acceso a la
 # red privada del proyecto (incluido Postgres) y a las variables del servicio.
 # El `release:` del Procfile no sirve aquí porque se ejecuta en build-time sin
 # red privada y peta al intentar conectar con Postgres.
-# Solo dejamos migrate aquí: collectstatic se ejecuta en el `web:` del
-# Procfile porque el contenedor de preDeploy es efímero y los ficheros
-# estáticos no se persisten al contenedor del runtime.
+# Solo dejamos migrate aquí: collectstatic se ejecuta en el startCommand
+# porque el contenedor de preDeploy es efímero y los ficheros estáticos no
+# se persisten al contenedor del runtime.
 # El prefijo DJANGO_SETTINGS_MODULE protege frente a entornos donde la
 # variable no se inyecte aún en este contenedor (lo hemos visto en shells del
 # dashboard); `wsgi.py` lo fija para gunicorn, pero `manage.py` no.
