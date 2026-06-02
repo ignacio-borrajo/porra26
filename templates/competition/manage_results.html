@@ -13,7 +13,7 @@
     <span>{{ m.home.flag }} {{ m.home.name }} vs {{ m.away.flag }} {{ m.away.name }}</span>
     <span class="chip chip-{{ m.status }}">{{ m.status }}</span>
     <a class="btn btn-ghost" href="{% url 'competicion:api:cierre_pdf' m.id %}" style="padding:6px 12px;font-size:12px" title="Descargar PDF de cierre">📄 PDF</a>
-    <a class="btn btn-primary" href="{% url 'competicion:official' m.id %}" style="padding:6px 12px;font-size:12px">Finalizar</a>
+    <a class="btn btn-primary" href="{% url 'competicion:official' m.id %}" data-modal-url="{% url 'competicion:official' m.id %}" style="padding:6px 12px;font-size:12px">Finalizar</a>
   </div>
   {% endfor %}
 </div>
@@ -26,7 +26,7 @@
     <span class="mono" style="color:var(--text-faint)">Grupo {{ m.group }}</span>
     <span>{{ m.home.flag }} {{ m.home.name }} vs {{ m.away.flag }} {{ m.away.name }}</span>
     <span class="mono" style="font-size:11px">{{ m.kickoff|date:"d M · H:i" }}</span>
-    <a class="btn btn-ghost" href="{% url 'competicion:official' m.id %}" style="padding:6px 12px;font-size:12px">Finalizar</a>
+    <a class="btn btn-ghost" href="{% url 'competicion:official' m.id %}" data-modal-url="{% url 'competicion:official' m.id %}" style="padding:6px 12px;font-size:12px">Finalizar</a>
   </div>
   {% endfor %}
 </div>
@@ -40,7 +40,7 @@
     <span>{{ m.home.flag }} {{ m.home.name }} {{ m.result_home }}–{{ m.result_away }} {{ m.away.flag }} {{ m.away.name }}</span>
     <span class="chip chip-done">Final</span>
     <a class="btn btn-ghost" href="{% url 'competicion:api:cierre_pdf' m.id %}" style="padding:6px 12px;font-size:12px" title="Descargar PDF de cierre">📄 PDF</a>
-    <a class="btn btn-ghost" href="{% url 'competicion:official' m.id %}" style="padding:6px 12px;font-size:12px">Editar</a>
+    <a class="btn btn-ghost" href="{% url 'competicion:official' m.id %}" data-modal-url="{% url 'competicion:official' m.id %}" style="padding:6px 12px;font-size:12px">Editar</a>
   </div>
   {% endfor %}
 </div>

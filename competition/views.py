@@ -268,7 +268,18 @@ class ManageResultsView(GestorRequiredMixin, View):
 class ResultOfficialView(GestorRequiredMixin, View):
     def get(self, request, match_id):
         m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
-        return render(request, "competition/_official_modal.html", {"match": m})
+        from competition.services.predictions import (
+            next_pending_result_match,
+            pending_result_matches_count,
+        )
+
+        pending_count = pending_result_matches_count()
+        has_next = next_pending_result_match(after_match=m) is not None
+        return render(
+            request,
+            "competition/_official_modal.html",
+            {"match": m, "pending_count": pending_count, "has_next": has_next},
+        )
 
     def post(self, request, match_id):
         m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
@@ -280,6 +291,20 @@ class ResultOfficialView(GestorRequiredMixin, View):
             return redirect("competicion:manage_results")
         resolve_match(m, home=h, away=a, actor=request.user)
         messages.success(request, f"Resultado confirmado · {m.home.name} {h}–{a} {m.away.name}")
+        if request.POST.get("chain") == "1":
+            from django.http import HttpResponse
+            from django.urls import reverse
+
+            from competition.services.predictions import next_pending_result_match
+
+            nxt = next_pending_result_match(after_match=m)
+            if nxt is not None:
+                resp = HttpResponse(status=204)
+                resp["X-Modal-Next"] = reverse("competicion:official", args=[nxt.id])
+                return resp
+            resp = HttpResponse(status=200)
+            resp["X-Modal-Redirect"] = reverse("competicion:manage_results")
+            return resp
         return redirect("competicion:manage_results")
 
 

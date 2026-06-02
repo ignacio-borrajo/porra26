@@ -1,25 +1,46 @@
-{% extends "base.html" %}
-{% block main %}
-<section class="glass pop" style="max-width:520px;margin:6vh auto;padding:28px;border-radius:24px">
-  <div class="eyebrow">RESULTADO OFICIAL</div>
-  <h1 class="display" style="font-size:24px">Marcar resultado final</h1>
+<section class="glass pop" style="width:min(520px,100%);padding:28px;border-radius:24px;background:var(--surface-solid)">
+  <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+    <div>
+      <div class="eyebrow">RESULTADO OFICIAL · {{ pending_count }} pendiente{{ pending_count|pluralize }}</div>
+      <h1 class="display" style="font-size:24px;margin:4px 0 0">Marcar resultado final</h1>
+    </div>
+    <button type="button" data-modal-close class="btn btn-ghost" style="width:36px;height:36px;padding:0;border-radius:12px" aria-label="Cerrar">{% load icons %}{% icon "x" width=14 %}</button>
+  </header>
   <form method="post" action="{% url 'competicion:official' match.id %}">
     {% csrf_token %}
-    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:14px;margin:18px 0;align-items:center">
-      <div style="text-align:center">
-        <div style="font-size:46px">{{ match.home.flag }}</div><strong>{{ match.home.name }}</strong>
-        <input name="home" type="number" min="0" max="20" value="{{ match.result_home|default:0 }}" class="input" style="font-size:32px;text-align:center;width:84px;margin:8px auto 0">
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin:18px 0">
+      <div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px">
+          <span style="font-size:28px;line-height:1">{{ match.home.flag }}</span>
+          <strong>{{ match.home.name }}</strong>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px">
+          <button type="button" class="btn btn-ghost" data-step="-1" aria-label="Restar gol {{ match.home.name }}" style="width:38px;height:38px;padding:0;font-size:22px;line-height:1">−</button>
+          <input name="home" type="text" inputmode="numeric" data-max="20" value="{{ match.result_home|default:0 }}" class="input" readonly style="font-size:32px;text-align:center;width:72px;cursor:default">
+          <button type="button" class="btn btn-ghost" data-step="1" aria-label="Sumar gol {{ match.home.name }}" style="width:38px;height:38px;padding:0;font-size:22px;line-height:1">+</button>
+        </div>
       </div>
       <div class="display" style="font-size:30px">:</div>
-      <div style="text-align:center">
-        <div style="font-size:46px">{{ match.away.flag }}</div><strong>{{ match.away.name }}</strong>
-        <input name="away" type="number" min="0" max="20" value="{{ match.result_away|default:0 }}" class="input" style="font-size:32px;text-align:center;width:84px;margin:8px auto 0">
+      <div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px">
+          <span style="font-size:28px;line-height:1">{{ match.away.flag }}</span>
+          <strong>{{ match.away.name }}</strong>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px">
+          <button type="button" class="btn btn-ghost" data-step="-1" aria-label="Restar gol {{ match.away.name }}" style="width:38px;height:38px;padding:0;font-size:22px;line-height:1">−</button>
+          <input name="away" type="text" inputmode="numeric" data-max="20" value="{{ match.result_away|default:0 }}" class="input" readonly style="font-size:32px;text-align:center;width:72px;cursor:default">
+          <button type="button" class="btn btn-ghost" data-step="1" aria-label="Sumar gol {{ match.away.name }}" style="width:38px;height:38px;padding:0;font-size:22px;line-height:1">+</button>
+        </div>
       </div>
     </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end">
-      <a class="btn btn-ghost" href="{% url 'competicion:manage_results' %}">Cancelar</a>
-      <button class="btn btn-primary" type="submit">Confirmar y finalizar</button>
+    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn btn-ghost" type="button" data-modal-close>Cancelar</button>
+      {% if has_next %}
+      <button class="btn btn-ghost" type="submit">Guardar resultado</button>
+      <button class="btn btn-primary" type="submit" name="chain" value="1">Guardar y siguiente</button>
+      {% else %}
+      <button class="btn btn-primary" type="submit">Guardar resultado</button>
+      {% endif %}
     </div>
   </form>
 </section>
-{% endblock %}
