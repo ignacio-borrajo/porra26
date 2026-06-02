@@ -15,6 +15,11 @@ ALLOWED_HOSTS = [
 _railway_host = os.environ.get("RAILWAY_PUBLIC_DOMAIN")
 if _railway_host and _railway_host not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(_railway_host)
+# Railway lanza los healthchecks desde el host interno `healthcheck.railway.app`
+# por HTTP plano. Sin esto Django responde 400 DisallowedHost y el deploy nunca
+# pasa de fase Network → Healthcheck.
+if "healthcheck.railway.app" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("healthcheck.railway.app")
 
 # PostgreSQL en Railway. DATABASE_URL la inyecta el plugin de Postgres al
 # enlazarlo al servicio web. Requiere SSL (conn_max_age reusa conexiones).
@@ -36,6 +41,9 @@ MIDDLEWARE = [
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 SECURE_SSL_REDIRECT = True
+# El healthcheck de Railway llega por HTTP plano; si lo redirigimos a HTTPS
+# obtiene un 301 y marca el deploy como fallido. Eximimos solo /healthz/.
+SECURE_REDIRECT_EXEMPT = [r"^healthz/$"]
 SECURE_HSTS_SECONDS = 31_536_000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
