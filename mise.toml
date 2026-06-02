@@ -1,0 +1,9 @@
+# Configuración de mise para builds reproducibles.
+# Railpack usa mise por debajo para instalar la versión de Python definida en
+# .python-version (3.12.7). Sin esta opción, mise rechaza el binario porque
+# python-build-standalone no firmaba todavía sus releases con GitHub artifact
+# attestations en la fecha del 3.12.7 (2024-10-16). Para una app interna con
+# versión pineada en el repo el riesgo es despreciable; preferimos que el
+# build pase a verificar attestations que no existen.
+[settings]
+python.github_attestations = false
