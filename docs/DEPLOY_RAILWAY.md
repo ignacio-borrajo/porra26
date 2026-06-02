@@ -10,8 +10,8 @@ Esta guía sustituye al despliegue en PythonAnywhere (`docs/DEPLOY.md`). El moti
 
 - Cuenta en https://railway.com (la que ya tiene Ignacio).
 - Repo conectable a Railway (GitHub).
-- Buzón corporativo dedicado al bot (`porra26-bot@edisa.com`) con **contraseña de aplicación** generada en Microsoft 365 (Office 365 no permite SMTP autenticado con la contraseña normal si hay MFA).
-- Buzón corporativo destino para los PDFs de cierre (`porra26-cierres@edisa.com`). Power Automate suscribe este buzón.
+- Cuenta en https://resend.com como proveedor SMTP saliente. **No requiere dominio propio**: con el remitente de pruebas `onboarding@resend.dev` se puede enviar a la dirección con la que te registras en Resend, que es justo lo que necesita el flujo (la app envía a tu propio buzón corporativo). Tier gratuito: 100 emails/día, 3 000/mes.
+- Tu buzón corporativo (`ignacio.borrajo@edisa.com`) actúa como destino: ahí caen los PDFs y desde ahí los recoge Power Automate. No hace falta crear un buzón dedicado en M365.
 
 ## 2. Ficheros del repo que Railway usa
 
@@ -42,18 +42,32 @@ Todos están versionados en la raíz:
 
 Los avatares se guardan en `media/avatars/`. Si no hay volumen, se pierden en cada redeploy.
 
-1. Servicio **web** → pestaña **Settings → Volumes → + New Volume**.
-2. Mount path: `/app/media`. Tamaño inicial: 1 GB (suficiente; se puede crecer).
+Railway ya no expone los volúmenes dentro de `Settings` del servicio: se crean desde el canvas del proyecto. Usa cualquiera de estos caminos:
+
+- **Command Palette**: pulsa `⌘K` (Mac) o `Ctrl+K` (Windows/Linux), escribe `Create Volume` y selecciónalo.
+- **Click derecho** sobre el área vacía del canvas → *Create* → **Volume**.
+- Botón **+ New** (arriba a la derecha) → **Volume** (si aparece en tu cuenta).
+
+Configuración:
+
+1. Cuando te pida el servicio, elige el servicio **web**.
+2. **Mount path**: `/app/media`.
+3. Tamaño inicial: 1 GB (redimensionable en caliente).
+
+Tras crearlo verás un nodo de *Volume* nuevo en el canvas conectado al servicio web; abriéndolo puedes ajustar tamaño y consultar el uso.
 
 ### 3.4 Variables de entorno
+
+Antes de pegar nada, **crea una API key en Resend**: panel → *API Keys* → *Create API Key* → permiso *Sending access* → cópiala (se muestra una sola vez).
 
 Pestaña **Variables** del servicio web → **Raw editor** → pega `.env.railway.example`. Sustituye los `replace-me`:
 
 - `DJANGO_SECRET_KEY` → genera con `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
 - `DJANGO_ALLOWED_HOSTS` → tu dominio Railway (`xxx.up.railway.app`) o tu dominio propio si lo enlazas. `prod.py` añade `RAILWAY_PUBLIC_DOMAIN` automáticamente, pero deja al menos uno aquí explícito.
-- `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` → cuenta `porra26-bot@edisa.com` + su *app password*.
-- `TEAMS_DESTINATION_EMAIL` → buzón que vigila Power Automate.
-- `TEAMS_API_TOKEN` → mismo token que pegarás en el flow de Power Automate.
+- `EMAIL_HOST_PASSWORD` → la API key de Resend que acabas de generar. `EMAIL_HOST_USER` se queda en el literal `resend` (Resend espera ese usuario fijo en SMTP).
+- `DEFAULT_FROM_EMAIL` → mientras no haya dominio propio, déjalo en `PORRA 26 <onboarding@resend.dev>`. Si más adelante verificas un dominio en Resend (ver §12), cámbialo a `PORRA 26 <bot@tu-dominio>`.
+- `TEAMS_DESTINATION_EMAIL` → tu buzón corporativo personal (`ignacio.borrajo@edisa.com`). Tiene que coincidir con la dirección con la que te registraste en Resend mientras estés en modo sin dominio verificado.
+- `TEAMS_API_TOKEN` → mismo token que pegarás en el flow de Power Automate (opción B del §8). Si solo usas el flujo *email-driven* (opción A), no hace falta tocarlo, pero conviene dejar un valor aleatorio para no exponer el endpoint REST.
 
 `DATABASE_URL` NO la pegues: viene por referencia del paso 3.2.
 
@@ -161,11 +175,13 @@ Servicio web → **Settings → Domains → + Custom Domain**, añade `porra26.e
 
 - **Plan**: Railway cobra por uso (CPU/RAM/egress). Para ~50 jugadores el consumo es ínfimo, pero conviene monitorizar el primer mes.
 - **Egress**: cada PDF enviado por SMTP cuenta como tráfico saliente. Despreciable a este volumen.
-- **SMTP de Microsoft 365**: el buzón emisor necesita *App password* (con MFA activa) o, mejor, un *Application access policy* + OAuth2. Esta guía asume *App password* por simplicidad.
+- **SMTP de Resend (modo sin dominio)**: usando `onboarding@resend.dev` solo se puede enviar a la dirección con la que te registraste. Esto encaja con el flujo actual (la app se envía al buzón que vigila Power Automate). Si el día de mañana hay varios destinatarios o quieres un remitente "de marca", verifica un dominio (ver §12).
+- **Resend free tier**: 100 envíos/día, 3 000/mes. Una porra del Mundial con ~50 jugadores no se acerca. Si lo superas, el siguiente tier es de pago.
 - **Volumen `/app/media`**: redimensionable en caliente; los datos no se pierden entre deploys pero **sí se pierden si borras el servicio**. Inclúyelo en el backup si los avatares importan.
 
 ## 11. Checklist de corte PA → Railway
 
+- [ ] Cuenta en Resend creada con el email que actuará de destinatario (`ignacio.borrajo@edisa.com`) y API key generada.
 - [ ] Postgres aprovisionado y `DATABASE_URL` enlazada.
 - [ ] Volumen `/app/media` montado.
 - [ ] Variables del paso 3.4 puestas (sin `replace-me`).
@@ -173,6 +189,37 @@ Servicio web → **Settings → Domains → + Custom Domain**, añade `porra26.e
 - [ ] `createsuperuser` ejecutado.
 - [ ] Fixtures del Mundial cargadas (o `dump.json` importado).
 - [ ] DNS apuntando al dominio Railway si aplica.
-- [ ] `TEAMS_DESTINATION_EMAIL` recibiendo un email de prueba (envíalo desde `manage.py shell`).
-- [ ] Power Automate reconfigurado para escuchar ese buzón.
+- [ ] `TEAMS_DESTINATION_EMAIL` recibiendo un email de prueba (envíalo desde `manage.py shell` — ver §13).
+- [ ] Regla en Outlook que mueve los correos con asunto `[PORRA26]` a una carpeta dedicada (evita ruido en bandeja y facilita el filtro de Power Automate).
+- [ ] Power Automate reconfigurado: trigger *When a new email arrives (V3)* con `From = onboarding@resend.dev` y `Subject Filter = [PORRA26][CIERRE]`.
 - [ ] App de PythonAnywhere puesta en pausa (no eliminada todavía) durante 1-2 semanas por si toca rollback.
+
+## 12. Migrar a dominio propio en Resend (opcional)
+
+Mientras uses `onboarding@resend.dev` el remitente es genérico y Outlook puede aplicarle filtros antispam. Cuando quieras "dignificar" el envío:
+
+1. Registra un dominio barato (porkbun, namecheap, ~8-12 €/año) o usa un subdominio que controles (`porra.tu-dominio.com`).
+2. En Resend → *Domains → Add Domain* → introduce el dominio y copia los 3 registros DNS que muestra (SPF, DKIM y MX opcional para *return path*).
+3. Pega los registros en el panel DNS del registrar y espera unos minutos. Resend marca el dominio como *Verified* en cuanto los detecta.
+4. En Railway → Variables: cambia `DEFAULT_FROM_EMAIL` a `PORRA 26 <bot@tu-dominio>` y reinicia el servicio.
+5. En Power Automate ajusta el filtro `From` al nuevo remitente.
+
+Ya no hace falta que el destinatario coincida con la cuenta de Resend: puedes enviar a cualquier dirección.
+
+## 13. Prueba de envío de extremo a extremo
+
+Desde local con CLI:
+
+```bash
+railway run python manage.py shell
+>>> from django.core.mail import EmailMessage
+>>> msg = EmailMessage(
+...     subject="[PORRA26][TEST] Smoke test SMTP",
+...     body="Si llegas a mi buzón, Resend va bien.",
+...     to=["ignacio.borrajo@edisa.com"],
+... )
+>>> msg.send()
+1
+```
+
+En el panel de Resend → *Logs* verás el envío como `Delivered`. Si aparece como `Bounced` o `Complained`, revisa que `to` coincide con la cuenta con la que te registraste (restricción del modo sin dominio verificado).
