@@ -148,6 +148,23 @@ def test_pdf_endpoint_404_if_not_closed(client):
 
 @pytest.mark.django_db
 @override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_pdf_endpoint_allows_future_match_with_result(client):
+    """Cuando el gestor entra un resultado a un partido cuyo cierre todavía
+    no ha pasado (testing pre-Mundial, o admin override), el PDF se genera
+    igualmente porque la decisión del gestor implica que las apuestas son
+    definitivas."""
+    m = MatchFactory(
+        kickoff=timezone.now() + timedelta(hours=6),
+        result_home=2,
+        result_away=1,
+    )
+    res = client.get(reverse("competicion:api:cierre_pdf", args=[m.id]), **AUTH)
+    assert res.status_code == 200
+    assert res["Content-Type"] == "application/pdf"
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
 def test_pdf_endpoint_404_unknown_match(client):
     res = client.get(reverse("competicion:api:cierre_pdf", args=[999_999]), **AUTH)
     assert res.status_code == 404

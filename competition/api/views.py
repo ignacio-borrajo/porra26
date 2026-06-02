@@ -58,8 +58,8 @@ def cierre_pdf(request, match_id: int):
         pk=match_id,
     )
     now = timezone.now()
-    if match.kickoff - timedelta(hours=BET_CLOSE_HOURS) > now:
-        # todavía abierto → no hay PDF de cierre
+    if not match.has_result and match.kickoff - timedelta(hours=BET_CLOSE_HOURS) > now:
+        # todavía abierto y sin resultado → no hay nada que retratar
         return JsonResponse({"detail": "Partido todavía no cerrado"}, status=404)
 
     pdf_bytes = build_closing_pdf(match)
