@@ -1193,3 +1193,98 @@ img.avatar { object-fit: cover; }
   text-align: right;
 }
 .leaderboard-row__pts.is-me { color: var(--accent); }
+
+/* === Pantalla de configuración de premios ============================ */
+.prizes-podium {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.prizes-podium li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 12px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface-hi);
+}
+.prizes-podium li[data-position="1"] { border-color: oklch(from var(--c-gold) l c h / 0.55); }
+.prizes-podium li[data-position="2"] { border-color: oklch(from var(--text-dim) l c h / 0.45); }
+.prizes-podium li[data-position="3"] { border-color: oklch(from var(--c-yellow) l c h / 0.45); }
+.prizes-podium-badge {
+  font-family: Sora, sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--text);
+}
+.prizes-podium li[data-position="1"] .prizes-podium-badge { color: var(--c-gold); }
+.prizes-podium li[data-position="2"] .prizes-podium-badge { color: var(--text-dim); }
+.prizes-podium li[data-position="3"] .prizes-podium-badge { color: var(--c-yellow); }
+.prizes-podium-label {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-faint);
+}
+.prizes-podium-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+.prizes-podium-input .input {
+  flex: 1;
+  text-align: right;
+  font-family: Sora, sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.prizes-matchday-card { border-color: oklch(from var(--c-cyan) l c h / 0.35); }
+.prizes-matchday-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+}
+.prizes-matchday-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-md);
+  background: oklch(from var(--c-cyan) l c h / 0.12);
+  color: var(--c-cyan);
+}
+.prizes-matchday-label {
+  font-family: 'Geist Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-faint);
+}
+.prizes-matchday-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.prizes-matchday-input .input {
+  width: 180px;
+  text-align: right;
+  font-family: Sora, sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+}
+
+@media (max-width: 720px) {
+  .prizes-podium { grid-template-columns: 1fr; }
+  .prizes-matchday-row { grid-template-columns: 1fr; }
+  .prizes-matchday-input .input { width: 100%; }
+}
