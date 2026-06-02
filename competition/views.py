@@ -193,13 +193,9 @@ class PredictView(LoginRequiredMixin, View):
             nxt = next_pending_match(request.user, after_match=m)
             if nxt is not None:
                 resp = HttpResponse(status=204)
-                resp["X-Modal-Next"] = reverse(
-                    "competicion:predict", args=[nxt.id]
-                )
+                resp["X-Modal-Next"] = reverse("competicion:predict", args=[nxt.id])
                 return resp
-            messages.success(
-                request, "¡Has apostado todos los partidos disponibles!"
-            )
+            messages.success(request, "¡Has apostado todos los partidos disponibles!")
             resp = HttpResponse(status=200)
             resp["X-Modal-Redirect"] = reverse("competicion:dashboard")
             return resp
