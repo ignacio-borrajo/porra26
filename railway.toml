@@ -1,0 +1,14 @@
+# Configuración del servicio web de PORRA 26 en Railway.
+# Railway lee este fichero automáticamente al detectarlo en la raíz del repo.
+# El builder Nixpacks instala dependencias desde requirements.txt y respeta runtime.txt.
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+# El comando de arranque vive en el Procfile (web: gunicorn ...).
+# Si quisieras moverlo aquí: startCommand = "gunicorn porra26.wsgi:application --bind 0.0.0.0:$PORT"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+healthcheckPath = "/healthz/"
+healthcheckTimeout = 30
