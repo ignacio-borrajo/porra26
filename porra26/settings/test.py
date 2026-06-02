@@ -13,3 +13,8 @@ DATABASES = {
 
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 AXES_ENABLED = False
+
+# Email — backend en memoria; los tests nunca emiten tráfico real.
+EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+DEFAULT_FROM_EMAIL = "porra26-bot@edisa.com"
+TEAMS_DESTINATION_EMAIL = "test-destino@edisa.com"

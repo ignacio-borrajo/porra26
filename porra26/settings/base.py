@@ -92,3 +92,21 @@ AXES_RESET_ON_SUCCESS = True
 RULES_UPDATED_AT = date(2026, 6, 1)
 
 TEAMS_API_TOKEN = os.getenv("TEAMS_API_TOKEN", "")
+
+# Email (SMTP) — usado por el management command `send_pending_closures` y
+# por las vistas que adjuntan PDFs. Si EMAIL_HOST está vacío caemos al
+# backend de consola para no fallar en entornos sin SMTP configurado.
+EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+if EMAIL_HOST:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+    EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() in {"1", "true", "yes"}
+    EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+    DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "porra26@localhost")
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Destinatario del PDF de cierre. Power Automate suscribe este buzón y
+# republica el adjunto en el chat de Teams.
+TEAMS_DESTINATION_EMAIL = os.getenv("TEAMS_DESTINATION_EMAIL", "")

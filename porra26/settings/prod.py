@@ -66,22 +66,6 @@ CACHES = {
     }
 }
 
-# SMTP saliente: Railway permite tráfico saliente al puerto 587. Apuntamos al
-# SMTP corporativo (Office 365 por defecto). Si falta EMAIL_HOST se cae al
-# backend de consola para no romper en arranques sin SMTP configurado.
-EMAIL_HOST = os.environ.get("EMAIL_HOST", "")
-if EMAIL_HOST:
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
-    EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() in {"1", "true", "yes"}
-    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-    DEFAULT_FROM_EMAIL = os.environ.get(
-        "DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "porra26@localhost"
-    )
-else:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
-# Buzón destino al que se envía el PDF de cierre de cada partido. Power
-# Automate vigila este buzón y republica el adjunto en el chat de Teams.
-TEAMS_DESTINATION_EMAIL = os.environ.get("TEAMS_DESTINATION_EMAIL", "")
+# SMTP saliente y TEAMS_DESTINATION_EMAIL viven en base.py (leídos del
+# entorno) para que el management command de cierre por email funcione en
+# todos los entornos. Aquí no hace falta nada específico de producción.
