@@ -20,8 +20,43 @@
 </nav>
 
 {% if tab == "general" %}
-  <div style="max-width:440px">
-    {% include "partials/_leaderboard.html" with rows=standings me=request.user users=standings_users my_rank=my_rank max_pts=max_pts %}
+  <div class="rankings-clas">
+    <div class="rankings-clas__col">
+      <section class="glass leaderboard rankings-clas__board">
+        <header class="leaderboard-header">
+          <div style="display:flex;align-items:center;gap:9px">
+            {% icon "trophy" width=18 height=18 %}
+            <h2 class="display" style="font-size:16px;margin:0">General</h2>
+          </div>
+          {% if my_rank %}<span class="chip chip-accent">Tú · #{{ my_rank }}</span>{% endif %}
+        </header>
+        {% include "partials/_leaderboard_panel.html" with rows=standings users=standings_users me=request.user max_pts=max_pts %}
+      </section>
+    </div>
+    <div class="rankings-clas__col rankings-clas__col--scope">
+      <section class="glass leaderboard rankings-clas__board">
+        <header class="leaderboard-header">
+          <div style="display:flex;align-items:center;gap:9px">
+            {% icon "trophy" width=18 height=18 %}
+            <h2 class="display" style="font-size:16px;margin:0">{{ scope_label|default:"Jornada" }}</h2>
+          </div>
+          {% if scope_my_rank %}<span class="chip chip-accent">Tú · #{{ scope_my_rank }}</span>{% endif %}
+        </header>
+        {% include "partials/_leaderboard_panel.html" with rows=scope_standings users=standings_users me=request.user max_pts=scope_max_pts %}
+      </section>
+      {% if md_options %}
+      <nav class="rankings-md-selector glass" aria-label="Selector de jornadas">
+        <span class="eyebrow" style="font-size:9px;padding:0 4px 4px">Jornadas</span>
+        {% for o in md_options %}
+          <a href="?tab=general&scope={{ o.key }}"
+             class="chip rankings-md-selector__item{% if o.is_active %} chip-open is-active{% endif %}"
+             style="text-decoration:none">
+            {{ o.label }}
+          </a>
+        {% endfor %}
+      </nav>
+      {% endif %}
+    </div>
   </div>
 {% else %}
   <div class="glass rise table-scroll" style="border-radius:22px">

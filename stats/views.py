@@ -8,6 +8,11 @@ from competition.services.standings import standings
 from stats.services.group_standings import group_standings
 from stats.services.history import per_player_history
 from stats.services.kpis import donut, kpis
+from stats.services.matchday_options import (
+    current_option,
+    matchday_options,
+    parse_scope_key,
+)
 
 
 class StatsView(LoginRequiredMixin, View):
@@ -41,7 +46,7 @@ class ChartDataView(LoginRequiredMixin, View):
 class RankingsView(LoginRequiredMixin, View):
     VALID_TABS = ("general", "sede", "puesto", "dept")
     TAB_LABELS = {
-        "general": "General",
+        "general": "Clasificación",
         "sede": "Sede",
         "puesto": "Puesto",
         "dept": "Departamento",
@@ -57,15 +62,44 @@ class RankingsView(LoginRequiredMixin, View):
         }
         if tab == "general":
             rows = standings()[:50]
-            users_by_id = User.objects.in_bulk([r.player_id for r in rows])
             my_rank = next((r.position for r in rows if r.player_id == request.user.id), None)
             max_pts = max((r.pts for r in rows), default=0) or 1
+
+            md_opts = matchday_options()
+            requested = parse_scope_key(request.GET.get("scope"), md_opts)
+            current = current_option(md_opts)
+            scope = requested or current
+            for o in md_opts:
+                o.is_active = scope is not None and o.key == scope.key
+
+            scope_rows: list = []
+            scope_my_rank = None
+            scope_max_pts = 1
+            scope_label = None
+            if scope is not None:
+                scope_rows = standings(
+                    round_id=scope.round_id, matchday=scope.matchday
+                )[:50]
+                scope_my_rank = next(
+                    (r.position for r in scope_rows if r.player_id == request.user.id),
+                    None,
+                )
+                scope_max_pts = max((r.pts for r in scope_rows), default=0) or 1
+                scope_label = scope.label
+
+            all_ids = {r.player_id for r in rows} | {r.player_id for r in scope_rows}
+            users_by_id = User.objects.in_bulk(all_ids)
             ctx.update(
                 {
                     "standings": rows,
                     "standings_users": users_by_id,
                     "my_rank": my_rank,
                     "max_pts": max_pts,
+                    "scope_standings": scope_rows,
+                    "scope_my_rank": scope_my_rank,
+                    "scope_max_pts": scope_max_pts,
+                    "scope_label": scope_label,
+                    "md_options": md_opts,
                 }
             )
         else:

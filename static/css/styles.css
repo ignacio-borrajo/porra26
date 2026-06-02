@@ -904,6 +904,60 @@ img.avatar { object-fit: cover; }
 }
 .leaderboard-header svg { color: var(--c-gold); }
 
+/* Rankings · tab Clasificación: dos columnas centradas con selector vertical
+   de jornadas pegado al board de la derecha. */
+.rankings-clas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  align-items: start;
+}
+.rankings-clas__col {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  min-width: 0;
+}
+.rankings-clas__col--scope { align-items: flex-start; }
+.rankings-clas__board {
+  width: 100%;
+  max-width: 440px;
+  padding: 18px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.rankings-md-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 14px;
+  position: sticky;
+  top: 88px;
+  min-width: 140px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+}
+.rankings-md-selector__item {
+  text-align: left;
+  white-space: nowrap;
+}
+.rankings-md-selector__item.is-active { font-weight: 700; }
+@media (max-width: 1100px) {
+  .rankings-clas { grid-template-columns: 1fr; }
+  .rankings-clas__col--scope { flex-direction: column; align-items: center; }
+  .rankings-md-selector {
+    position: static;
+    max-height: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 440px;
+  }
+}
+
 /* Tabs Global / Jornada-Ronda (radio CSS, sin JS) */
 .lb-scope-input { position: absolute; opacity: 0; pointer-events: none; }
 .lb-tabs {
