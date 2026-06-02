@@ -18,11 +18,14 @@
       {% icon "book" width=17 height=17 %} Reglas
     </a>
     {% if user.is_gestor %}
-    <a href="{% url 'pot:manage_players' %}" class="nav-item{% if ns == 'pot' %} is-active{% endif %}">
+    <a href="{% url 'pot:manage_players' %}" class="nav-item{% if ns == 'pot' and url_name != 'prizes' and url_name != 'audit' %} is-active{% endif %}">
       {% icon "users" width=17 height=17 %} Jugadores
     </a>
     <a href="{% url 'competicion:manage_results' %}" class="nav-item{% if url_name == 'manage_results' %} is-active{% endif %}">
       {% icon "whistle" width=17 height=17 %} Resultados
+    </a>
+    <a href="{% url 'pot:prizes' %}" class="nav-item{% if url_name == 'prizes' %} is-active{% endif %}">
+      {% icon "euro" width=17 height=17 %} Premios
     </a>
     {% endif %}
   </nav>
