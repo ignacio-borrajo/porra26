@@ -100,5 +100,5 @@ class ProfileForm(forms.ModelForm):
             raise forms.ValidationError("La foto no puede pesar más de 2 MB.")
         try:
             return process_avatar(f)
-        except (UnidentifiedImageError, OSError):
-            raise forms.ValidationError("El archivo no es una imagen válida.")
+        except (UnidentifiedImageError, OSError) as err:
+            raise forms.ValidationError("El archivo no es una imagen válida.") from err
