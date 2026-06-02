@@ -1,13 +1,21 @@
 # Configuración del servicio web de PORRA 26 en Railway.
 # Railway lee este fichero automáticamente al detectarlo en la raíz del repo.
-# El builder Nixpacks instala dependencias desde requirements.txt y respeta runtime.txt.
+# El builder Railpack instala dependencias desde requirements.txt y respeta
+# runtime.txt (NIXPACKS quedó deprecated; Railway lo rechaza ya).
 
 [build]
-builder = "NIXPACKS"
+builder = "RAILPACK"
 
 [deploy]
 # El comando de arranque vive en el Procfile (web: gunicorn ...).
-# Si quisieras moverlo aquí: startCommand = "gunicorn porra26.wsgi:application --bind 0.0.0.0:$PORT"
+# preDeployCommand corre DESPUÉS del build, en un contenedor con acceso a la
+# red privada del proyecto (incluido Postgres) y a las variables del servicio.
+# El `release:` del Procfile no sirve aquí porque se ejecuta en build-time sin
+# red privada y peta al intentar conectar con Postgres.
+# El prefijo DJANGO_SETTINGS_MODULE protege frente a entornos donde la
+# variable no se inyecte aún en este contenedor (lo hemos visto en shells del
+# dashboard); `wsgi.py` lo fija para gunicorn, pero `manage.py` no.
+preDeployCommand = "DJANGO_SETTINGS_MODULE=porra26.settings.prod python manage.py migrate --no-input && DJANGO_SETTINGS_MODULE=porra26.settings.prod python manage.py collectstatic --no-input"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 healthcheckPath = "/healthz/"

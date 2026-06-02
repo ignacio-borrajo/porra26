@@ -19,8 +19,8 @@ Todos están versionados en la raíz:
 
 | Fichero | Para qué sirve |
 |---------|----------------|
-| `Procfile` | Comandos de `release` (migraciones + collectstatic) y `web` (gunicorn). |
-| `railway.toml` | Builder Nixpacks, política de reinicio y *healthcheck* (`/healthz/`). |
+| `Procfile` | Comando `web` (gunicorn). Las migraciones viven en `preDeployCommand` de `railway.toml`, no en un `release:` del Procfile (este último corre en build-time sin acceso a Postgres). |
+| `railway.toml` | Builder Railpack, `preDeployCommand` (migrate + collectstatic), política de reinicio y *healthcheck* (`/healthz/`). |
 | `runtime.txt` | Pin de Python 3.12.x. |
 | `requirements.txt` | Incluye ya `psycopg`, `dj-database-url`, `gunicorn` y `whitenoise`. |
 | `.env.railway.example` | Plantilla de variables a pegar en el panel "Variables" del servicio. |
@@ -74,10 +74,10 @@ Pestaña **Variables** del servicio web → **Raw editor** → pega `.env.railwa
 
 ### 3.5 Lanzar el deploy
 
-Servicio web → **Deployments → Deploy**. Verás dos fases en los logs:
+Servicio web → **Deployments → Deploy**. Verás tres fases en los logs:
 
-1. **Build** (Nixpacks): instala Python 3.12 + `requirements.txt`.
-2. **Release**: corre `python manage.py migrate --no-input && python manage.py collectstatic --no-input`.
+1. **Build** (Railpack): instala Python 3.12 + `requirements.txt`.
+2. **Pre-Deploy**: corre `DJANGO_SETTINGS_MODULE=porra26.settings.prod python manage.py migrate --no-input && ... collectstatic --no-input` (definido en `railway.toml → [deploy].preDeployCommand`). Ya tiene red privada y variables, así que conecta con Postgres.
 3. **Web**: arranca gunicorn en el puerto `$PORT`.
 
 Si el *healthcheck* en `/healthz/` responde 200, Railway marca el deploy como `SUCCESS` y enruta el tráfico.
