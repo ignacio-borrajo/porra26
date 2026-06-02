@@ -62,6 +62,7 @@ Antes de pegar nada, **crea una API key en Resend**: panel → *API Keys* → *C
 
 Pestaña **Variables** del servicio web → **Raw editor** → pega `.env.railway.example`. Sustituye los `replace-me`:
 
+- `DJANGO_SETTINGS_MODULE=porra26.settings.prod` → imprescindible. Sin esto, `manage.py` cae a `dev` (SQLite local) y los comandos `railway run python manage.py …` no tocan Postgres. `wsgi.py` ya fuerza prod para el servicio web, pero los comandos administrativos necesitan verla en el entorno inyectado.
 - `DJANGO_SECRET_KEY` → genera con `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
 - `DJANGO_ALLOWED_HOSTS` → tu dominio Railway (`xxx.up.railway.app`) o tu dominio propio si lo enlazas. `prod.py` añade `RAILWAY_PUBLIC_DOMAIN` automáticamente, pero deja al menos uno aquí explícito.
 - `EMAIL_HOST_PASSWORD` → la API key de Resend que acabas de generar. `EMAIL_HOST_USER` se queda en el literal `resend` (Resend espera ese usuario fijo en SMTP).
