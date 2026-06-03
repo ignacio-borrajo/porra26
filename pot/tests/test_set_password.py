@@ -4,8 +4,9 @@ import re
 import pytest
 from django.urls import reverse
 
+from accounts.models import AuditLog
 from accounts.tests.factories import GestorFactory, UserFactory
-from pot.forms import generate_suggested_password, SetPlayerPasswordForm
+from pot.forms import SetPlayerPasswordForm, generate_suggested_password
 
 
 def test_generate_suggested_password_meets_rules():
@@ -110,9 +111,6 @@ def test_get_404_for_unknown_user(client):
     client.force_login(GestorFactory())
     r = client.get(reverse("pot:player_set_password", args=[99999]))
     assert r.status_code == 404
-
-
-from accounts.models import AuditLog
 
 
 @pytest.mark.django_db
