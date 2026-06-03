@@ -159,6 +159,28 @@ def test_detail_requires_login(client):
 
 
 @pytest.mark.django_db
+def test_detail_marks_exact_via_applied_snapshot(client):
+    """La marca 'exacto' se decide contra exact_points_applied (snapshot del
+    partido), no contra round.points actual. Si el gestor sube los puntos
+    de la ronda después de resolver, los exactos antiguos siguen siendo exactos."""
+    me = UserFactory(must_change_password=False, name="Ana")
+    client.force_login(me)
+    grp = RoundFactory(id="groups", points=3, partial_points=1, label="G", short="G", order=1)
+    m = MatchFactory(round=grp, kickoff=timezone.now() - timedelta(hours=3))
+    PredictionFactory(player=me, match=m, home=2, away=1)
+    resolve_match(m, home=2, away=1, actor=me)
+
+    grp.points = 99
+    grp.save()
+
+    r = client.get(reverse("competicion:detail", args=[m.id]))
+    assert r.status_code == 200
+    assert r.context["round_points"] == 3
+    me_row = next(row for row in r.context["rows"] if row.get("is_me"))
+    assert me_row["exact"] is True
+
+
+@pytest.mark.django_db
 def test_dashboard_shows_matchday_subselector_for_groups(client):
     u = UserFactory(must_change_password=False)
     client.force_login(u)
