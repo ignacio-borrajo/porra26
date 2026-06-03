@@ -186,3 +186,126 @@ def test_pdf_endpoint_accepts_gestor_session(client):
     m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
     res = client.get(reverse("competicion:api:cierre_pdf", args=[m.id]))
     assert res.status_code == 200
+
+
+# --- POST cierre_enviar ----------------------------------------------------
+
+
+@pytest.fixture
+def _clear_outbox():
+    from django.core import mail
+
+    mail.outbox = []
+    yield
+    mail.outbox = []
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_enviar_endpoint_sends_email(client, _clear_outbox):
+    from django.core import mail
+
+    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
+    res = client.post(reverse("competicion:api:cierre_enviar", args=[m.id]), **AUTH)
+    assert res.status_code == 200
+    assert len(mail.outbox) == 1
+    assert m.teams_slug in mail.outbox[0].subject
+    report = BetsClosingReport.objects.get(match=m)
+    assert report.sent_at is not None
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_enviar_endpoint_resends_when_already_sent(client, _clear_outbox):
+    """Reenviar: la segunda llamada al endpoint dispara un envío nuevo,
+    no es idempotente como sí lo es el service `send_closure_email`."""
+    from django.core import mail
+
+    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
+    url = reverse("competicion:api:cierre_enviar", args=[m.id])
+    client.post(url, **AUTH)
+    client.post(url, **AUTH)
+    assert len(mail.outbox) == 2
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_enviar_endpoint_allows_future_match_with_result(client, _clear_outbox):
+    from django.core import mail
+
+    m = MatchFactory(
+        kickoff=timezone.now() + timedelta(hours=6),
+        result_home=2,
+        result_away=1,
+    )
+    res = client.post(reverse("competicion:api:cierre_enviar", args=[m.id]), **AUTH)
+    assert res.status_code == 200
+    assert len(mail.outbox) == 1
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_enviar_endpoint_404_if_not_closed_and_no_result(client, _clear_outbox):
+    from django.core import mail
+
+    m = MatchFactory(kickoff=timezone.now() + timedelta(hours=6))
+    res = client.post(reverse("competicion:api:cierre_enviar", args=[m.id]), **AUTH)
+    assert res.status_code == 404
+    assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_enviar_endpoint_404_unknown_match(client):
+    res = client.post(reverse("competicion:api:cierre_enviar", args=[999_999]), **AUTH)
+    assert res.status_code == 404
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_enviar_endpoint_requires_auth(client):
+    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
+    res = client.post(reverse("competicion:api:cierre_enviar", args=[m.id]))
+    assert res.status_code == 401
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_enviar_endpoint_rejects_get(client):
+    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
+    res = client.get(reverse("competicion:api:cierre_enviar", args=[m.id]), **AUTH)
+    assert res.status_code == 405
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_enviar_endpoint_accepts_gestor_session(client, _clear_outbox):
+    from django.core import mail
+
+    from accounts.tests.factories import GestorFactory
+
+    gestor = GestorFactory()
+    client.force_login(gestor)
+    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
+    res = client.post(reverse("competicion:api:cierre_enviar", args=[m.id]))
+    assert res.status_code == 200
+    assert len(mail.outbox) == 1
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_enviar_endpoint_redirects_on_html_accept(client, _clear_outbox):
+    """Cuando el POST viene de un <form> del navegador (Accept text/html),
+    redirige a /competicion/resultados/ con un mensaje flash en lugar de
+    devolver JSON."""
+    from accounts.tests.factories import GestorFactory
+
+    gestor = GestorFactory()
+    client.force_login(gestor)
+    m = MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
+    res = client.post(
+        reverse("competicion:api:cierre_enviar", args=[m.id]),
+        HTTP_ACCEPT="text/html,application/xhtml+xml,application/xml;q=0.9",
+    )
+    assert res.status_code == 302
+    assert res.url == reverse("competicion:manage_results")

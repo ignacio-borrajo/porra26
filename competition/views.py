@@ -221,7 +221,9 @@ class ManageResultsView(GestorRequiredMixin, View):
             else:
                 active_md = _default_matchday(active_id, matchdays)
 
-        match_qs = Match.objects.filter(round_id=active_id).select_related("home", "away", "round")
+        match_qs = Match.objects.filter(round_id=active_id).select_related(
+            "home", "away", "round", "closing_report"
+        )
         if active_md is not None:
             match_qs = match_qs.filter(matchday=active_md)
         ms = list(match_qs.order_by("kickoff"))

@@ -1,13 +1,17 @@
 import hashlib
 from datetime import timedelta
 
+from django.contrib import messages
 from django.db import transaction
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from competition.api.auth import require_teams_api_token
 from competition.models import BET_CLOSE_HOURS, BetsClosingReport, Match
+from competition.services.closing_email import send_closure_email
 from competition.services.closing_report import build_closing_pdf
 
 
@@ -72,3 +76,41 @@ def cierre_pdf(request, match_id: int):
     filename = f"cierre-{match.teams_slug}.pdf"
     resp["Content-Disposition"] = f'attachment; filename="{filename}"'
     return resp
+
+
+@require_teams_api_token
+@require_POST
+def cierre_enviar(request, match_id: int):
+    """Envía (o reenvía) el PDF de cierre del match por email.
+
+    Disparo on-demand desde el panel del gestor — sustituye al cron service.
+    Como la intención del gestor al pulsar "Reenviar" es siempre forzar un
+    envío fresco, limpiamos `sent_at` antes de invocar al service (que es
+    idempotente: si encuentra sent_at fijado no enviaría nada).
+
+    Si la request es de navegador (Accept text/html), redirige a la pantalla
+    de resultados con un mensaje flash. Si es de API (Bearer token), devuelve
+    JSON. Detectamos por `Accept`.
+    """
+    match = get_object_or_404(Match, pk=match_id)
+    BetsClosingReport.objects.filter(match=match).update(sent_at=None)
+    wants_html = "text/html" in request.META.get("HTTP_ACCEPT", "")
+    try:
+        report = send_closure_email(match)
+    except ValueError as exc:
+        if wants_html:
+            messages.error(request, f"No se pudo enviar: {exc}")
+            return redirect(reverse("competicion:manage_results"))
+        return JsonResponse({"detail": str(exc)}, status=404)
+
+    if wants_html:
+        messages.success(
+            request, f"PDF enviado a Teams para {match.home.name} vs {match.away.name}"
+        )
+        return redirect(reverse("competicion:manage_results"))
+    return JsonResponse(
+        {
+            "match_id": match.id,
+            "sent_at": report.sent_at.isoformat() if report.sent_at else None,
+        }
+    )
