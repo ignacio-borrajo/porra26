@@ -125,6 +125,23 @@ def test_rules_renders_tiebreak_and_access(client):
 
 
 @pytest.mark.django_db
+def test_rules_page_no_longer_mentions_alphabetical_tiebreak(client):
+    client.force_login(UserFactory())
+    r = client.get(reverse("core:rules"))
+    content = r.content.decode("utf-8").lower()
+    assert "alfabético" not in content
+
+
+@pytest.mark.django_db
+def test_rules_page_explains_shared_position_and_prize_split(client):
+    client.force_login(UserFactory())
+    r = client.get(reverse("core:rules"))
+    content = r.content.decode("utf-8")
+    assert "comparten plaza" in content
+    assert "a partes iguales" in content
+
+
+@pytest.mark.django_db
 def test_rules_renders_placeholder_medals_when_no_prizes(client):
     # Delete seed prizes so the {% empty %} branch fires.
     from pot.models import Prize
