@@ -119,8 +119,8 @@
         <ol class="login-top">
           {% for r in top_rows %}
           {% with u=top_users|get_item:r.player_id %}
-          <li class="login-top__row{% if forloop.counter == 1 %} login-top__row--lead{% endif %}">
-            <span class="mono login-top__pos{% if forloop.counter <= 3 %} login-top__pos--podium{% endif %}">{{ forloop.counter }}</span>
+          <li class="login-top__row{% if r.position == 1 %} login-top__row--lead{% endif %}">
+            <span class="mono login-top__pos{% if r.position <= 3 %} login-top__pos--podium{% endif %}">{% if r.is_first_in_tie %}{% if r.is_tied %}={% endif %}{{ r.position }}{% endif %}</span>
             <div class="login-top__id">
               {% if u %}{% include "partials/_avatar.html" with u=u size=28 %}{% endif %}
               <span class="login-top__name">{{ r.name }}</span>

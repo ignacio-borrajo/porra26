@@ -174,7 +174,8 @@ class PrizesSettingsView(GestorRequiredMixin, View):
 
     def post(self, request):
         from decimal import Decimal, InvalidOperation
-        from django.db import transaction
+
+        from django.db import transaction  # noqa: I001
 
         def _parse_decimal(raw):
             try:
@@ -379,9 +380,7 @@ class PlayersImportResultView(GestorRequiredMixin, View):
             messages.warning(request, "No hay resultado de importación disponible.")
             return redirect("pot:manage_players")
         skipped_total = (
-            data["skipped_existing"]
-            + data["skipped_invalid_email"]
-            + data["skipped_empty"]
+            data["skipped_existing"] + data["skipped_invalid_email"] + data["skipped_empty"]
         )
         return render(
             request,

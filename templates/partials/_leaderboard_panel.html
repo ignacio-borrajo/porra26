@@ -1,16 +1,21 @@
 {% load avatar_extras %}
 {% if rows %}
-  {% with first=rows.0 second=rows.1 third=rows.2 %}
+  {% regroup rows by position as podium_groups %}
+  {% with p1=podium_groups|slice:":1"|first p2=podium_groups|slice:"1:2"|first p3=podium_groups|slice:"2:3"|first %}
   <div class="podium">
-    {# Orden visual: 2º, 1º, 3º (la cima en el centro y más alta) #}
-    {% if second %}
-      {% include "partials/_podium_step.html" with row=second rank=2 user=users|get_item:second.player_id me=me %}
+    {# Orden visual: 2º · 1º · 3º (la cima en el centro y más alta) #}
+    {% if p2 and p2.grouper <= 3 %}
+      {% include "partials/_podium_step.html" with rows=p2.list rank=p2.grouper users=users me=me %}
     {% else %}
       <div class="podium-slot podium-slot--empty"></div>
     {% endif %}
-    {% include "partials/_podium_step.html" with row=first rank=1 user=users|get_item:first.player_id me=me %}
-    {% if third %}
-      {% include "partials/_podium_step.html" with row=third rank=3 user=users|get_item:third.player_id me=me %}
+    {% if p1 and p1.grouper <= 3 %}
+      {% include "partials/_podium_step.html" with rows=p1.list rank=p1.grouper users=users me=me %}
+    {% else %}
+      <div class="podium-slot podium-slot--empty"></div>
+    {% endif %}
+    {% if p3 and p3.grouper <= 3 %}
+      {% include "partials/_podium_step.html" with rows=p3.list rank=p3.grouper users=users me=me %}
     {% else %}
       <div class="podium-slot podium-slot--empty"></div>
     {% endif %}
@@ -25,7 +30,7 @@
 
   <ol class="leaderboard-list stagger no-scrollbar">
     {% for r in rows %}
-      {% if forloop.counter > 3 %}
+      {% if r.position > 3 %}
         {% include "partials/_leaderboard_row.html" with r=r user=users|get_item:r.player_id me=me max_pts=max_pts %}
       {% endif %}
     {% endfor %}

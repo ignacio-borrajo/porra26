@@ -1054,6 +1054,37 @@ img.avatar { object-fit: cover; }
 .podium-slot--2 .podium-medal { filter: drop-shadow(0 4px 10px oklch(0.82 0.02 250)); }
 .podium-slot--3 .podium-medal { filter: drop-shadow(0 4px 10px oklch(0.68 0.10 50)); }
 
+.podium-people {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  align-items: center;
+}
+.podium-person {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+.podium-person .podium-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.podium-person .podium-name.is-me { color: var(--accent); }
+.podium-slot--multi { gap: 6px; }
+.podium-slot--multi .podium-person .podium-name { font-size: 11px; }
+
 .podium-info {
   text-align: center;
   line-height: 1.15;
@@ -1147,6 +1178,9 @@ img.avatar { object-fit: cover; }
   background: linear-gradient(100deg, oklch(from var(--accent) l c h / 0.16), oklch(from var(--accent-2) l c h / 0.06));
   border-color: oklch(from var(--accent) l c h / 0.4);
   box-shadow: 0 0 22px -10px var(--accent);
+}
+.leaderboard-row--tied + .leaderboard-row--tied {
+  margin-top: -1px;
 }
 .leaderboard-row__pos {
   font-size: 13px;

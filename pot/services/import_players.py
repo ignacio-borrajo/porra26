@@ -126,9 +126,7 @@ def import_players_from_xlsx(uploaded_file, *, actor=None) -> ImportResult:
     result = ImportResult()
 
     for row in rows_iter:
-        if row is None or all(
-            c is None or (isinstance(c, str) and not c.strip()) for c in row
-        ):
+        if row is None or all(c is None or (isinstance(c, str) and not c.strip()) for c in row):
             result.skipped_empty += 1
             continue
 

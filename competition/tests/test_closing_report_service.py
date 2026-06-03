@@ -202,8 +202,8 @@ def test_pdf_matchday_delta_against_general():
     """En la clasificación de jornada, Δ refleja la diferencia vs la general."""
     rnd = RoundFactory(points=3)
     now = timezone.now()
-    # Partido finalizado de la jornada 1 que da puntos a Ana.
-    j1 = Match.objects.create(
+    # Dos partidos en jornada 1, ambos finalizados, para diferenciar la general.
+    j1a = Match.objects.create(
         round=rnd,
         group="A",
         matchday=1,
@@ -211,6 +211,17 @@ def test_pdf_matchday_delta_against_general():
         away=TeamFactory(code="BB1"),
         kickoff=now - timedelta(days=2),
         result_home=1,
+        result_away=0,
+        finished_at=now,
+    )
+    j1b = Match.objects.create(
+        round=rnd,
+        group="A",
+        matchday=1,
+        home=TeamFactory(code="CC1"),
+        away=TeamFactory(code="DD1"),
+        kickoff=now - timedelta(days=2),
+        result_home=2,
         result_away=0,
         finished_at=now,
     )
@@ -228,9 +239,11 @@ def test_pdf_matchday_delta_against_general():
     )
     ana = UserFactory(is_jugador=True, is_active=True, name="Ana")
     beto = UserFactory(is_jugador=True, is_active=True, name="Beto")
-    # En la general Ana lleva 6 puntos (3+3), Beto 0.
-    PredictionFactory(match=j1, player=ana, home=1, away=0, earned=3)
-    PredictionFactory(match=j1, player=beto, home=0, away=2, earned=0)
+    # En la general Ana lleva 6 puntos (3+3 en jornada 1), Beto 3 (solo en jornada 2).
+    PredictionFactory(match=j1a, player=ana, home=1, away=0, earned=3)
+    PredictionFactory(match=j1b, player=ana, home=2, away=0, earned=3)
+    PredictionFactory(match=j1a, player=beto, home=0, away=2, earned=0)
+    PredictionFactory(match=j1b, player=beto, home=0, away=1, earned=0)
     # En la jornada 2 solo puntúa Beto, así que pasa de #2 a #1 de la jornada.
     PredictionFactory(match=j2, player=ana, home=0, away=0, earned=0)
     PredictionFactory(match=j2, player=beto, home=2, away=1, earned=3)

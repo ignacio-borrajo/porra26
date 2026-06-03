@@ -82,3 +82,32 @@ def test_group_standings_records_top_player(finished_match):
     assert rows["vigo"].top_name == "Ana"
     assert rows["vigo"].top_pts == 3
     assert rows["vigo"].top_user_id == a.id
+    assert rows["vigo"].top_tied_count == 1
+
+
+@pytest.mark.django_db
+def test_group_leader_chip_shows_tied_count_when_multiple_leaders(finished_match):
+    """Si dos jugadores del mismo grupo empatan tras las 3 reglas, top_tied_count refleja el empate."""
+    a = UserFactory(sede="vigo", is_jugador=True, name="Borja")
+    b = UserFactory(sede="vigo", is_jugador=True, name="Ana")
+    Prediction.objects.create(player=a, match=finished_match, home=1, away=0, earned=3)
+    Prediction.objects.create(player=b, match=finished_match, home=1, away=0, earned=3)
+    rows = {r.key: r for r in group_standings("sede")}
+    target = rows["vigo"]
+    assert target.top_pts == 3
+    assert target.top_tied_count == 2
+    assert target.top_name == "Ana"  # alfabético dentro del empate
+
+
+@pytest.mark.django_db
+def test_group_standings_has_dense_position_with_ties(finished_match):
+    """Dos sedes con la misma media comparten posición; la siguiente no salta."""
+    UserFactory(sede="vigo", is_jugador=True, name="V1")  # avg 0
+    UserFactory(sede="madrid", is_jugador=True, name="M1")  # avg 0
+    UserFactory(sede="barcelona", is_jugador=True, name="B1")  # avg 0
+    rows = [r for r in group_standings("sede") if r.players > 0 and r.key != "__none__"]
+    # Las tres con jugadores tienen avg 0, total 0 → todas en posición 1
+    positions = sorted({r.position for r in rows})
+    assert positions == [1]
+    for r in rows:
+        assert r.is_tied is True

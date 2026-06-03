@@ -22,7 +22,9 @@ class LoginView(View):
 
     def _info_context(self) -> dict:
         first_prize = (
-            Prize.objects.filter(scope="global", position=1).values_list("amount", flat=True).first()
+            Prize.objects.filter(scope="global", position=1)
+            .values_list("amount", flat=True)
+            .first()
         )
         next_matches = list(
             Match.objects.filter(kickoff__gt=timezone.now())

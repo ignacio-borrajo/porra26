@@ -137,12 +137,12 @@ Calculados a partir de `kickoff`, el momento actual y el resultado. El cierre de
 
 Jugadores **activos** ordenados por:
 1. `pts` descendente.
-2. **Desempate (en este orden):**
-   1. Más marcadores exactos.
-   2. Más aciertos totales (resultado correcto, incluidos exactos).
-   3. Orden alfabético del nombre.
+2. Desempate: más marcadores exactos → más aciertos totales (resultado correcto, incluidos exactos).
+3. Si tras esos criterios siguen empatados → **plaza compartida** (ranking denso 1, 1, 2, 2, 3). Dentro del grupo de empate, orden alfabético del nombre **solo a efectos visuales** (no decide plaza).
 
-Solo cuentan jugadores `active = true`. El podio destaca el top 3; el usuario actual va resaltado en toda la tabla.
+Solo cuentan jugadores `active = true`. El podio destaca el top 3 (puede tener más de un jugador por plaza si hay empate); el usuario actual va resaltado en toda la tabla.
+
+**Premios económicos.** El importe de cada plaza del podio (P1·P2·P3) se reparte a partes iguales entre quienes la ocupen. El premio por ganador de jornada/ronda se decide aplicando las mismas reglas dentro del scope; si tras las tres siguen empatados, los empatados se reparten el importe a partes iguales.
 
 ---
 

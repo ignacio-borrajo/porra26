@@ -28,7 +28,7 @@
             {% icon "trophy" width=18 height=18 %}
             <h2 class="display" style="font-size:16px;margin:0">General</h2>
           </div>
-          {% if my_rank %}<span class="chip chip-accent">Tú · #{{ my_rank }}</span>{% endif %}
+          {% if my_rank %}<span class="chip chip-accent">Tú · {% if my_is_tied %}=#{% else %}#{% endif %}{{ my_rank }}</span>{% endif %}
         </header>
         {% include "partials/_leaderboard_panel.html" with rows=standings users=standings_users me=request.user max_pts=max_pts %}
       </section>
@@ -40,7 +40,7 @@
             {% icon "trophy" width=18 height=18 %}
             <h2 class="display" style="font-size:16px;margin:0">{{ scope_label|default:"Jornada" }}</h2>
           </div>
-          {% if scope_my_rank %}<span class="chip chip-accent">Tú · #{{ scope_my_rank }}</span>{% endif %}
+          {% if scope_my_rank %}<span class="chip chip-accent">Tú · {% if scope_my_is_tied %}=#{% else %}#{% endif %}{{ scope_my_rank }}</span>{% endif %}
         </header>
         {% include "partials/_leaderboard_panel.html" with rows=scope_standings users=standings_users me=request.user max_pts=scope_max_pts %}
       </section>
@@ -66,7 +66,7 @@
     <div class="stagger">
     {% for r in rows %}
       <div class="table-row" style="display:grid;grid-template-columns:60px 1fr 100px 110px 110px 1.6fr;padding:14px 18px;align-items:center;border-bottom:1px solid var(--border);{% if r.key == my_group %}background:oklch(from var(--accent) l c h / 0.12);{% endif %}{% if r.key == '__none__' %}opacity:0.55;{% endif %}">
-        <span class="mono" style="font-size:13px;color:var(--text-faint)">{{ forloop.counter }}</span>
+        <span class="mono" style="font-size:13px;color:var(--text-faint)">{% if r.is_first_in_tie %}{% if r.is_tied %}={% endif %}{{ r.position|default_if_none:"" }}{% endif %}</span>
         <strong style="font-size:14px">{{ r.label }}{% if r.key == my_group %} · tú{% endif %}</strong>
         <span class="mono" style="font-size:13px">{{ r.players }}</span>
         <span class="mono" style="font-size:13px">{{ r.total }} pts</span>
@@ -74,7 +74,7 @@
         <div style="display:flex;align-items:center;gap:8px">
           {% if r.top_name %}
             {% include "partials/_avatar.html" with u=top_users|get_item:r.top_user_id size=28 %}
-            <strong style="font-size:13px">{{ r.top_name }}</strong>
+            <strong style="font-size:13px">{{ r.top_name }}{% if r.top_tied_count > 1 %} +{{ r.top_tied_count|add:"-1" }}{% endif %}</strong>
             <span class="chip" style="padding:0 6px;font-size:10px">{{ r.top_pts }} pts</span>
           {% else %}
             <span style="color:var(--text-faint);font-size:12px">sin jugadores</span>

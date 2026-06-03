@@ -9,6 +9,8 @@ from competition.models import Match, Prediction
 @dataclass
 class StandingRow:
     position: int
+    is_tied: bool
+    is_first_in_tie: bool
     player_id: int
     name: str
     email: str
@@ -68,12 +70,29 @@ def standings(round_id: str | None = None, matchday: int | None = None) -> list[
         streaks = _compute_streaks(player_ids)
         trends = _compute_trends(merged)
 
-    out = []
-    for i, r in enumerate(merged, start=1):
+    key_counts: dict[tuple[int, int, int], int] = {}
+    for r in merged:
+        k = (int(r["pts"] or 0), int(r["exact_hits"]), int(r["hits"]))
+        key_counts[k] = key_counts.get(k, 0) + 1
+
+    out: list[StandingRow] = []
+    prev_key: tuple[int, int, int] | None = None
+    position = 0
+    for r in merged:
+        key = (int(r["pts"] or 0), int(r["exact_hits"]), int(r["hits"]))
+        if key != prev_key:
+            position += 1
+            is_first_in_tie = True
+        else:
+            is_first_in_tie = False
+        prev_key = key
+        is_tied = key_counts[key] > 1
         pid = r["player_id"]
         out.append(
             StandingRow(
-                position=i,
+                position=position,
+                is_tied=is_tied,
+                is_first_in_tie=is_first_in_tie,
                 player_id=pid,
                 name=r["player__name"],
                 email=r["player__email"],

@@ -23,11 +23,13 @@ def _wb(rows) -> BytesIO:
 
 @pytest.mark.django_db
 def test_import_creates_users():
-    buf = _wb([
-        ["Email", "Nombre", "Contraseña"],
-        ["alpha@edisa.com", "Alpha", "alpha-pass"],
-        ["beta@edisa.com", "Beta", "beta-pass"],
-    ])
+    buf = _wb(
+        [
+            ["Email", "Nombre", "Contraseña"],
+            ["alpha@edisa.com", "Alpha", "alpha-pass"],
+            ["beta@edisa.com", "Beta", "beta-pass"],
+        ]
+    )
     result = import_players_from_xlsx(buf)
     assert result.created == 2
     assert result.skipped_total == 0
@@ -43,11 +45,13 @@ def test_import_creates_users():
 @pytest.mark.django_db
 def test_import_skips_existing_email():
     UserFactory(email="dup@edisa.com")
-    buf = _wb([
-        ["email", "nombre", "contraseña"],
-        ["dup@edisa.com", "Duplicado", "x"],
-        ["new@edisa.com", "Nuevo", "y"],
-    ])
+    buf = _wb(
+        [
+            ["email", "nombre", "contraseña"],
+            ["dup@edisa.com", "Duplicado", "x"],
+            ["new@edisa.com", "Nuevo", "y"],
+        ]
+    )
     result = import_players_from_xlsx(buf)
     assert result.created == 1
     assert result.skipped_existing == 1
@@ -55,11 +59,13 @@ def test_import_skips_existing_email():
 
 @pytest.mark.django_db
 def test_import_skips_invalid_email():
-    buf = _wb([
-        ["email", "nombre", "contraseña"],
-        ["no-es-un-email", "Foo", "x"],
-        ["ok@edisa.com", "Ok", "y"],
-    ])
+    buf = _wb(
+        [
+            ["email", "nombre", "contraseña"],
+            ["no-es-un-email", "Foo", "x"],
+            ["ok@edisa.com", "Ok", "y"],
+        ]
+    )
     result = import_players_from_xlsx(buf)
     assert result.created == 1
     assert result.skipped_invalid_email == 1
@@ -67,14 +73,16 @@ def test_import_skips_invalid_email():
 
 @pytest.mark.django_db
 def test_import_skips_empty_rows_and_missing_fields():
-    buf = _wb([
-        ["email", "nombre", "contraseña"],
-        [None, None, None],
-        ["", "", ""],
-        ["a@edisa.com", "", "x"],
-        ["b@edisa.com", "B", ""],
-        ["c@edisa.com", "C", "z"],
-    ])
+    buf = _wb(
+        [
+            ["email", "nombre", "contraseña"],
+            [None, None, None],
+            ["", "", ""],
+            ["a@edisa.com", "", "x"],
+            ["b@edisa.com", "B", ""],
+            ["c@edisa.com", "C", "z"],
+        ]
+    )
     result = import_players_from_xlsx(buf)
     assert result.created == 1
     assert result.skipped_empty == 4
@@ -86,10 +94,12 @@ def test_import_does_not_update_existing_user_when_no_paid_column():
     existing.set_password("old-pass")
     existing.save()
     Payment.objects.create(player=existing, paid=True)
-    buf = _wb([
-        ["email", "nombre", "contraseña"],
-        ["x@edisa.com", "Cambiado", "new-pass"],
-    ])
+    buf = _wb(
+        [
+            ["email", "nombre", "contraseña"],
+            ["x@edisa.com", "Cambiado", "new-pass"],
+        ]
+    )
     result = import_players_from_xlsx(buf)
     assert result.skipped_existing == 1
     assert result.updated == 0
@@ -105,10 +115,12 @@ def test_import_existing_user_only_updates_paid_field():
     existing.set_password("old-pass")
     existing.save()
     Payment.objects.create(player=existing, paid=False)
-    buf = _wb([
-        ["email", "nombre", "contraseña", "pagado"],
-        ["x@edisa.com", "Cambiado", "new-pass", "S"],
-    ])
+    buf = _wb(
+        [
+            ["email", "nombre", "contraseña", "pagado"],
+            ["x@edisa.com", "Cambiado", "new-pass", "S"],
+        ]
+    )
     result = import_players_from_xlsx(buf)
     assert result.updated == 1
     assert result.created == 0
@@ -124,10 +136,12 @@ def test_import_existing_user_only_updates_paid_field():
 def test_import_existing_user_paid_to_pending_when_value_not_S():
     existing = UserFactory(email="x@edisa.com")
     Payment.objects.create(player=existing, paid=True)
-    buf = _wb([
-        ["email", "nombre", "contraseña", "pagado"],
-        ["x@edisa.com", "X", "pw", "N"],
-    ])
+    buf = _wb(
+        [
+            ["email", "nombre", "contraseña", "pagado"],
+            ["x@edisa.com", "X", "pw", "N"],
+        ]
+    )
     result = import_players_from_xlsx(buf)
     assert result.updated == 1
     existing.refresh_from_db()
@@ -139,10 +153,12 @@ def test_import_existing_user_paid_to_pending_when_value_not_S():
 def test_import_existing_user_unchanged_paid_counts_as_skipped():
     existing = UserFactory(email="x@edisa.com")
     Payment.objects.create(player=existing, paid=False)
-    buf = _wb([
-        ["email", "nombre", "contraseña", "pagado"],
-        ["x@edisa.com", "X", "pw", "N"],
-    ])
+    buf = _wb(
+        [
+            ["email", "nombre", "contraseña", "pagado"],
+            ["x@edisa.com", "X", "pw", "N"],
+        ]
+    )
     result = import_players_from_xlsx(buf)
     assert result.updated == 0
     assert result.skipped_existing == 1
@@ -152,10 +168,12 @@ def test_import_existing_user_unchanged_paid_counts_as_skipped():
 
 @pytest.mark.django_db
 def test_import_new_user_with_paid_S_creates_paid_payment():
-    buf = _wb([
-        ["email", "nombre", "contraseña", "pagado"],
-        ["new@edisa.com", "Nuevo", "pw", "S"],
-    ])
+    buf = _wb(
+        [
+            ["email", "nombre", "contraseña", "pagado"],
+            ["new@edisa.com", "Nuevo", "pw", "S"],
+        ]
+    )
     result = import_players_from_xlsx(buf)
     assert result.created == 1
     user = User.objects.get(email="new@edisa.com")
@@ -165,10 +183,12 @@ def test_import_new_user_with_paid_S_creates_paid_payment():
 
 @pytest.mark.django_db
 def test_import_new_user_with_paid_blank_creates_unpaid_payment():
-    buf = _wb([
-        ["email", "nombre", "contraseña", "pagado"],
-        ["new@edisa.com", "Nuevo", "pw", ""],
-    ])
+    buf = _wb(
+        [
+            ["email", "nombre", "contraseña", "pagado"],
+            ["new@edisa.com", "Nuevo", "pw", ""],
+        ]
+    )
     result = import_players_from_xlsx(buf)
     assert result.created == 1
     user = User.objects.get(email="new@edisa.com")
@@ -177,11 +197,13 @@ def test_import_new_user_with_paid_blank_creates_unpaid_payment():
 
 @pytest.mark.django_db
 def test_import_paid_column_case_insensitive():
-    buf = _wb([
-        ["email", "nombre", "contraseña", "Pagado"],
-        ["a@edisa.com", "A", "pw", "s"],
-        ["b@edisa.com", "B", "pw", "Sí"],
-    ])
+    buf = _wb(
+        [
+            ["email", "nombre", "contraseña", "Pagado"],
+            ["a@edisa.com", "A", "pw", "s"],
+            ["b@edisa.com", "B", "pw", "Sí"],
+        ]
+    )
     result = import_players_from_xlsx(buf)
     assert result.created == 2
     assert User.objects.get(email="a@edisa.com").payment.paid is True
@@ -190,10 +212,12 @@ def test_import_paid_column_case_insensitive():
 
 @pytest.mark.django_db
 def test_import_column_order_is_irrelevant():
-    buf = _wb([
-        ["Contraseña", "Nombre", "Email"],
-        ["pw", "Nombre1", "a@edisa.com"],
-    ])
+    buf = _wb(
+        [
+            ["Contraseña", "Nombre", "Email"],
+            ["pw", "Nombre1", "a@edisa.com"],
+        ]
+    )
     result = import_players_from_xlsx(buf)
     assert result.created == 1
     assert User.objects.get(email="a@edisa.com").name == "Nombre1"
@@ -201,10 +225,12 @@ def test_import_column_order_is_irrelevant():
 
 @pytest.mark.django_db
 def test_import_missing_required_column_returns_error():
-    buf = _wb([
-        ["email", "nombre"],
-        ["a@edisa.com", "Alpha"],
-    ])
+    buf = _wb(
+        [
+            ["email", "nombre"],
+            ["a@edisa.com", "Alpha"],
+        ]
+    )
     result = import_players_from_xlsx(buf)
     assert result.error is not None
     assert result.created == 0
@@ -219,10 +245,12 @@ def test_import_unreadable_file_returns_error():
 @pytest.mark.django_db
 def test_import_creates_audit_log_per_user(monkeypatch):
     actor = GestorFactory()
-    buf = _wb([
-        ["email", "nombre", "contraseña"],
-        ["audit@edisa.com", "Audit", "p"],
-    ])
+    buf = _wb(
+        [
+            ["email", "nombre", "contraseña"],
+            ["audit@edisa.com", "Audit", "p"],
+        ]
+    )
     import_players_from_xlsx(buf, actor=actor)
     user = User.objects.get(email="audit@edisa.com")
     assert AuditLog.objects.filter(
@@ -256,10 +284,12 @@ def test_view_post_no_file_shows_error(client):
 @pytest.mark.django_db
 def test_view_post_xlsx_redirects_to_result_via_x_modal_next(client):
     client.force_login(GestorFactory(must_change_password=False))
-    buf = _wb([
-        ["email", "nombre", "contraseña"],
-        ["flow@edisa.com", "Flow", "pw"],
-    ])
+    buf = _wb(
+        [
+            ["email", "nombre", "contraseña"],
+            ["flow@edisa.com", "Flow", "pw"],
+        ]
+    )
     buf.name = "import.xlsx"
     r = client.post(
         reverse("pot:players_import"),
@@ -276,12 +306,14 @@ def test_view_result_renders_counters_and_consumes_session(client):
     g = GestorFactory(must_change_password=False)
     client.force_login(g)
     UserFactory(email="dup@edisa.com")
-    buf = _wb([
-        ["email", "nombre", "contraseña"],
-        ["dup@edisa.com", "Dup", "x"],
-        ["new@edisa.com", "New", "y"],
-        ["bad-email", "Bad", "z"],
-    ])
+    buf = _wb(
+        [
+            ["email", "nombre", "contraseña"],
+            ["dup@edisa.com", "Dup", "x"],
+            ["new@edisa.com", "New", "y"],
+            ["bad-email", "Bad", "z"],
+        ]
+    )
     buf.name = "import.xlsx"
     client.post(reverse("pot:players_import"), {"file": buf}, HTTP_X_MODAL="1")
     r = client.get(reverse("pot:players_import_result"), HTTP_X_MODAL="1")

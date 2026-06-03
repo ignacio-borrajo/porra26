@@ -1,6 +1,6 @@
 {% load icons avatar_extras %}
-<li class="leaderboard-row{% if me and r.player_id == me.id %} is-me{% endif %}">
-  <div class="leaderboard-row__pos mono">{{ r.position }}</div>
+<li class="leaderboard-row{% if me and r.player_id == me.id %} is-me{% endif %}{% if r.is_tied %} leaderboard-row--tied{% endif %}">
+  <div class="leaderboard-row__pos mono">{% if r.is_first_in_tie %}{% if r.is_tied %}={% endif %}{{ r.position }}{% endif %}</div>
   <div class="leaderboard-row__main">
     <div class="leaderboard-row__top">
       {% if user %}{% include "partials/_avatar.html" with u=user size=32 %}{% endif %}
