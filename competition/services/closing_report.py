@@ -2,7 +2,7 @@ import io
 from dataclasses import dataclass, field
 from datetime import timedelta
 
-from django.utils import timezone
+from django.utils import formats, timezone
 from reportlab.lib import colors
 from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import A4
@@ -322,6 +322,109 @@ def _classification_block(match: Match, styles) -> Table:
     return wrap
 
 
+def _team_chip(code: str, color: HexColor, styles) -> Table:
+    """Chip rectangular con el código FIFA del equipo (sustituto visual de la bandera)."""
+    chip = Table(
+        [[Paragraph(code, styles["hero-code"])]],
+        colWidths=[24 * mm],
+        rowHeights=[10 * mm],
+    )
+    chip.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), color),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("ROUNDEDCORNERS", [5, 5, 5, 5]),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
+        )
+    )
+    chip.hAlign = "CENTER"
+    return chip
+
+
+def _team_column(team, chip_color: HexColor, styles) -> Table:
+    """Columna de un equipo: chip-código encima, nombre debajo."""
+    col = Table(
+        [
+            [_team_chip(team.code, chip_color, styles)],
+            [Paragraph(team.name, styles["hero-team"])],
+        ],
+        colWidths=[75 * mm],
+    )
+    col.setStyle(
+        TableStyle(
+            [
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (0, 0), 4),
+                ("BOTTOMPADDING", (0, 1), (-1, 1), 0),
+            ]
+        )
+    )
+    return col
+
+
+def _match_hero(match: Match, styles) -> list:
+    """Cabecera tipo marcador del partido, inspirada en /competicion/.
+
+    Estructura:
+      · Fecha completa (grande, centrada).
+      · Marcador a tres columnas: home (mitad) · VS (centro) · away (mitad).
+        Cada lado lleva un chip con el código FIFA del equipo como sustituto
+        visual de la bandera (los emoji de bandera no renderizan en PDF con
+        las fuentes estándar).
+      · Línea de metadatos pequeña: ronda · grupo · hora de cierre.
+    """
+    kickoff_local = timezone.localtime(match.kickoff)
+    close_local = timezone.localtime(match.kickoff - timedelta(hours=2))
+
+    fecha_text = formats.date_format(
+        kickoff_local, r"l j \d\e F \d\e Y · H:i"
+    ).capitalize()
+
+    # Tomados del degradado de la banda de cabecera (naranja + violeta).
+    home_col = _team_column(match.home, GRADIENT_STOPS[0], styles)
+    away_col = _team_column(match.away, GRADIENT_STOPS[2], styles)
+    vs_para = Paragraph("VS", styles["hero-vs"])
+
+    # Anchura útil ≈ 174 mm. Mitad - centro - mitad.
+    scoreboard = Table(
+        [[home_col, vs_para, away_col]],
+        colWidths=[75 * mm, 24 * mm, 75 * mm],
+    )
+    scoreboard.setStyle(
+        TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+            ]
+        )
+    )
+
+    meta_text = (
+        f"{match.round.label} · Grupo {match.group} · Cierre {close_local:%H:%M}"
+    )
+
+    return [
+        Paragraph(fecha_text, styles["hero-date"]),
+        Spacer(1, 5 * mm),
+        scoreboard,
+        Spacer(1, 4 * mm),
+        Paragraph(meta_text, styles["hero-meta"]),
+    ]
+
+
 def build_closing_pdf(match: Match) -> bytes:
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -334,16 +437,50 @@ def build_closing_pdf(match: Match) -> bytes:
     )
     base = getSampleStyleSheet()
     styles = {
-        "title": ParagraphStyle(
-            "title", parent=base["Heading1"], fontName="Helvetica-Bold", fontSize=16, leading=20
+        "hero-date": ParagraphStyle(
+            "hero-date",
+            parent=base["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=15,
+            leading=18,
+            alignment=1,  # centrado
+            textColor=HexColor("#333333"),
         ),
-        "sub": ParagraphStyle(
-            "sub",
+        "hero-code": ParagraphStyle(
+            "hero-code",
+            parent=base["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=14,
+            leading=16,
+            alignment=1,
+            textColor=colors.white,
+        ),
+        "hero-team": ParagraphStyle(
+            "hero-team",
+            parent=base["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=22,
+            leading=26,
+            alignment=1,
+            textColor=HexColor("#1A1A1A"),
+        ),
+        "hero-vs": ParagraphStyle(
+            "hero-vs",
+            parent=base["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=28,
+            leading=32,
+            alignment=1,
+            textColor=HexColor("#888888"),
+        ),
+        "hero-meta": ParagraphStyle(
+            "hero-meta",
             parent=base["Normal"],
             fontName="Helvetica",
             fontSize=10,
             leading=14,
-            textColor=HexColor("#555555"),
+            alignment=1,
+            textColor=HexColor("#666666"),
         ),
         "h2": ParagraphStyle(
             "h2",
@@ -361,19 +498,7 @@ def build_closing_pdf(match: Match) -> bytes:
     stats = compute_closing_stats(match)
 
     flow = []
-    flow.append(
-        Paragraph(
-            f"{match.home.name} <font color='#888888'>vs</font> {match.away.name}",
-            styles["title"],
-        )
-    )
-    kickoff_local = timezone.localtime(match.kickoff)
-    close_local = timezone.localtime(match.kickoff - timedelta(hours=2))
-    sub = (
-        f"{match.round.label} · Grupo {match.group} · "
-        f"{kickoff_local:%d %b %Y, %H:%M} · Cierre {close_local:%H:%M}"
-    )
-    flow.append(Paragraph(sub, styles["sub"]))
+    flow.extend(_match_hero(match, styles))
     flow.append(Spacer(1, 8 * mm))
 
     flow.append(Paragraph("Resumen", styles["h2"]))
