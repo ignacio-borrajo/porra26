@@ -46,3 +46,28 @@ def generate_suggested_password() -> str:
     ])
     secrets.SystemRandom().shuffle(body)
     return "".join(body)
+
+
+class SetPlayerPasswordForm(forms.Form):
+    new1 = forms.CharField(
+        label="Nueva contraseña",
+        min_length=10,
+        widget=forms.PasswordInput(attrs={"class": "input"}, render_value=True),
+    )
+    new2 = forms.CharField(
+        label="Repite la contraseña",
+        min_length=10,
+        widget=forms.PasswordInput(attrs={"class": "input"}, render_value=True),
+    )
+
+    def clean(self):
+        c = super().clean()
+        if c.get("new1") and c.get("new2") and c["new1"] != c["new2"]:
+            raise forms.ValidationError("Las dos contraseñas no coinciden.")
+        if c.get("new1"):
+            pwd = c["new1"]
+            if not any(ch.isupper() for ch in pwd) or not any(ch.isdigit() for ch in pwd):
+                raise forms.ValidationError(
+                    "La contraseña debe tener al menos una mayúscula y un dígito."
+                )
+        return c
