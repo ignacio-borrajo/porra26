@@ -37,6 +37,28 @@ def test_rules_context_has_required_keys(client):
 
 
 @pytest.mark.django_db
+def test_rules_table_shows_partial_points_column(client):
+    RoundFactory(id="groups", label="Fase de grupos", short="GRP", points=3, partial_points=1, order=1)
+    RoundFactory(id="final", label="Final", short="FIN", points=20, partial_points=2, order=6)
+    client.force_login(UserFactory())
+    r = client.get(reverse("core:rules"))
+    content = r.content.decode("utf-8")
+    assert "1·X·2" in content
+    # 20 (exact) y 2 (partial) deben aparecer en la fila de Final
+    assert ">20</strong>" in content
+    assert ">2</strong>" in content
+
+
+@pytest.mark.django_db
+def test_rules_does_not_claim_partial_is_always_one(client):
+    RoundFactory(id="groups", label="Fase de grupos", short="GRP", points=3, partial_points=2, order=1)
+    client.force_login(UserFactory())
+    r = client.get(reverse("core:rules"))
+    content = r.content.decode("utf-8")
+    assert "siempre vale 1 punto" not in content
+
+
+@pytest.mark.django_db
 def test_rules_renders_points_card(client):
     RoundFactory(id="groups", label="Fase de grupos", short="GRP", points=3, order=1)
     RoundFactory(id="r32", label="Dieciseisavos", short="R32", points=5, order=2)

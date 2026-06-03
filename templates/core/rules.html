@@ -90,20 +90,25 @@
 
     <table class="rules-table">
       <thead>
-        <tr><th scope="col">Ronda</th><th scope="col">Puntos por marcador exacto</th></tr>
+        <tr>
+          <th scope="col">Ronda</th>
+          <th scope="col">Marcador exacto</th>
+          <th scope="col">Solo resultado (1·X·2)</th>
+        </tr>
       </thead>
       <tbody>
         {% for r in rounds %}
         <tr>
           <td><span class="chip" data-round="{{ r.id }}">{{ r.label }}</span></td>
           <td><strong style="font-family:Sora,sans-serif;font-weight:700;font-size:20px">{{ r.points }}</strong> <span style="font-family:'Geist Mono',monospace;color:var(--text-faint);font-size:12px">pts</span></td>
+          <td><strong style="font-family:Sora,sans-serif;font-weight:700;font-size:20px">{{ r.partial_points }}</strong> <span style="font-family:'Geist Mono',monospace;color:var(--text-faint);font-size:12px">pts</span></td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
 
     <p style="font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint);margin:0">
-      Acertar solo el resultado (1·X·2) siempre vale 1 punto, sea cual sea la ronda.
+      Acertar solo el resultado (1·X·2) suma los puntos indicados en la columna 1·X·2. Los valores se pueden ajustar desde "Premios y puntos".
     </p>
   </section>
 

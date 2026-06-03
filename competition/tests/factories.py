@@ -15,6 +15,7 @@ class RoundFactory(factory.django.DjangoModelFactory):
     label = "Fase de grupos"
     short = "GRP"
     points = 3
+    partial_points = 1
     order = 1
 
 
