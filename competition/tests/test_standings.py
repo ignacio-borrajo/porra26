@@ -34,24 +34,81 @@ def test_standings_orders_by_points():
 
 
 @pytest.mark.django_db
-def test_standings_tiebreak_by_exact_then_hits_then_name():
+def test_tiebreak_keeps_shared_position():
     groups = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
-    z = UserFactory(name="Zoe", email="z@e.com")
     a = UserFactory(name="Ana", email="a@e.com")
     b = UserFactory(name="Borja", email="b@e.com")
+    c = UserFactory(name="Carla", email="c@e.com")
     m1 = MatchFactory(round=groups, result_home=1, result_away=0)
     m2 = MatchFactory(round=groups, result_home=0, result_away=0)
     PredictionFactory(player=a, match=m1, home=1, away=0, earned=3)
-    PredictionFactory(player=a, match=m2, home=2, away=2, earned=1)
-    PredictionFactory(player=b, match=m1, home=2, away=0, earned=1)
+    PredictionFactory(player=a, match=m2, home=0, away=0, earned=3)
+    PredictionFactory(player=b, match=m1, home=1, away=0, earned=3)
     PredictionFactory(player=b, match=m2, home=0, away=0, earned=3)
-    PredictionFactory(player=z, match=m1, home=1, away=0, earned=3)
-    PredictionFactory(player=z, match=m2, home=0, away=0, earned=3)
+    PredictionFactory(player=c, match=m1, home=1, away=0, earned=3)
+    PredictionFactory(player=c, match=m2, home=1, away=1, earned=0)
 
-    s = standings()
-    # Zoe (2 exactos) -> primero. Ana y Borja empatados a 4 pts y 1 exacto, alfabético.
-    top3_names = [r.name for r in s if r.pts > 0][:3]
-    assert top3_names == ["Zoe", "Ana", "Borja"]
+    rows = {r.name: r for r in standings()}
+    assert rows["Ana"].position == 1
+    assert rows["Borja"].position == 1
+    assert rows["Ana"].is_tied is True
+    assert rows["Borja"].is_tied is True
+    assert rows["Ana"].is_first_in_tie is True
+    assert rows["Borja"].is_first_in_tie is False
+    assert rows["Carla"].position == 2
+    assert rows["Carla"].is_tied is False
+    assert rows["Carla"].is_first_in_tie is True
+
+
+@pytest.mark.django_db
+def test_dense_ranking_no_gap_after_tie():
+    groups = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    a = UserFactory(name="Ana", email="a@e.com")
+    b = UserFactory(name="Borja", email="b@e.com")
+    c = UserFactory(name="Carla", email="c@e.com")
+    m1 = MatchFactory(round=groups, result_home=1, result_away=0)
+    PredictionFactory(player=a, match=m1, home=1, away=0, earned=3)
+    PredictionFactory(player=b, match=m1, home=1, away=0, earned=3)
+    PredictionFactory(player=c, match=m1, home=0, away=1, earned=0)
+
+    rows = {r.name: r for r in standings()}
+    assert rows["Ana"].position == 1
+    assert rows["Borja"].position == 1
+    assert rows["Carla"].position == 2  # densa, sin saltos
+
+
+@pytest.mark.django_db
+def test_alphabetical_only_visual_within_tie():
+    groups = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    z = UserFactory(name="Zoe", email="z@e.com")
+    a = UserFactory(name="Ana", email="a@e.com")
+    m1 = MatchFactory(round=groups, result_home=1, result_away=0)
+    PredictionFactory(player=z, match=m1, home=1, away=0, earned=3)
+    PredictionFactory(player=a, match=m1, home=1, away=0, earned=3)
+
+    rows = standings()
+    same_pos = [r for r in rows if r.pts == 3]
+    assert same_pos[0].name == "Ana"
+    assert same_pos[0].is_first_in_tie is True
+    assert same_pos[1].name == "Zoe"
+    assert same_pos[1].is_first_in_tie is False
+    assert same_pos[0].position == same_pos[1].position == 1
+
+
+@pytest.mark.django_db
+def test_is_tied_false_when_unique():
+    groups = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    a = UserFactory(name="Ana", email="a@e.com")
+    b = UserFactory(name="Borja", email="b@e.com")
+    m1 = MatchFactory(round=groups, result_home=1, result_away=0)
+    PredictionFactory(player=a, match=m1, home=1, away=0, earned=3)
+    PredictionFactory(player=b, match=m1, home=0, away=1, earned=0)
+
+    rows = {r.name: r for r in standings()}
+    assert rows["Ana"].is_tied is False
+    assert rows["Ana"].is_first_in_tie is True
+    assert rows["Borja"].is_tied is False
+    assert rows["Borja"].is_first_in_tie is True
 
 
 @pytest.mark.django_db
