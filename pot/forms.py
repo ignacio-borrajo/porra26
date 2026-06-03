@@ -28,3 +28,21 @@ class PlayerForm(forms.ModelForm):
 
 def generate_temp_password() -> str:
     return secrets.token_urlsafe(9)
+
+
+def generate_suggested_password() -> str:
+    """Devuelve una contraseña aleatoria que siempre cumple las reglas
+    del SetPlayerPasswordForm (>=10, una mayúscula, un dígito)."""
+    alphabet = "abcdefghijkmnopqrstuvwxyz"  # sin 'l' por legibilidad
+    uppers = "ABCDEFGHJKLMNPQRSTUVWXYZ"  # sin 'I', 'O'
+    digits = "23456789"  # sin '0', '1'
+    symbols = "!@#$%&*?-"
+    pool = alphabet + uppers + digits + symbols
+    body = [secrets.choice(pool) for _ in range(9)]
+    body.extend([
+        secrets.choice(uppers),
+        secrets.choice(digits),
+        secrets.choice(alphabet),
+    ])
+    secrets.SystemRandom().shuffle(body)
+    return "".join(body)
