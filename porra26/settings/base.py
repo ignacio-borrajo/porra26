@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "pot",
     "stats",
     "core",
+    "announcements",
     "axes",
 ]
 
