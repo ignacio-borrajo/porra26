@@ -23,6 +23,10 @@ class GroupRow:
     top_name: str
     top_pts: int
     top_user_id: int | None = None
+    top_tied_count: int = 1
+    position: int | None = None
+    is_tied: bool = False
+    is_first_in_tie: bool = True
 
 
 def group_standings(dimension: Dimension) -> list[GroupRow]:
@@ -30,7 +34,8 @@ def group_standings(dimension: Dimension) -> list[GroupRow]:
 
     Devuelve una fila por cada `choice` del enum (incluso si está vacía)
     y, al final, una fila "Sin asignar" con los jugadores que no tienen
-    valor en ese campo.
+    valor en ese campo. Las filas con jugadores se ordenan por media y
+    reciben posición densa (1,1,2,2,3) con flags `is_tied`/`is_first_in_tie`.
     """
     choices = CHOICES_BY_DIMENSION[dimension]
     labels = {key: label for key, label in choices}
@@ -56,6 +61,7 @@ def group_standings(dimension: Dimension) -> list[GroupRow]:
 
     head = [r for r in rows if r.key != "__none__"]
     head.sort(key=lambda r: (-r.avg, -r.total, r.label.lower()))
+    _assign_dense_positions(head)
     tail = [r for r in rows if r.key == "__none__"]
     return head + tail
 
@@ -65,10 +71,19 @@ def _row_for(key: str, label: str, members) -> GroupRow:
     total = sum(r.pts for r in members)
     avg = (total / players) if players else 0.0
     if members:
-        top = max(members, key=lambda r: (r.pts, -r.player_id))
+        # 3 reglas para decidir el líder del grupo. Empate persistente → alfabético solo presentación.
+        ordered = sorted(
+            members,
+            key=lambda r: (-r.pts, -r.exact_hits, -r.hits, r.name.lower()),
+        )
+        top = ordered[0]
+        top_key = (top.pts, top.exact_hits, top.hits)
+        tied = [r for r in ordered if (r.pts, r.exact_hits, r.hits) == top_key]
         top_name, top_pts, top_user_id = top.name, top.pts, top.player_id
+        top_tied_count = len(tied)
     else:
         top_name, top_pts, top_user_id = "", 0, None
+        top_tied_count = 1
     return GroupRow(
         key=key,
         label=label,
@@ -78,4 +93,26 @@ def _row_for(key: str, label: str, members) -> GroupRow:
         top_name=top_name,
         top_pts=top_pts,
         top_user_id=top_user_id,
+        top_tied_count=top_tied_count,
     )
+
+
+def _assign_dense_positions(rows: list[GroupRow]) -> None:
+    """Asigna `position`, `is_tied`, `is_first_in_tie` in place sobre filas ya ordenadas."""
+    if not rows:
+        return
+    counts: dict[tuple[float, int], int] = {}
+    for r in rows:
+        counts[(r.avg, r.total)] = counts.get((r.avg, r.total), 0) + 1
+    prev_key: tuple[float, int] | None = None
+    position = 0
+    for r in rows:
+        key = (r.avg, r.total)
+        if key != prev_key:
+            position += 1
+            r.is_first_in_tie = True
+        else:
+            r.is_first_in_tie = False
+        prev_key = key
+        r.position = position
+        r.is_tied = counts[key] > 1
