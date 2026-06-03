@@ -59,23 +59,29 @@ Dashboard del proyecto → **Usage** (gráficas de CPU, RAM y egress por servici
 
 ## Verificar envíos de cierre por email
 
-El flujo automático es: Cron Service `*/10 min` → `send_pending_closures` → email vía Resend → Outlook → flow → Teams.
+El envío es **on-demand**: el gestor pulsa "✉️ Enviar" en la fila del partido en `/competicion/resultados/` tras introducir el resultado oficial. La cadena es: botón → endpoint `cierres/<id>/enviar/` → `send_closure_email` → Resend → Outlook → Power Automate → Teams.
 
 Cada lunes (o tras cualquier jornada del Mundial), abre `/competicion/resultados/` como gestor y revisa la sección **"Estado de envíos a Teams"**:
 
-- Todos los partidos cerrados desde la semana pasada deben aparecer con ✓ en Generado y ✓ en Enviado.
+- Todos los partidos finalizados desde la semana pasada deben aparecer con ✓ en Generado y ✓ en Enviado.
+- Si algún partido tiene resultado pero el envío no se hizo (sent_at vacío), basta con pulsar **✉️ Enviar** en su fila.
 - Si algún partido aparece con ⏳ (ámbar) o solo Generado ✓ pero Enviado —, sigue esta cadena:
 
-  1. **Railway → servicio cron → Logs** del último run. Busca `ERR · <slug> · <exc>`. Si hay traza, esa es la causa raíz.
-  2. **Resend → Logs** (https://resend.com/logs). El envío debe aparecer como `Delivered`. Si está `Bounced`/`Complained`, problema de destinatario o sender.
-  3. **Outlook** (`ignacio.borrajo@edisa.com`): comprueba que el email llegó. Revisa también *Correo no deseado*. Si la regla de PORRA26 lo movió, mira en esa carpeta.
-  4. **Power Automate → tu flow → Historial de ejecuciones**: cada ejecución te dice exactamente qué paso falló (trigger, Apply to each, Create file en OneDrive, Post message). Reintenta desde el botón *Resubmit*.
-  5. Como solución manual de emergencia, descarga el PDF con el botón **📄 PDF** de la pantalla de Resultados y súbelo al chat de Teams a mano.
+  1. **Resend → Logs** (https://resend.com/logs). El envío debe aparecer como `Delivered`. Si está `Bounced`/`Complained`, problema de destinatario o sender.
+  2. **Outlook** (`ignacio.borrajo@edisa.com`): comprueba que el email llegó. Revisa también *Correo no deseado*. Si la regla de PORRA26 lo movió, mira en esa carpeta.
+  3. **Power Automate → tu flow → Historial de ejecuciones**: cada ejecución te dice exactamente qué paso falló (trigger, Apply to each, Create file en OneDrive, Post message). Reintenta desde el botón *Resubmit*.
+  4. Vuelve al panel del gestor y pulsa **↻ Reenviar** en la fila del partido — fuerza un envío fresco.
+  5. Como solución manual de emergencia, descarga el PDF con el botón **📄 PDF** y súbelo al chat de Teams a mano.
 
-Para forzar el reenvío de un match concreto (todo verde excepto el envío real):
+Para reenvío masivo desde CLI (varios partidos pendientes tras una incidencia):
 
 ```bash
-# Limpia el sent_at del match para que send_pending_closures lo vuelva a procesar
-python manage.py shell -c "from competition.models import BetsClosingReport; BetsClosingReport.objects.filter(match_id=<id>).update(sent_at=None)"
-python manage.py send_pending_closures --match-id <id>
+# Lista los pendientes sin enviar
+railway run python manage.py send_pending_closures --dry-run
+
+# Envía todos los pendientes (mismos guard-rails que el botón)
+railway run python manage.py send_pending_closures
+
+# Envía solo uno
+railway run python manage.py send_pending_closures --match-id <id>
 ```
