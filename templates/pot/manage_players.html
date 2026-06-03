@@ -5,9 +5,14 @@
   <h1 class="display" style="font-size:28px;margin:0">Jugadores</h1>
   <span class="chip chip-open">{{ active_count }} activos</span>
   <span class="chip">{{ paid_count }}/{{ total_count }} pagado</span>
-  <button class="btn btn-primary" style="margin-left:auto" data-modal-url="{% url 'pot:player_new' %}">
-    {% icon "plus" width=14 %} Nuevo jugador
-  </button>
+  <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-ghost" data-modal-url="{% url 'pot:players_import' %}">
+      Importar Excel
+    </button>
+    <button class="btn btn-primary" data-modal-url="{% url 'pot:player_new' %}">
+      {% icon "plus" width=14 %} Nuevo jugador
+    </button>
+  </div>
 </header>
 <form method="get" style="margin-bottom:12px">
   <input class="input" type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o correo" style="max-width:360px">

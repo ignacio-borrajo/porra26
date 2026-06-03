@@ -16,6 +16,7 @@ from pot.forms import (
     generate_temp_password,
 )
 from pot.models import Payment, PotSettings, Prize
+from pot.services.import_players import import_players_from_xlsx
 
 
 class ManagePlayersView(GestorRequiredMixin, View):
@@ -297,3 +298,95 @@ class SetPasswordView(GestorRequiredMixin, View):
             response["X-Modal-Redirect"] = target
             return response
         return redirect(target)
+
+
+class PlayersImportView(GestorRequiredMixin, View):
+    template_name = "pot/_players_import_modal.html"
+
+    def _is_modal(self, request) -> bool:
+        return request.headers.get("X-Modal") == "1"
+
+    def _render(self, request, *, error=None):
+        return render(
+            request,
+            self.template_name,
+            {"modal": self._is_modal(request), "error": error},
+        )
+
+    def get(self, request):
+        return self._render(request)
+
+    def post(self, request):
+        uploaded = request.FILES.get("file")
+        if uploaded is None:
+            response = self._render(request, error="Selecciona un fichero .xlsx.")
+            if self._is_modal(request):
+                response["X-Modal-Errors"] = "1"
+            return response
+
+        name = (uploaded.name or "").lower()
+        if not name.endswith(".xlsx"):
+            response = self._render(request, error="El fichero debe tener extensión .xlsx.")
+            if self._is_modal(request):
+                response["X-Modal-Errors"] = "1"
+            return response
+
+        result = import_players_from_xlsx(uploaded, actor=request.user)
+        if result.error:
+            response = self._render(request, error=result.error)
+            if self._is_modal(request):
+                response["X-Modal-Errors"] = "1"
+            return response
+
+        request.session["players_import_result"] = {
+            "created": result.created,
+            "skipped_existing": result.skipped_existing,
+            "skipped_invalid_email": result.skipped_invalid_email,
+            "skipped_empty": result.skipped_empty,
+        }
+        if result.created:
+            AuditLog.objects.create(
+                actor=request.user,
+                action="players_imported",
+                target_type="user",
+                target_id="*",
+                payload={
+                    "created": result.created,
+                    "skipped_existing": result.skipped_existing,
+                    "skipped_invalid_email": result.skipped_invalid_email,
+                    "skipped_empty": result.skipped_empty,
+                },
+            )
+        target = reverse("pot:players_import_result")
+        if self._is_modal(request):
+            response = HttpResponse(status=200)
+            response["X-Modal-Next"] = target
+            return response
+        return redirect(target)
+
+
+class PlayersImportResultView(GestorRequiredMixin, View):
+    template_name = "pot/_players_import_result_modal.html"
+
+    def _is_modal(self, request) -> bool:
+        return request.headers.get("X-Modal") == "1"
+
+    def get(self, request):
+        data = request.session.pop("players_import_result", None)
+        if data is None:
+            messages.warning(request, "No hay resultado de importación disponible.")
+            return redirect("pot:manage_players")
+        skipped_total = (
+            data["skipped_existing"]
+            + data["skipped_invalid_email"]
+            + data["skipped_empty"]
+        )
+        return render(
+            request,
+            self.template_name,
+            {
+                "modal": self._is_modal(request),
+                "result": data,
+                "skipped_total": skipped_total,
+            },
+        )

@@ -4,6 +4,12 @@ from . import views
 
 urlpatterns = [
     path("jugadores/", views.ManagePlayersView.as_view(), name="manage_players"),
+    path("jugadores/importar/", views.PlayersImportView.as_view(), name="players_import"),
+    path(
+        "jugadores/importar/resultado/",
+        views.PlayersImportResultView.as_view(),
+        name="players_import_result",
+    ),
     path("jugadores/nuevo/", views.PlayerFormView.as_view(), name="player_new"),
     path("jugadores/<int:pk>/", views.PlayerFormView.as_view(), name="player_edit"),
     path("jugadores/<int:pk>/reset/", views.ResetPasswordView.as_view(), name="player_reset"),
