@@ -95,3 +95,35 @@ document.addEventListener("click", (event) => {
   const next = Math.max(min, Math.min(max, cur + parseInt(step.dataset.step, 10)));
   input.value = String(next);
 });
+
+document.addEventListener("click", async (event) => {
+  const trigger = event.target.closest("[data-suggest-url]");
+  if (!trigger) return;
+  event.preventDefault();
+  const form = trigger.closest("form");
+  if (!form) return;
+  const res = await fetch(trigger.dataset.suggestUrl, {
+    headers: { "X-Modal": "1" },
+    credentials: "same-origin",
+  });
+  if (!res.ok) return;
+  const { password } = await res.json();
+  const new1 = form.querySelector('input[name="new1"]');
+  const new2 = form.querySelector('input[name="new2"]');
+  if (new1) new1.value = password;
+  if (new2) new2.value = password;
+});
+
+document.addEventListener("click", (event) => {
+  const trigger = event.target.closest("[data-toggle-reveal]");
+  if (!trigger) return;
+  event.preventDefault();
+  const form = trigger.closest("form");
+  if (!form) return;
+  const new1 = form.querySelector('input[name="new1"]');
+  const new2 = form.querySelector('input[name="new2"]');
+  if (!new1 || !new2) return;
+  const next = new1.type === "password" ? "text" : "password";
+  new1.type = next;
+  new2.type = next;
+});
