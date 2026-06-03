@@ -1,4 +1,3 @@
-from typing import Optional
 
 from competition.models import Match
 from pot.services.prizes import matchday_winners
@@ -32,9 +31,9 @@ def detect_after_match(match: Match) -> list[WinnerAnnouncement]:
 def _try_create(
     scope_kind: str,
     *,
-    matchday: Optional[int] = None,
-    round_id: Optional[str] = None,
-) -> Optional[WinnerAnnouncement]:
+    matchday: int | None = None,
+    round_id: str | None = None,
+) -> WinnerAnnouncement | None:
     if scope_kind == "matchday":
         scope_key = ("matchday", matchday)
         filter_kwargs = {"scope_kind": "matchday", "scope_matchday": matchday}

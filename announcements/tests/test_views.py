@@ -3,7 +3,6 @@ from django.urls import reverse
 
 from accounts.tests.factories import UserFactory
 from announcements.models import WinnerAnnouncement, WinnerAnnouncementSeen
-from competition.tests.factories import RoundFactory
 
 
 @pytest.fixture
