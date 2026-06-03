@@ -98,6 +98,44 @@ def test_prizes_post_updates_matchday_winner_prize(client):
 
 
 @pytest.mark.django_db
+def test_prizes_get_renders_maintenance_cost_input(client):
+    client.force_login(GestorFactory(must_change_password=False))
+    r = client.get(reverse("pot:prizes"))
+    assert 'name="maintenance_cost"' in r.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+def test_prizes_post_updates_maintenance_cost(client):
+    g = GestorFactory(must_change_password=False)
+    client.force_login(g)
+    Prize.objects.filter(scope="global").delete()
+    p1 = Prize.objects.create(scope="global", position=1, amount=0, label="1er premio")
+
+    client.post(
+        reverse("pot:prizes"),
+        {f"amount_{p1.id}": "0", "matchday_winner_prize": "0", "maintenance_cost": "30.25"},
+    )
+    assert PotSettings.load().maintenance_cost == Decimal("30.25")
+
+
+@pytest.mark.django_db
+def test_prizes_post_ignores_invalid_maintenance_cost(client):
+    g = GestorFactory(must_change_password=False)
+    client.force_login(g)
+    s = PotSettings.load()
+    s.maintenance_cost = Decimal("12.00")
+    s.save()
+    Prize.objects.filter(scope="global").delete()
+    p1 = Prize.objects.create(scope="global", position=1, amount=0, label="1er premio")
+
+    client.post(
+        reverse("pot:prizes"),
+        {f"amount_{p1.id}": "0", "matchday_winner_prize": "0", "maintenance_cost": "-5"},
+    )
+    assert PotSettings.load().maintenance_cost == Decimal("12.00")
+
+
+@pytest.mark.django_db
 def test_prizes_post_writes_audit_log(client):
     g = GestorFactory(must_change_password=False)
     client.force_login(g)

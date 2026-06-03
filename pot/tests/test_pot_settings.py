@@ -33,3 +33,17 @@ def test_matchday_winner_prize_is_persisted():
     s.matchday_winner_prize = Decimal("25.50")
     s.save()
     assert PotSettings.load().matchday_winner_prize == Decimal("25.50")
+
+
+@pytest.mark.django_db
+def test_maintenance_cost_defaults_to_zero():
+    s = PotSettings.load()
+    assert s.maintenance_cost == Decimal("0")
+
+
+@pytest.mark.django_db
+def test_maintenance_cost_is_persisted():
+    s = PotSettings.load()
+    s.maintenance_cost = Decimal("42.75")
+    s.save()
+    assert PotSettings.load().maintenance_cost == Decimal("42.75")

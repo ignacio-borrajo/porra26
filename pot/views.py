@@ -201,12 +201,18 @@ class PrizesSettingsView(GestorRequiredMixin, View):
                     prize.amount = value
                     prize.save(update_fields=["amount"])
 
+            settings_obj = PotSettings.load()
             mw_raw = request.POST.get("matchday_winner_prize")
             mw_value = _parse_decimal(mw_raw)
             if mw_value is not None:
-                settings_obj = PotSettings.load()
                 settings_obj.matchday_winner_prize = mw_value
                 settings_obj.save(update_fields=["matchday_winner_prize"])
+
+            mc_raw = request.POST.get("maintenance_cost")
+            mc_value = _parse_decimal(mc_raw)
+            if mc_value is not None:
+                settings_obj.maintenance_cost = mc_value
+                settings_obj.save(update_fields=["maintenance_cost"])
 
             for round_ in Round.objects.all():
                 changes: dict[str, int] = {}

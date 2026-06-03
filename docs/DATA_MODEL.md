@@ -77,6 +77,7 @@ Restricción: **un pronóstico por jugador y partido** (único `playerId+matchId
 |-------|------|-------|
 | `perPlayer` | Decimal | aportación por jugador (prototipo: 10 €) |
 | `matchdayWinnerPrize` | Decimal | importe único que se entrega al jugador con más puntos en cada jornada de grupos y cada ronda KO |
+| `maintenanceCost` | Decimal | gastos de mantenimiento del bote (informativo); se publica en la página de Reglas y queda disponible para descontar en cálculos manuales si hiciera falta |
 | `prizes` | Prize[] | filas con `scope="global"` y `position ∈ {1,2,3}` — el podio final |
 
 `total` = `perPlayer × nº de jugadores que pagan`. En el prototipo: 48 jugadores → 480 €.
@@ -101,6 +102,8 @@ sino:
 `signo()` distingue victoria local (+), empate (0) y victoria visitante (−). Es la lógica del prototipo (`app.jsx → saveOfficial`) adaptada a la parametrización.
 
 > **Parametrización y congelado.** Tanto los puntos por marcador exacto como los puntos por 1·X·2 son parametrizables por ronda desde "Premios y puntos" (gestor). Al confirmar el resultado de un partido se congelan los valores vigentes en el propio `Match` (`exact_points_applied`, `partial_points_applied`): los cambios posteriores en la tabla de puntos **no afectan** a partidos ya resueltos.
+
+> **Fases finales: solo 90 minutos.** En las rondas eliminatorias el resultado que cuenta para puntuar es el del **tiempo reglamentario (90 minutos)** — se excluyen **prórroga y penaltis**. El gestor introduce el marcador de los 90 minutos como resultado oficial del `Match`.
 
 **Valores por defecto por ronda**:
 

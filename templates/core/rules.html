@@ -110,6 +110,14 @@
     <p style="font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint);margin:0">
       Acertar solo el resultado (1·X·2) suma los puntos indicados en la columna 1·X·2. Los valores se pueden ajustar desde "Premios y puntos".
     </p>
+
+    <div class="rules-knockout-rule" role="note" aria-label="Regla de fases finales">
+      <div class="rules-knockout-rule-icon">{% icon "whistle" width=26 height=26 aria_hidden="true" %}</div>
+      <div class="rules-knockout-rule-body">
+        <span class="eyebrow">Fases finales · 90 minutos</span>
+        <strong>En fases finales el resultado será el resultante de los 90 minutos de partido excluyendo prórrogas y penaltis.</strong>
+      </div>
+    </div>
   </section>
 
   <section class="glass" style="padding:24px;border-radius:var(--r-lg);display:flex;flex-direction:column;gap:20px">
@@ -213,6 +221,17 @@
         <span class="eyebrow">Premio por ganador de jornada</span>
         <strong>{{ matchday_winner_prize|floatformat:"-2" }} €</strong>
         <p>El jugador con más puntos en cada jornada de grupos y en cada ronda eliminatoria se lleva este premio extra.</p>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if maintenance_cost and maintenance_cost > 0 %}
+    <div class="rules-matchday-prize">
+      <div class="rules-matchday-prize-icon">{% icon "euro" width=22 height=22 aria_hidden="true" %}</div>
+      <div class="rules-matchday-prize-body">
+        <span class="eyebrow">Gastos de mantenimiento</span>
+        <strong>{{ maintenance_cost|floatformat:"-2" }} €</strong>
+        <p>Importe que se aparta del bote para cubrir gastos comunes de la porra.</p>
       </div>
     </div>
     {% endif %}
