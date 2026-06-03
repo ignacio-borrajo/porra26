@@ -322,65 +322,14 @@ def _classification_block(match: Match, styles) -> Table:
     return wrap
 
 
-def _team_chip(code: str, color: HexColor, styles) -> Table:
-    """Chip rectangular con el código FIFA del equipo (sustituto visual de la bandera)."""
-    chip = Table(
-        [[Paragraph(code, styles["hero-code"])]],
-        colWidths=[24 * mm],
-        rowHeights=[10 * mm],
-    )
-    chip.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, -1), color),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("ROUNDEDCORNERS", [5, 5, 5, 5]),
-                ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                ("TOPPADDING", (0, 0), (-1, -1), 0),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-            ]
-        )
-    )
-    chip.hAlign = "CENTER"
-    return chip
-
-
-def _team_column(team, chip_color: HexColor, styles) -> Table:
-    """Columna de un equipo: chip-código encima, nombre debajo."""
-    col = Table(
-        [
-            [_team_chip(team.code, chip_color, styles)],
-            [Paragraph(team.name, styles["hero-team"])],
-        ],
-        colWidths=[75 * mm],
-    )
-    col.setStyle(
-        TableStyle(
-            [
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                ("TOPPADDING", (0, 0), (-1, -1), 0),
-                ("BOTTOMPADDING", (0, 0), (0, 0), 4),
-                ("BOTTOMPADDING", (0, 1), (-1, 1), 0),
-            ]
-        )
-    )
-    return col
-
-
 def _match_hero(match: Match, styles) -> list:
     """Cabecera tipo marcador del partido, inspirada en /competicion/.
 
     Estructura:
       · Fecha completa (grande, centrada).
-      · Marcador a tres columnas: home (mitad) · VS (centro) · away (mitad).
-        Cada lado lleva un chip con el código FIFA del equipo como sustituto
-        visual de la bandera (los emoji de bandera no renderizan en PDF con
-        las fuentes estándar).
+      · Marcador a tres columnas: nombre home (mitad) · centro · nombre away
+        (mitad). En el centro va el resultado oficial en grande si ya existe;
+        si no, "VS".
       · Línea de metadatos pequeña: ronda · grupo · hora de cierre.
     """
     kickoff_local = timezone.localtime(match.kickoff)
@@ -390,15 +339,21 @@ def _match_hero(match: Match, styles) -> list:
         kickoff_local, r"l j \d\e F \d\e Y · H:i"
     ).capitalize()
 
-    # Tomados del degradado de la banda de cabecera (naranja + violeta).
-    home_col = _team_column(match.home, GRADIENT_STOPS[0], styles)
-    away_col = _team_column(match.away, GRADIENT_STOPS[2], styles)
-    vs_para = Paragraph("VS", styles["hero-vs"])
+    home_para = Paragraph(match.home.name, styles["hero-team"])
+    away_para = Paragraph(match.away.name, styles["hero-team"])
+
+    has_result = match.result_home is not None and match.result_away is not None
+    if has_result:
+        center_para = Paragraph(
+            f"{match.result_home} - {match.result_away}", styles["hero-score"]
+        )
+    else:
+        center_para = Paragraph("VS", styles["hero-vs"])
 
     # Anchura útil ≈ 174 mm. Mitad - centro - mitad.
     scoreboard = Table(
-        [[home_col, vs_para, away_col]],
-        colWidths=[75 * mm, 24 * mm, 75 * mm],
+        [[home_para, center_para, away_para]],
+        colWidths=[70 * mm, 34 * mm, 70 * mm],
     )
     scoreboard.setStyle(
         TableStyle(
@@ -446,15 +401,6 @@ def build_closing_pdf(match: Match) -> bytes:
             alignment=1,  # centrado
             textColor=HexColor("#333333"),
         ),
-        "hero-code": ParagraphStyle(
-            "hero-code",
-            parent=base["Normal"],
-            fontName="Helvetica-Bold",
-            fontSize=14,
-            leading=16,
-            alignment=1,
-            textColor=colors.white,
-        ),
         "hero-team": ParagraphStyle(
             "hero-team",
             parent=base["Normal"],
@@ -472,6 +418,15 @@ def build_closing_pdf(match: Match) -> bytes:
             leading=32,
             alignment=1,
             textColor=HexColor("#888888"),
+        ),
+        "hero-score": ParagraphStyle(
+            "hero-score",
+            parent=base["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=42,
+            leading=46,
+            alignment=1,
+            textColor=HexColor("#1A1A1A"),
         ),
         "hero-meta": ParagraphStyle(
             "hero-meta",
