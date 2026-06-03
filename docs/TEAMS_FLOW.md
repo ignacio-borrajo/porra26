@@ -77,10 +77,12 @@ Con esto los emails caen en `PORRA26` y la bandeja queda limpia, pero el flow lo
 Mensaje (HTML, pegar tal cual en *Code view*):
 
 ```html
-<p>🔒 <b>Cierre de apuestas</b></p>
-<p>Adjunto el PDF con los pronósticos de @{triggerOutputs()?['body/Subject']}.</p>
+<p>📣 <b>Cierre de apuestas</b> · @{replace(triggerOutputs()?['body/Subject'], '[Porra26] ', '')}</p>
+<p>Adjunto el PDF con los pronósticos.</p>
 <p><i>Generado por la porra desde Railway · @{utcNow()}</i></p>
 ```
+
+> El asunto que pone Django es del tipo `[Porra26] España vs Argentina · 15/06 18:00`. La expresión `replace(..., '[Porra26] ', '')` retira el prefijo y deja solo `España vs Argentina · 15/06 18:00`. Si más adelante cambias el prefijo en `closing_email.py`, actualiza también este `replace`.
 
 > El conector estándar de Teams **no permite adjuntos directamente en este paso**. Hay dos opciones:
 > - **A**: añadir un paso intermedio que sube el PDF a OneDrive personal y luego publica el enlace en Teams. Requiere licencia OneDrive (incluida en M365 Business).
@@ -111,10 +113,12 @@ Entre el trigger y la acción de Teams, inserta dos pasos.
 Cambia el `Message` a:
 
 ```html
-<p>🔒 <b>Cierre de apuestas</b> · @{triggerOutputs()?['body/Subject']}</p>
+<p>📣 <b>Cierre de apuestas</b> · @{replace(triggerOutputs()?['body/Subject'], '[Porra26] ', '')}</p>
 <p>📄 <a href="@{body('Create_file')?['webUrl']}">Descargar PDF</a></p>
 <p><i>Generado por la porra desde Railway · @{utcNow()}</i></p>
 ```
+
+Importante: para que el `<a href="…">Descargar PDF</a>` se renderice como enlace en Teams (y no como URL pelada), pega el HTML en la **vista código** del editor de Message — botón `</>` en la esquina inferior derecha del campo. Si lo pegas en la vista rich-text Power Automate escapa los tags.
 
 > La acción **Post message in a chat or channel** debe quedar **fuera** del `Apply to each` para no postear un mensaje por adjunto (el cierre siempre lleva un solo PDF, pero por defensa nos quedamos con un mensaje único).
 

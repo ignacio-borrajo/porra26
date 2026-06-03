@@ -35,11 +35,21 @@ def test_send_creates_email_with_pdf_attachment():
 
 
 @pytest.mark.django_db
-def test_send_subject_includes_prefix_and_slug():
-    match = MatchFactory(kickoff=timezone.now() - timedelta(minutes=30))
+def test_send_subject_uses_team_names_and_kickoff():
+    """El asunto debe ser human-friendly para Outlook y Teams.
+
+    Formato: "[Porra26] España vs Argentina · 15/06 18:00"
+    """
+    home = TeamFactory(code="ESP", name="España")
+    away = TeamFactory(code="ARG", name="Argentina")
+    match = MatchFactory(home=home, away=away, kickoff=timezone.now() - timedelta(minutes=30))
     send_closure_email(match)
     msg = mail.outbox[0]
-    assert msg.subject == f"[Porra26] {match.teams_slug}"
+    assert msg.subject.startswith("[Porra26] ")
+    assert "España vs Argentina" in msg.subject
+    assert " · " in msg.subject
+    # El slug ya no debe aparecer en el asunto (era difícil de leer).
+    assert match.teams_slug not in msg.subject
 
 
 @pytest.mark.django_db

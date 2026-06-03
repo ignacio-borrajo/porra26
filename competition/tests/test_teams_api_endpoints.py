@@ -209,7 +209,8 @@ def test_enviar_endpoint_sends_email(client, _clear_outbox):
     res = client.post(reverse("competicion:api:cierre_enviar", args=[m.id]), **AUTH)
     assert res.status_code == 200
     assert len(mail.outbox) == 1
-    assert m.teams_slug in mail.outbox[0].subject
+    assert m.home.name in mail.outbox[0].subject
+    assert m.away.name in mail.outbox[0].subject
     report = BetsClosingReport.objects.get(match=m)
     assert report.sent_at is not None
 

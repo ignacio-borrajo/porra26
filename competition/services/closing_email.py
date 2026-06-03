@@ -57,7 +57,13 @@ def send_closure_email(match: Match) -> BetsClosingReport:
         report.last_sha256 = sha
         report.save(update_fields=["attempts", "generated_at", "last_sha256"])
 
-    subject = f"{SUBJECT_PREFIX} {match.teams_slug}"
+    # Asunto pensado para que se lea bien en Outlook y para que Power Automate
+    # solo tenga que quitar el prefijo "[Porra26] " antes de postear en Teams.
+    # Formato fecha d/m H:i para evitar dependencia del locale del sistema.
+    kickoff_local = timezone.localtime(match.kickoff)
+    subject = (
+        f"{SUBJECT_PREFIX} {match.home.name} vs {match.away.name} · {kickoff_local:%d/%m %H:%M}"
+    )
     body = _build_body(match)
     message = EmailMessage(
         subject=subject,
