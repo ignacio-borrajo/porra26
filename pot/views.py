@@ -7,6 +7,7 @@ from django.views import View
 
 from accounts.mixins import GestorRequiredMixin
 from accounts.models import AuditLog, User
+from competition.models import Round
 from pot.forms import PlayerForm, generate_temp_password
 from pot.models import Payment, PotSettings, Prize
 
@@ -160,6 +161,7 @@ class PrizesSettingsView(GestorRequiredMixin, View):
                 "prizes": Prize.objects.filter(scope="global").order_by("position"),
                 "settings": PotSettings.load(),
                 "paid_count": Payment.objects.filter(paid=True).count(),
+                "rounds": Round.objects.all().order_by("order"),
             },
         )
 
@@ -173,6 +175,15 @@ class PrizesSettingsView(GestorRequiredMixin, View):
             except (TypeError, InvalidOperation):
                 return None
             return value if value >= 0 else None
+
+        def _parse_int(raw):
+            try:
+                value = int(raw)
+            except (TypeError, ValueError):
+                return None
+            return value if value >= 0 else None
+
+        scoring_changes: dict[str, dict[str, int]] = {}
 
         with transaction.atomic():
             for prize in Prize.objects.filter(scope="global"):
@@ -189,6 +200,21 @@ class PrizesSettingsView(GestorRequiredMixin, View):
                 settings_obj.matchday_winner_prize = mw_value
                 settings_obj.save(update_fields=["matchday_winner_prize"])
 
+            for round_ in Round.objects.all():
+                changes: dict[str, int] = {}
+                new_exact = _parse_int(request.POST.get(f"exact_{round_.id}"))
+                if new_exact is not None and new_exact != round_.points:
+                    round_.points = new_exact
+                    round_.save(update_fields=["points"])
+                    changes["exact"] = new_exact
+                new_partial = _parse_int(request.POST.get(f"partial_{round_.id}"))
+                if new_partial is not None and new_partial != round_.partial_points:
+                    round_.partial_points = new_partial
+                    round_.save(update_fields=["partial_points"])
+                    changes["partial"] = new_partial
+                if changes:
+                    scoring_changes[round_.id] = changes
+
             AuditLog.objects.create(
                 actor=request.user,
                 action="prize_changed",
@@ -196,7 +222,16 @@ class PrizesSettingsView(GestorRequiredMixin, View):
                 target_id="*",
                 payload={},
             )
-        messages.success(request, "Premios actualizados.")
+            if scoring_changes:
+                AuditLog.objects.create(
+                    actor=request.user,
+                    action="scoring_changed",
+                    target_type="round",
+                    target_id="*",
+                    payload=scoring_changes,
+                )
+
+        messages.success(request, "Premios y puntos actualizados.")
         return redirect("pot:prizes")
 
 
