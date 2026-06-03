@@ -214,3 +214,13 @@ def test_post_requires_gestor(client):
     assert r.status_code == 302
     target.refresh_from_db()
     assert not target.check_password("Nueva1234X")
+
+
+@pytest.mark.django_db
+def test_manage_players_renders_set_password_button(client):
+    client.force_login(GestorFactory())
+    target = UserFactory(name="Adelaida Plumífera")
+    r = client.get(reverse("pot:manage_players"))
+    assert r.status_code == 200
+    expected_url = reverse("pot:player_set_password", args=[target.id])
+    assert expected_url.encode() in r.content
