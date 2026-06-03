@@ -8,9 +8,7 @@ from announcements.models import WinnerAnnouncement, WinnerAnnouncementSeen
 @pytest.fixture
 def matchday_announcement(db):
     user = UserFactory(name="Ganadora")
-    ann = WinnerAnnouncement.objects.create(
-        scope_kind="matchday", scope_matchday=1, points=8
-    )
+    ann = WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=1, points=8)
     ann.winners.set([user])
     return ann, user
 
@@ -56,12 +54,8 @@ class TestModalView:
 class TestSeenView:
     def test_creates_record_and_returns_next_header(self, client):
         u = UserFactory()
-        a1 = WinnerAnnouncement.objects.create(
-            scope_kind="matchday", scope_matchday=1, points=8
-        )
-        a2 = WinnerAnnouncement.objects.create(
-            scope_kind="matchday", scope_matchday=2, points=10
-        )
+        a1 = WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=1, points=8)
+        a2 = WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=2, points=10)
         client.force_login(u)
         url = reverse("announcements:seen", args=[a1.id])
         res = client.post(url)
@@ -72,9 +66,7 @@ class TestSeenView:
 
     def test_no_next_returns_204_no_header(self, client):
         u = UserFactory()
-        a = WinnerAnnouncement.objects.create(
-            scope_kind="matchday", scope_matchday=1, points=8
-        )
+        a = WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=1, points=8)
         client.force_login(u)
         res = client.post(reverse("announcements:seen", args=[a.id]))
         assert res.status_code == 204
@@ -82,9 +74,7 @@ class TestSeenView:
 
     def test_idempotent(self, client):
         u = UserFactory()
-        a = WinnerAnnouncement.objects.create(
-            scope_kind="matchday", scope_matchday=1, points=8
-        )
+        a = WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=1, points=8)
         client.force_login(u)
         url = reverse("announcements:seen", args=[a.id])
         client.post(url)
@@ -93,21 +83,15 @@ class TestSeenView:
         assert WinnerAnnouncementSeen.objects.filter(announcement=a, user=u).count() == 1
 
     def test_requires_login(self, client):
-        a = WinnerAnnouncement.objects.create(
-            scope_kind="matchday", scope_matchday=1, points=8
-        )
+        a = WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=1, points=8)
         res = client.post(reverse("announcements:seen", args=[a.id]))
         assert res.status_code in (302, 401, 403)
 
     def test_seen_pending_for_other_user_does_not_affect_next(self, client):
         u1 = UserFactory()
         u2 = UserFactory()
-        a1 = WinnerAnnouncement.objects.create(
-            scope_kind="matchday", scope_matchday=1, points=8
-        )
-        a2 = WinnerAnnouncement.objects.create(
-            scope_kind="matchday", scope_matchday=2, points=8
-        )
+        a1 = WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=1, points=8)
+        a2 = WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=2, points=8)
         # u2 ya ha visto a1
         WinnerAnnouncementSeen.objects.create(announcement=a1, user=u2)
         # u1 marca a1; debe seguir teniendo pendiente a2

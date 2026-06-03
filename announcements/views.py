@@ -26,8 +26,7 @@ class AnnouncementSeenView(LoginRequiredMixin, View):
         WinnerAnnouncementSeen.objects.get_or_create(announcement=ann, user=request.user)
 
         next_ann = (
-            WinnerAnnouncement.objects
-            .exclude(seen_by__user=request.user)
+            WinnerAnnouncement.objects.exclude(seen_by__user=request.user)
             .exclude(pk=ann.pk)
             .order_by("created_at")
             .first()

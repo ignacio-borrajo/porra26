@@ -85,11 +85,7 @@ class WinnerAnnouncementSeen(models.Model):
     seen_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        constraints = [
-            UniqueConstraint(
-                fields=["announcement", "user"], name="uniq_seen_per_user"
-            )
-        ]
+        constraints = [UniqueConstraint(fields=["announcement", "user"], name="uniq_seen_per_user")]
         indexes = [models.Index(fields=["user", "announcement"])]
 
     def __str__(self):

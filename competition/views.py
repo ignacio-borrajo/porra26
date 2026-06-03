@@ -98,8 +98,7 @@ class CompetitionView(LoginRequiredMixin, View):
         from announcements.models import WinnerAnnouncement
 
         first_announcement_id = (
-            WinnerAnnouncement.objects
-            .exclude(seen_by__user=request.user)
+            WinnerAnnouncement.objects.exclude(seen_by__user=request.user)
             .order_by("created_at")
             .values_list("id", flat=True)
             .first()

@@ -122,7 +122,10 @@ class TestGlobalScope:
         kinds = sorted(a.scope_kind for a in created)
         assert kinds == ["global", "round"]
         assert WinnerAnnouncement.objects.filter(scope_kind="global").count() == 1
-        assert WinnerAnnouncement.objects.filter(scope_kind="round", scope_round_id="final").count() == 1
+        assert (
+            WinnerAnnouncement.objects.filter(scope_kind="round", scope_round_id="final").count()
+            == 1
+        )
 
     def test_no_global_announcement_when_not_final(self, r16_round):
         user = UserFactory()

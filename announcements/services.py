@@ -1,4 +1,3 @@
-
 from competition.models import Match
 from pot.services.prizes import matchday_winners
 
