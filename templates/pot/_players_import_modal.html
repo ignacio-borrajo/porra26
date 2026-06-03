@@ -1,0 +1,31 @@
+{% load icons %}
+<section class="glass pop" style="width:min(520px,100%);border-radius:28px;padding:28px;background:var(--surface-solid)">
+  <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div>
+      <span class="eyebrow">Importar</span>
+      <h2 class="display" style="margin:6px 0 0;font-size:22px">Importar jugadores desde Excel</h2>
+    </div>
+    <button type="button" data-modal-close class="btn btn-ghost" style="width:38px;height:38px;padding:0;border-radius:12px">{% icon "x" width=14 %}</button>
+  </header>
+
+  <form method="post" action="{% url 'pot:players_import' %}" enctype="multipart/form-data">
+    {% csrf_token %}
+    <p class="mono" style="margin:0 0 16px;font-size:11.5px;color:var(--text-faint);padding:10px 12px;border-radius:10px;background:var(--surface-hi);line-height:1.5">
+      El fichero debe ser <strong>.xlsx</strong> con una fila de cabecera y las columnas <strong>email</strong>, <strong>nombre</strong> y <strong>contraseña</strong>. Los emails ya existentes se omiten; no se actualiza ningún usuario. La contraseña se asigna tal cual y el jugador deberá cambiarla al primer acceso.
+    </p>
+
+    <div class="field">
+      <label for="id_import_file">Fichero Excel</label>
+      <input id="id_import_file" class="input" type="file" name="file" accept=".xlsx" required>
+    </div>
+
+    {% if error %}
+      <p style="color:var(--c-red);font-size:12.5px;margin:12px 0 0">{{ error }}</p>
+    {% endif %}
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px">
+      <button type="button" data-modal-close class="btn btn-ghost">Cancelar</button>
+      <button class="btn btn-primary" type="submit">Importar</button>
+    </div>
+  </form>
+</section>
