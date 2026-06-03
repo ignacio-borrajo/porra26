@@ -95,10 +95,21 @@ class CompetitionView(LoginRequiredMixin, View):
         all_ids = {r.player_id for r in rows} | {r.player_id for r in scope_rows}
         users_by_id = User.objects.in_bulk(all_ids)
 
+        from announcements.models import WinnerAnnouncement
+
+        first_announcement_id = (
+            WinnerAnnouncement.objects
+            .exclude(seen_by__user=request.user)
+            .order_by("created_at")
+            .values_list("id", flat=True)
+            .first()
+        )
+
         return render(
             request,
             "competition/dashboard.html",
             {
+                "first_announcement_id": first_announcement_id,
                 "rounds": rounds,
                 "active_round": active_id,
                 "matchdays": matchdays,

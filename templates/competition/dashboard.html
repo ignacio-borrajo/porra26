@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block main %}
 <div class="dashboard-grid">
   <section>
@@ -46,4 +47,13 @@
   </section>
   <aside>{% include "partials/_leaderboard.html" with rows=standings me=request.user users=standings_users my_rank=my_rank max_pts=max_pts scope_rows=scope_standings scope_my_rank=scope_my_rank scope_max_pts=scope_max_pts scope_label=scope_label %}</aside>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% if first_announcement_id %}
+<script type="module">
+  import { openModal } from "{% static 'js/modal.js' %}";
+  openModal("{% url 'announcements:modal' first_announcement_id %}");
+</script>
+{% endif %}
 {% endblock %}

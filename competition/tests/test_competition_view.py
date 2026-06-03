@@ -292,3 +292,44 @@ def test_dashboard_shows_locked_banner_for_blocked_matchday(client):
         r = client.get(reverse("competicion:dashboard") + "?round=groups&matchday=2")
         body = r.content.decode().lower()
         assert "bloqueada" in body or "se desbloquea" in body
+
+
+@pytest.mark.django_db
+def test_dashboard_passes_first_announcement_id_when_pending(client):
+    from announcements.models import WinnerAnnouncement
+
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    a1 = WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=1, points=8)
+    WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=2, points=10)
+    r = client.get(reverse("competicion:dashboard"))
+    assert r.status_code == 200
+    assert r.context["first_announcement_id"] == a1.id
+
+
+@pytest.mark.django_db
+def test_dashboard_omits_first_announcement_id_when_all_seen(client):
+    from announcements.models import WinnerAnnouncement, WinnerAnnouncementSeen
+
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    a1 = WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=1, points=8)
+    WinnerAnnouncementSeen.objects.create(announcement=a1, user=u)
+    r = client.get(reverse("competicion:dashboard"))
+    assert r.status_code == 200
+    assert r.context["first_announcement_id"] is None
+
+
+@pytest.mark.django_db
+def test_dashboard_first_announcement_id_is_oldest_pending(client):
+    from announcements.models import WinnerAnnouncement
+
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    older = WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=1, points=8)
+    WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=2, points=10)
+    r = client.get(reverse("competicion:dashboard"))
+    assert r.context["first_announcement_id"] == older.id
