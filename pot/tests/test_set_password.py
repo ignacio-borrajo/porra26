@@ -1,3 +1,4 @@
+import json
 import re
 
 import pytest
@@ -69,3 +70,43 @@ def test_get_requires_gestor(client):
     target = UserFactory()
     r = client.get(reverse("pot:player_set_password", args=[target.id]))
     assert r.status_code == 302  # redirect a dashboard
+
+
+@pytest.mark.django_db
+def test_get_renders_modal_with_suggestion(client):
+    client.force_login(GestorFactory())
+    target = UserFactory()
+    r = client.get(
+        reverse("pot:player_set_password", args=[target.id]),
+        HTTP_X_MODAL="1",
+    )
+    assert r.status_code == 200
+    assert b"<html" not in r.content.lower()  # es fragmento
+    assert target.name.encode() in r.content
+    # El formulario está presente (contendrá los inputs pre-rellenados tras Task 6).
+    body = r.content.decode()
+    assert "method=\"post\"" in body
+    assert "class=\"glass pop\"" in body
+
+
+@pytest.mark.django_db
+def test_get_suggest_returns_json(client):
+    client.force_login(GestorFactory())
+    target = UserFactory()
+    r = client.get(
+        reverse("pot:player_set_password", args=[target.id]) + "?suggest=1"
+    )
+    assert r.status_code == 200
+    assert r["Content-Type"].startswith("application/json")
+    payload = json.loads(r.content)
+    pwd = payload["password"]
+    assert len(pwd) >= 10
+    assert any(ch.isupper() for ch in pwd)
+    assert any(ch.isdigit() for ch in pwd)
+
+
+@pytest.mark.django_db
+def test_get_404_for_unknown_user(client):
+    client.force_login(GestorFactory())
+    r = client.get(reverse("pot:player_set_password", args=[99999]))
+    assert r.status_code == 404
