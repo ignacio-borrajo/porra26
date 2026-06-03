@@ -18,7 +18,7 @@ from reportlab.platypus import (
 
 from accounts.models import User
 from competition.models import Match, Prediction
-from competition.services.standings import standings
+from competition.services.standings import StandingRow, standings
 
 
 @dataclass
@@ -157,13 +157,18 @@ def _predictions_table(match, styles) -> Table:
         p.player_id: p for p in Prediction.objects.filter(match=match).select_related("player")
     }
     jugadores = list(User.objects.filter(is_jugador=True, is_active=True).order_by("name"))
-    data = [["Jugador", "Pronóstico"]]
+    data = [["Jugador", "Pronóstico", "Pts"]]
     for u in jugadores:
         p = preds.get(u.id)
-        cell = f"{p.home} - {p.away}" if p else "—"
-        data.append([u.name, cell])
-    # Ancho útil A4 con márgenes 18 mm = 174 mm; reparto 60 % / 40 %.
-    table = Table(data, colWidths=[104 * mm, 70 * mm], repeatRows=1)
+        if p is None:
+            pred_cell = "—"
+            pts_cell = "—"
+        else:
+            pred_cell = f"{p.home} - {p.away}"
+            pts_cell = "—" if p.earned is None else str(p.earned)
+        data.append([u.name, pred_cell, pts_cell])
+    # Ancho útil A4 con márgenes 18 mm = 174 mm: 90 + 54 + 30.
+    table = Table(data, colWidths=[90 * mm, 54 * mm, 30 * mm], repeatRows=1)
     table.setStyle(
         TableStyle(
             [
@@ -171,36 +176,6 @@ def _predictions_table(match, styles) -> Table:
                 ("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 10),
                 ("FONT", (0, 1), (-1, -1), "Helvetica", 10),
                 ("ALIGN", (1, 0), (1, -1), "CENTER"),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, HexColor("#F8F8F8")]),
-                ("BOX", (0, 0), (-1, -1), 0.4, HexColor("#DDDDDD")),
-                ("INNERGRID", (0, 0), (-1, -1), 0.2, HexColor("#DDDDDD")),
-                ("LEFTPADDING", (0, 0), (-1, -1), 6),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-                ("TOPPADDING", (0, 0), (-1, -1), 4),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-            ]
-        )
-    )
-    return table
-
-
-def _standings_table(styles) -> Table:
-    rows = standings()
-    data = [["Pos", "Jugador", "Pts"]]
-    shown = rows[:20]
-    for r in shown:
-        data.append([str(r.position), r.name, str(r.pts)])
-    if len(rows) > 20:
-        data.append(["", f"… y {len(rows) - 20} jugadores más", ""])
-    # Ancho útil 174 mm: 15 + 134 + 25.
-    table = Table(data, colWidths=[15 * mm, 134 * mm, 25 * mm], repeatRows=1)
-    table.setStyle(
-        TableStyle(
-            [
-                ("BACKGROUND", (0, 0), (-1, 0), HexColor("#EEEEEE")),
-                ("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 10),
-                ("FONT", (0, 1), (-1, -1), "Helvetica", 10),
-                ("ALIGN", (0, 0), (0, -1), "CENTER"),
                 ("ALIGN", (2, 0), (2, -1), "RIGHT"),
                 ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, HexColor("#F8F8F8")]),
                 ("BOX", (0, 0), (-1, -1), 0.4, HexColor("#DDDDDD")),
@@ -213,6 +188,138 @@ def _standings_table(styles) -> Table:
         )
     )
     return table
+
+
+def _matchday_scope_label(match: Match) -> str:
+    """Etiqueta de la sección de clasificación local al partido."""
+    if match.matchday is not None:
+        return f"Jornada {match.matchday}"
+    return match.round.label
+
+
+def _format_delta(matchday_pos: int, general_pos: int | None) -> str:
+    """Diferencia de posición entre la jornada y la general.
+
+    Positivo = mejor en la jornada que en la general.
+    """
+    if general_pos is None:
+        return "—"
+    diff = general_pos - matchday_pos
+    if diff > 0:
+        return f"+{diff}"
+    if diff < 0:
+        return str(diff)
+    return "="
+
+
+def _classification_table(
+    title: str,
+    rows: list[StandingRow],
+    *,
+    delta_against: dict[int, int] | None = None,
+    max_rows: int = 20,
+) -> Table:
+    """Tabla compacta de clasificación para layout a dos columnas.
+
+    Cuando `delta_against` se proporciona, añade una columna 'Dif' con la
+    diferencia de posición respecto a esa clasificación (positivo = mejor aquí).
+    """
+    has_delta = delta_against is not None
+    headers = ["Pos", "Jugador", "Pts"] + (["Dif"] if has_delta else [])
+    data = [headers]
+    shown = rows[:max_rows]
+    for r in shown:
+        row = [str(r.position), r.name, str(r.pts)]
+        if has_delta:
+            row.append(_format_delta(r.position, delta_against.get(r.player_id)))
+        data.append(row)
+    if len(rows) > max_rows:
+        extra = ["", f"… y {len(rows) - max_rows} más", ""]
+        if has_delta:
+            extra.append("")
+        data.append(extra)
+
+    # Ancho objetivo ≈ 82 mm.
+    if has_delta:
+        col_widths = [9 * mm, 45 * mm, 14 * mm, 14 * mm]
+    else:
+        col_widths = [10 * mm, 56 * mm, 16 * mm]
+
+    style_cmds = [
+        ("BACKGROUND", (0, 0), (-1, 0), HexColor("#EEEEEE")),
+        ("FONT", (0, 0), (-1, 0), "Helvetica-Bold", 9),
+        ("FONT", (0, 1), (-1, -1), "Helvetica", 9),
+        ("ALIGN", (0, 0), (0, -1), "CENTER"),
+        ("ALIGN", (2, 0), (2, -1), "RIGHT"),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, HexColor("#F8F8F8")]),
+        ("BOX", (0, 0), (-1, -1), 0.4, HexColor("#DDDDDD")),
+        ("INNERGRID", (0, 0), (-1, -1), 0.2, HexColor("#DDDDDD")),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+    ]
+    if has_delta:
+        style_cmds.append(("ALIGN", (3, 0), (3, -1), "CENTER"))
+
+    table = Table(data, colWidths=col_widths, repeatRows=1)
+    table.setStyle(TableStyle(style_cmds))
+
+    block_title = Paragraph(
+        f"<b>{title}</b>",
+        ParagraphStyle(
+            "clf-title",
+            fontName="Helvetica-Bold",
+            fontSize=10,
+            leading=12,
+            spaceAfter=3,
+            textColor=HexColor("#333333"),
+        ),
+    )
+    block = Table([[block_title], [table]], colWidths=[sum(col_widths)])
+    block.setStyle(
+        TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
+        )
+    )
+    return block
+
+
+def _classification_block(match: Match, styles) -> Table:
+    general_rows = standings()
+    matchday_rows = standings(round_id=match.round_id, matchday=match.matchday)
+    general_pos = {r.player_id: r.position for r in general_rows}
+
+    matchday_played = any(r.pts > 0 for r in matchday_rows)
+    matchday_table = _classification_table(
+        _matchday_scope_label(match),
+        matchday_rows,
+        delta_against=general_pos if matchday_played else None,
+    )
+    general_table = _classification_table("General", general_rows)
+
+    wrap = Table(
+        [[matchday_table, "", general_table]],
+        colWidths=[82 * mm, 10 * mm, 82 * mm],
+    )
+    wrap.setStyle(
+        TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]
+        )
+    )
+    return wrap
 
 
 def build_closing_pdf(match: Match) -> bytes:
@@ -277,8 +384,8 @@ def build_closing_pdf(match: Match) -> bytes:
     flow.append(_predictions_table(match, styles))
     flow.append(Spacer(1, 6 * mm))
 
-    flow.append(Paragraph("Clasificación general", styles["h2"]))
-    flow.append(_standings_table(styles))
+    flow.append(Paragraph("Clasificación", styles["h2"]))
+    flow.append(_classification_block(match, styles))
 
     doc.build(flow, onFirstPage=_draw_header_band, onLaterPages=_draw_header_band)
     return buf.getvalue()
