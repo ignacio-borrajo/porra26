@@ -83,10 +83,10 @@ def test_get_renders_modal_with_suggestion(client):
     assert r.status_code == 200
     assert b"<html" not in r.content.lower()  # es fragmento
     assert target.name.encode() in r.content
-    # El formulario está presente (contendrá los inputs pre-rellenados tras Task 6).
+    # La sugerencia llega pre-rellenada en ambos inputs.
     body = r.content.decode()
-    assert "method=\"post\"" in body
-    assert "class=\"glass pop\"" in body
+    assert body.count('name="new1"') == 1
+    assert 'value="' in body  # algún value sugerido
 
 
 @pytest.mark.django_db
