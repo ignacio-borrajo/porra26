@@ -123,6 +123,24 @@ def test_renders_img_when_avatar_set(client):
 
 
 @pytest.mark.django_db
+def test_avatar_url_is_served(client):
+    """`/media/avatars/...` debe responder 200 también con DEBUG=False.
+
+    En producción WhiteNoise solo atiende STATIC_URL; si no registramos
+    explícitamente MEDIA_URL en urls.py, el navegador recibe 404 y la imagen
+    aparece rota justo tras guardar el perfil.
+    """
+    user = UserFactory(name="Ana", sede="vigo", puesto="desarrollo", dept="gestion")
+    client.force_login(user)
+    client.post(reverse("accounts:my_account"), {**_profile_payload(), "avatar": _png()})
+    user.refresh_from_db()
+    assert user.avatar
+    r = client.get(user.avatar.url)
+    assert r.status_code == 200, f"avatar URL devuelve {r.status_code} en lugar de 200"
+    assert r["Content-Type"].startswith("image/")
+
+
+@pytest.mark.django_db
 def test_renders_initials_fallback_when_no_avatar(client):
     user = UserFactory(name="Ana López", sede="vigo", puesto="desarrollo", dept="gestion")
     client.force_login(user)
