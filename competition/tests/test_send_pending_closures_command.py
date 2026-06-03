@@ -90,7 +90,9 @@ def test_command_match_id_filter():
     MatchFactory(kickoff=now - timedelta(minutes=20))
     call_command("send_pending_closures", "--match-id", str(m1.id))
     assert len(mail.outbox) == 1
-    assert m1.teams_slug in mail.outbox[0].subject
+    # El asunto incluye los nombres de los equipos del match concreto.
+    assert m1.home.name in mail.outbox[0].subject
+    assert m1.away.name in mail.outbox[0].subject
 
 
 @pytest.mark.django_db
