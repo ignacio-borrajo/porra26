@@ -1,11 +1,19 @@
 import io
+from datetime import timedelta
 
 import pdfplumber
 import pytest
+from django.utils import timezone
 
 from accounts.tests.factories import UserFactory
+from competition.models import Match
 from competition.services.closing_report import build_closing_pdf, compute_closing_stats
-from competition.tests.factories import MatchFactory, PredictionFactory
+from competition.tests.factories import (
+    MatchFactory,
+    PredictionFactory,
+    RoundFactory,
+    TeamFactory,
+)
 
 
 @pytest.mark.django_db
@@ -139,6 +147,106 @@ def test_pdf_summary_shows_bet_counts():
     with pdfplumber.open(io.BytesIO(pdf)) as doc:
         text = "\n".join(page.extract_text() or "" for page in doc.pages)
     assert "3 de 4" in text
+
+
+@pytest.mark.django_db
+def test_pdf_predictions_table_includes_points_column():
+    """La tabla de pronósticos muestra los puntos ganados por cada jugador."""
+    match = MatchFactory(home=TeamFactory(code="ESP"), away=TeamFactory(code="ARG"))
+    ganador = UserFactory(is_jugador=True, is_active=True, name="Ana Acierto")
+    fallon = UserFactory(is_jugador=True, is_active=True, name="Beto Fallo")
+    PredictionFactory(match=match, player=ganador, home=2, away=1, earned=3)
+    PredictionFactory(match=match, player=fallon, home=0, away=0, earned=0)
+
+    pdf = build_closing_pdf(match)
+    with pdfplumber.open(io.BytesIO(pdf)) as doc:
+        # La primera página contiene la tabla de pronósticos.
+        rows = doc.pages[0].extract_tables()
+    # Aplanamos cabeceras de todas las tablas para encontrar la de pronósticos.
+    pred_table = next(t for t in rows if t and "Pronóstico" in t[0])
+    assert pred_table[0] == ["Jugador", "Pronóstico", "Pts"]
+    by_name = {row[0]: row for row in pred_table[1:]}
+    assert by_name["Ana Acierto"][2] == "3"
+    assert by_name["Beto Fallo"][2] == "0"
+
+
+@pytest.mark.django_db
+def test_pdf_predictions_pts_dash_when_not_scored():
+    """Antes de introducir el resultado oficial, la columna Pts muestra '—'."""
+    match = MatchFactory()
+    p = UserFactory(is_jugador=True, is_active=True, name="Sin Puntuar")
+    PredictionFactory(match=match, player=p, home=1, away=1, earned=None)
+    pdf = build_closing_pdf(match)
+    with pdfplumber.open(io.BytesIO(pdf)) as doc:
+        tables = doc.pages[0].extract_tables()
+    pred_table = next(t for t in tables if t and "Pronóstico" in t[0])
+    by_name = {row[0]: row for row in pred_table[1:]}
+    assert by_name["Sin Puntuar"][1] == "1 - 1"
+    assert by_name["Sin Puntuar"][2] == "—"
+
+
+@pytest.mark.django_db
+def test_pdf_includes_matchday_and_general_classification():
+    """El PDF muestra clasificación de jornada y general lado a lado."""
+    match = MatchFactory(matchday=2)
+    UserFactory(is_jugador=True, is_active=True, name="Solo General")
+    pdf = build_closing_pdf(match)
+    with pdfplumber.open(io.BytesIO(pdf)) as doc:
+        text = "\n".join(page.extract_text() or "" for page in doc.pages)
+    assert "Jornada 2" in text
+    assert "General" in text
+
+
+@pytest.mark.django_db
+def test_pdf_matchday_delta_against_general():
+    """En la clasificación de jornada, Δ refleja la diferencia vs la general."""
+    rnd = RoundFactory(points=3)
+    now = timezone.now()
+    # Partido finalizado de la jornada 1 que da puntos a Ana.
+    j1 = Match.objects.create(
+        round=rnd,
+        group="A",
+        matchday=1,
+        home=TeamFactory(code="AA1"),
+        away=TeamFactory(code="BB1"),
+        kickoff=now - timedelta(days=2),
+        result_home=1,
+        result_away=0,
+        finished_at=now,
+    )
+    # Partido de jornada 2 sobre el que se genera el PDF, finalizado.
+    j2 = Match.objects.create(
+        round=rnd,
+        group="A",
+        matchday=2,
+        home=TeamFactory(code="AA2"),
+        away=TeamFactory(code="BB2"),
+        kickoff=now - timedelta(days=1),
+        result_home=2,
+        result_away=1,
+        finished_at=now,
+    )
+    ana = UserFactory(is_jugador=True, is_active=True, name="Ana")
+    beto = UserFactory(is_jugador=True, is_active=True, name="Beto")
+    # En la general Ana lleva 6 puntos (3+3), Beto 0.
+    PredictionFactory(match=j1, player=ana, home=1, away=0, earned=3)
+    PredictionFactory(match=j1, player=beto, home=0, away=2, earned=0)
+    # En la jornada 2 solo puntúa Beto, así que pasa de #2 a #1 de la jornada.
+    PredictionFactory(match=j2, player=ana, home=0, away=0, earned=0)
+    PredictionFactory(match=j2, player=beto, home=2, away=1, earned=3)
+
+    pdf = build_closing_pdf(j2)
+    with pdfplumber.open(io.BytesIO(pdf)) as doc:
+        tables = []
+        for page in doc.pages:
+            tables.extend(page.extract_tables())
+    # Buscamos la tabla con cabecera ['Pos', 'Jugador', 'Pts', 'Dif'].
+    matchday_table = next(t for t in tables if t and t[0] == ["Pos", "Jugador", "Pts", "Dif"])
+    rows_by_name = {row[1]: row for row in matchday_table[1:]}
+    # Beto: pos jornada 1, pos general 2 → +1.
+    assert rows_by_name["Beto"][3] == "+1"
+    # Ana: pos jornada 2, pos general 1 → -1.
+    assert rows_by_name["Ana"][3] == "-1"
 
 
 @pytest.mark.django_db
