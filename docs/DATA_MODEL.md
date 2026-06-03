@@ -91,29 +91,29 @@ Al resolver un partido (resultado oficial confirmado), por cada pronóstico:
 
 ```
 si pronóstico.home == resultado.home Y pronóstico.away == resultado.away:
-    earned = round.points              // MARCADOR EXACTO → puntos completos de la ronda
+    earned = match.exact_points_applied      // MARCADOR EXACTO
 sino si signo(pron.home − pron.away) == signo(res.home − res.away):
-    earned = 1                         // ACIERTA SOLO EL RESULTADO (1·X·2) → 1 punto
+    earned = match.partial_points_applied    // ACIERTA SOLO EL RESULTADO (1·X·2)
 sino:
-    earned = 0                         // FALLO
+    earned = 0                                // FALLO
 ```
 
-`signo()` distingue victoria local (+), empate (0) y victoria visitante (−). Es la lógica exacta del prototipo (`app.jsx → saveOfficial`).
+`signo()` distingue victoria local (+), empate (0) y victoria visitante (−). Es la lógica del prototipo (`app.jsx → saveOfficial`) adaptada a la parametrización.
 
-**Puntos por ronda** (token `round.points`):
+> **Parametrización y congelado.** Tanto los puntos por marcador exacto como los puntos por 1·X·2 son parametrizables por ronda desde "Premios y puntos" (gestor). Al confirmar el resultado de un partido se congelan los valores vigentes en el propio `Match` (`exact_points_applied`, `partial_points_applied`): los cambios posteriores en la tabla de puntos **no afectan** a partidos ya resueltos.
 
-| Ronda | Puntos (exacto) |
-|-------|-----------------|
-| Fase de grupos | **3** |
-| Dieciseisavos | **5** |
-| Octavos | **7** |
-| Cuartos | **10** |
-| Semifinales | por definir (mantener progresión, p. ej. 12–15) |
-| Final | por definir (el mayor) |
+**Valores por defecto por ronda**:
 
-> Acertar solo el resultado siempre vale **1 punto**, independientemente de la ronda.
+| Ronda | Exacto | 1·X·2 |
+|-------|--------|-------|
+| Fase de grupos | **3** | 1 |
+| Dieciseisavos | **5** | 1 |
+| Octavos | **7** | 1 |
+| Cuartos | **10** | 1 |
+| Semifinales | por definir | 1 |
+| Final | por definir (el mayor) | 1 |
 
-**Métricas que se recalculan** tras resolver: puntos totales, aciertos (`earned > 0`), exactos (`earned == round.points`), racha (aciertos consecutivos por orden de partido), tendencia y posición en la clasificación.
+**Métricas que se recalculan** tras resolver: puntos totales, aciertos (`earned > 0`), exactos (`earned == match.exact_points_applied`), racha (aciertos consecutivos por orden de partido), tendencia y posición en la clasificación.
 
 ---
 
