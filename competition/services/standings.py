@@ -39,7 +39,7 @@ def standings(round_id: str | None = None, matchday: int | None = None) -> list[
         qs.values("player_id", "player__name", "player__email").annotate(
             pts=Sum("earned"),
             hits=Count("id", filter=Q(earned__gt=0)),
-            exact_hits=Count("id", filter=Q(earned=F("match__round__points"))),
+            exact_hits=Count("id", filter=Q(earned=F("match__exact_points_applied"))),
         )
     )
 
@@ -146,7 +146,7 @@ def _compute_trends(merged: list[dict]) -> dict[int, str]:
                 "player_id": pid,
                 "pts": (r["pts"] or 0) - delta.get(pid, 0),
                 "exact_hits": r["exact_hits"]
-                - (1 if delta.get(pid, 0) == last_match.round.points else 0),
+                - (1 if delta.get(pid, 0) == last_match.exact_points_applied else 0),
                 "hits": r["hits"] - (1 if delta.get(pid, 0) > 0 else 0),
                 "name": r["player__name"],
             }
