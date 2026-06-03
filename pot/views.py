@@ -174,7 +174,8 @@ class PrizesSettingsView(GestorRequiredMixin, View):
 
     def post(self, request):
         from decimal import Decimal, InvalidOperation
-        from django.db import transaction
+
+        from django.db import transaction  # noqa: I001
 
         def _parse_decimal(raw):
             try:

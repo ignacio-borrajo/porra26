@@ -3,7 +3,9 @@ from decimal import Decimal
 import pytest
 from django.urls import reverse
 
+from accounts.models import AuditLog
 from accounts.tests.factories import GestorFactory, UserFactory
+from competition.tests.factories import RoundFactory
 from pot.models import PotSettings, Prize
 
 
@@ -54,9 +56,6 @@ def test_prizes_get_renders_inputs_for_each_prize(client):
     assert 'name="matchday_winner_prize"' in content
 
 
-from accounts.models import AuditLog
-
-
 @pytest.mark.django_db
 def test_prizes_post_updates_top3_amounts(client):
     g = GestorFactory(must_change_password=False)
@@ -76,7 +75,9 @@ def test_prizes_post_updates_top3_amounts(client):
         },
     )
     assert r.status_code == 302
-    p1.refresh_from_db(); p2.refresh_from_db(); p3.refresh_from_db()
+    p1.refresh_from_db()
+    p2.refresh_from_db()
+    p3.refresh_from_db()
     assert p1.amount == Decimal("240")
     assert p2.amount == Decimal("144")
     assert p3.amount == Decimal("96")
@@ -142,9 +143,6 @@ def test_prizes_post_rejects_negative_amount(client):
     p1.refresh_from_db()
     assert p1.amount == Decimal("50")  # ignorado
     assert PotSettings.load().matchday_winner_prize == Decimal("0")  # default tras load (sin cambio si rechazamos)
-
-
-from competition.tests.factories import RoundFactory
 
 
 @pytest.mark.django_db
@@ -218,7 +216,7 @@ def test_prizes_post_ignores_invalid_scoring_values(client):
 def test_prizes_post_writes_scoring_audit_log_when_changed(client):
     g = GestorFactory(must_change_password=False)
     client.force_login(g)
-    groups = RoundFactory(id="groups", points=3, partial_points=1, label="G", short="G", order=1)
+    RoundFactory(id="groups", points=3, partial_points=1, label="G", short="G", order=1)
     Prize.objects.filter(scope="global").delete()
     p1 = Prize.objects.create(scope="global", position=1, amount=0, label="1er premio")
 

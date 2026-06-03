@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 
 from pot.models import PotSettings
@@ -17,9 +19,6 @@ def test_load_returns_existing():
     s1.save()
     s2 = PotSettings.load()
     assert s2.per_player == 15
-
-
-from decimal import Decimal
 
 
 @pytest.mark.django_db

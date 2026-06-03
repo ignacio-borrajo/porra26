@@ -30,7 +30,7 @@ urlpatterns = [
     # aquí: solo guardamos avatares normalizados a JPEG y la app es interna
     # y de bajo tráfico.
     re_path(
-        r"^%s(?P<path>.*)$" % re.escape(settings.MEDIA_URL.lstrip("/")),
+        rf"^{re.escape(settings.MEDIA_URL.lstrip('/'))}(?P<path>.*)$",
         _serve_media,
     ),
 ]

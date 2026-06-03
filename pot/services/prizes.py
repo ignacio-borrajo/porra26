@@ -51,7 +51,6 @@ def matchday_winners(scope_key) -> WinnerResult:
         return WinnerResult(status="desierto")
 
     from accounts.models import User
-
     from pot.models import PotSettings
 
     winners = list(User.objects.filter(id__in=[r.player_id for r in rows]))
