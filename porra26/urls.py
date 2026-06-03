@@ -24,6 +24,7 @@ urlpatterns = [
     path("stats/", include(("stats.urls", "stats"), namespace="stats")),
     path("gestion/", include(("pot.urls", "pot"), namespace="pot")),
     path("reglas/", include(("core.urls", "core"), namespace="core")),
+    path("anuncios/", include(("announcements.urls", "announcements"), namespace="announcements")),
     # Sirve MEDIA_URL también con DEBUG=False. WhiteNoise solo atiende
     # STATIC_URL y Railway monta /app/media como volumen persistente; sin
     # esta ruta los avatares devuelven 404. La vista `serve` es adecuada

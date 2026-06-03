@@ -36,3 +36,7 @@ def resolve_match(match: Match, *, home: int, away: int, actor) -> None:
         target_id=str(match.id),
         payload={"home": home, "away": away},
     )
+
+    from announcements.services import detect_after_match
+
+    detect_after_match(match)
