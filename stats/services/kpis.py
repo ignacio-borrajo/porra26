@@ -6,13 +6,13 @@ from competition.services.standings import standings
 
 def donut(player_id: int) -> dict:
     rows = Prediction.objects.filter(player_id=player_id, earned__isnull=False).values_list(
-        "earned", "match__round__points"
+        "earned", "match__exact_points_applied"
     )
     exact = partial = fail = 0
-    for earned, round_points in rows:
-        if earned == round_points:
+    for earned, exact_applied in rows:
+        if exact_applied is not None and earned == exact_applied:
             exact += 1
-        elif earned > 0:
+        elif earned and earned > 0:
             partial += 1
         else:
             fail += 1

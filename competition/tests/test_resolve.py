@@ -39,3 +39,33 @@ def test_resolve_match_creates_audit_log():
     log = AuditLog.objects.get(action="match_resolved")
     assert log.actor_id == g.id
     assert log.target_id == str(m.id)
+
+
+@pytest.mark.django_db
+def test_resolve_match_freezes_points_applied():
+    groups = RoundFactory(id="groups", points=3, partial_points=1, label="G", short="G", order=1)
+    m = MatchFactory(round=groups)
+    resolve_match(m, home=1, away=0, actor=GestorFactory())
+    m.refresh_from_db()
+    assert m.exact_points_applied == 3
+    assert m.partial_points_applied == 1
+
+
+@pytest.mark.django_db
+def test_resolve_match_does_not_overwrite_existing_snapshots():
+    """Si se edita un resultado después de cambiar la puntuación de la ronda,
+    los snapshots ya fijados no se reescriben."""
+    groups = RoundFactory(id="groups", points=3, partial_points=1, label="G", short="G", order=1)
+    m = MatchFactory(round=groups)
+    actor = GestorFactory()
+    resolve_match(m, home=1, away=0, actor=actor)
+
+    groups.points = 10
+    groups.partial_points = 5
+    groups.save()
+    m.refresh_from_db()
+
+    resolve_match(m, home=2, away=0, actor=actor)
+    m.refresh_from_db()
+    assert m.exact_points_applied == 3
+    assert m.partial_points_applied == 1

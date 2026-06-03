@@ -17,8 +17,8 @@ Aplicación web **interna de empresa** para una porra (quiniela) del **Mundial F
 
 ## Reglas de negocio clave (resumen — detalle en docs/DATA_MODEL.md)
 
-- **Puntuación:** marcador exacto → puntos completos del partido; acertar solo el resultado (1/X/2) → 1 punto; fallar → 0.
-- **Puntos por ronda:** Grupos 3 · Dieciseisavos 5 · Octavos 7 · Cuartos 10 (escala creciente; semis/final por definir, mantén la progresión).
+- **Puntuación:** marcador exacto → puntos del partido (parametrizable por ronda); acertar solo el resultado (1/X/2) → puntos parciales (parametrizable por ronda, default 1); fallar → 0. Los puntos se congelan en cada `Match` al resolverse, así los cambios solo aplican a partidos sin resolver.
+- **Puntos por ronda (defaults):** Grupos 3 · Dieciseisavos 5 · Octavos 7 · Cuartos 10 (escala creciente; semis/final por definir, mantén la progresión). 1·X·2 = 1 en todas las rondas. El gestor puede ajustarlos desde "Premios y puntos".
 - **Cierre de apuestas:** 2 horas antes del saque (`kickoff − 2h`). Después no se puede crear ni editar el pronóstico.
 - **Estados de partido:** `open` → `closing` (<2 h, cuenta atrás) → `closed` → `live` → `done`.
 - **Bote:** aportación por jugador (10 €), premios para el top 3. El gestor marca quién ha pagado.

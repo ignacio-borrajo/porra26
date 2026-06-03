@@ -214,6 +214,28 @@ def test_standings_scope_skips_streak_and_trend():
 
 
 @pytest.mark.django_db
+def test_exact_hits_uses_match_snapshot_not_current_round_points():
+    """Un partido resuelto con points=3 sigue contando como exacto aunque
+    ahora la ronda valga 5."""
+    groups = RoundFactory(id="groups", points=3, partial_points=1, label="G", short="G", order=1)
+    u = UserFactory(is_jugador=True, is_active=True)
+    m = MatchFactory(
+        round=groups,
+        result_home=1,
+        result_away=0,
+    )
+    PredictionFactory(player=u, match=m, home=1, away=0, earned=3)
+
+    # Cambia el valor actual de la ronda
+    groups.points = 5
+    groups.save()
+
+    rows = standings()
+    me = next(r for r in rows if r.player_id == u.id)
+    assert me.exact_hits == 1
+
+
+@pytest.mark.django_db
 def test_trend_up_when_position_improved_after_last_match():
     groups = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
     leader = UserFactory(name="Leader", email="l@e.com")

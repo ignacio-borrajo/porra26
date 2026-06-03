@@ -10,7 +10,7 @@ def score(pred, match) -> int | None:
     if match.result_home is None or match.result_away is None:
         return None
     if pred.home == match.result_home and pred.away == match.result_away:
-        return match.round.points
+        return match.exact_points_applied
     if _sign(pred.home - pred.away) == _sign(match.result_home - match.result_away):
-        return 1
+        return match.partial_points_applied
     return 0

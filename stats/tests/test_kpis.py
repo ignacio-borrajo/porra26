@@ -17,6 +17,21 @@ def test_donut_segments():
 
 
 @pytest.mark.django_db
+def test_donut_uses_match_exact_points_applied():
+    """Un acierto exacto con points=3 sigue contando como exacto aunque
+    ahora la ronda valga 5."""
+    grp = RoundFactory(id="groups", points=3, partial_points=1, label="G", short="G", order=1)
+    u = UserFactory()
+    m = MatchFactory(round=grp, result_home=2, result_away=1)
+    PredictionFactory(player=u, match=m, home=2, away=1, earned=3)
+
+    grp.points = 5
+    grp.save()
+
+    assert donut(u.id) == {"exact": 1, "partial": 0, "fail": 0}
+
+
+@pytest.mark.django_db
 def test_kpis_basic():
     grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
     me = UserFactory(name="Me", email="me@e.com")

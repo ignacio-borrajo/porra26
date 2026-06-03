@@ -23,6 +23,7 @@ class Round(models.Model):
     label = models.CharField(max_length=40)
     short = models.CharField(max_length=10)
     points = models.PositiveSmallIntegerField()
+    partial_points = models.PositiveSmallIntegerField(default=1)
     order = models.PositiveSmallIntegerField()
 
     class Meta:
@@ -41,6 +42,8 @@ class Match(models.Model):
     kickoff = models.DateTimeField()
     result_home = models.PositiveSmallIntegerField(null=True, blank=True)
     result_away = models.PositiveSmallIntegerField(null=True, blank=True)
+    exact_points_applied = models.PositiveSmallIntegerField(null=True, blank=True)
+    partial_points_applied = models.PositiveSmallIntegerField(null=True, blank=True)
     finished_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:

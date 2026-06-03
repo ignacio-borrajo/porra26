@@ -12,7 +12,14 @@ def resolve_match(match: Match, *, home: int, away: int, actor) -> None:
     match.result_home = home
     match.result_away = away
     match.finished_at = timezone.now()
-    match.save(update_fields=["result_home", "result_away", "finished_at"])
+    update_fields = ["result_home", "result_away", "finished_at"]
+
+    if match.exact_points_applied is None:
+        match.exact_points_applied = match.round.points
+        match.partial_points_applied = match.round.partial_points
+        update_fields += ["exact_points_applied", "partial_points_applied"]
+
+    match.save(update_fields=update_fields)
 
     preds = list(
         Prediction.objects.select_for_update().filter(match=match).select_related("match__round")

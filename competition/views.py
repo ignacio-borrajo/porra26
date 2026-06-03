@@ -321,7 +321,7 @@ class MatchDetailView(LoginRequiredMixin, View):
         preds = list(
             Prediction.objects.filter(match=m).select_related("player").order_by("player__name")
         )
-        round_points = m.round.points
+        round_points = m.exact_points_applied or m.round.points
         has_result = m.has_result
 
         rows = []
