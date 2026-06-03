@@ -107,7 +107,9 @@ Specs:
 
 **Por qué dos specs**: el primer intento usaba Power Automate sondeando tres endpoints HTTP de Django. Al desplegar descubrimos que el conector HTTP de Power Automate es **premium** (≈ €12/usuario/mes) y la organización no quiere pagar premium. La reescritura usa solo conectores estándar: Django envía un email con el PDF adjunto vía SMTP cada vez que un partido se cierra, y un flow con trigger Outlook + Teams lo publica en el chat.
 
-**Adaptación a Railway**: durante el despliegue migramos de PythonAnywhere a Railway porque PA no permite SMTP saliente sin Hacker plan ($5/mes) y porque Railway nos da SMTP saliente libre, Postgres gestionado y volumen persistente. El SMTP lo provee Resend (free tier, 100 envíos/día) por el puerto 2587. El "scheduled task de PA" pasa a ser un **Cron Service** dentro del mismo proyecto Railway (`*/10 * * * *`). Ver `docs/DEPLOY_RAILWAY.md` §14.
+**Adaptación a Railway**: durante el despliegue migramos de PythonAnywhere a Railway porque PA no permite SMTP saliente sin Hacker plan ($5/mes) y porque Railway nos da SMTP saliente libre, Postgres gestionado y volumen persistente. El SMTP lo provee Resend (free tier, 100 envíos/día) por el puerto 2587.
+
+**Disparo del envío — on-demand, no cron**: el plan original contemplaba un cron `*/10 min` que recorriese matches pendientes. Lo descartamos al replantearlo: con ~104 partidos en todo el Mundial, un cron consume miles de invocaciones para mover 100 emails (mal ratio), y el gestor ya entra a la plataforma a introducir el resultado oficial — pulsar un botón en esa misma pantalla es trivial. El comando `send_pending_closures` se mantiene como herramienta CLI para reenvíos masivos en emergencia. Ver `docs/DEPLOY_RAILWAY.md` §14.
 
 Backend ya implementado (modelo, PDF, endpoint `/pdf` para descarga manual, sección "Estado de envíos") sigue valiendo tal cual; solo cambia el "transporte" del PDF al chat.
 
@@ -116,16 +118,16 @@ Backend ya implementado (modelo, PDF, endpoint `/pdf` para descarga manual, secc
 - [x] UI gestor: botón "📄 PDF" + sección "Estado de envíos a Teams".
 - [x] Endpoint `/api/teams/cierres/<id>/pdf` (descarga manual desde la UI).
 - [x] Service `send_closure_email(match)` con SMTP + tests.
-- [x] Management command `send_pending_closures` + tests.
+- [x] Management command `send_pending_closures` (herramienta CLI batch).
 - [x] Eliminar endpoint `marcar-enviado` (ya no se consume desde fuera).
 - [x] SMTP de Resend desde Railway en producción (puerto 2587).
-- [ ] Cron Service en Railway que ejecuta `send_pending_closures` cada 10 min.
-- [ ] `docs/TEAMS_FLOW.md` reescrito con la versión email-driven (Outlook trigger + Teams Post message in chat).
+- [x] Endpoint POST `/api/teams/cierres/<id>/enviar/` + botón Enviar/Reenviar en panel del gestor.
+- [ ] `docs/TEAMS_FLOW.md` con el flujo on-demand (Outlook trigger + Teams Post message in chat).
 - [ ] Power Automate flow configurado + regla Outlook que filtra `[Porra26]`.
 
 Plan de implementación: [`docs/superpowers/plans/2026-06-01-cierre-apuestas-email.md`](superpowers/plans/2026-06-01-cierre-apuestas-email.md).
 
-**Hecho cuando:** al cerrarse un partido (`kickoff − 2 h`), en ≤ 10 min llega al chat de Teams un mensaje con el PDF como adjunto, y reintenta automáticamente si el envío falló.
+**Hecho cuando:** el gestor pulsa "Enviar" tras introducir el resultado oficial y en segundos aparece el PDF en el chat de Teams. Si el envío falla puede reenviar desde la misma pantalla.
 
 ---
 

@@ -226,55 +226,39 @@ railway run python manage.py shell
 
 En el panel de Resend → *Logs* verás el envío como `Delivered`. Si aparece como `Bounced` o `Complained`, revisa que `to` coincide con la cuenta con la que te registraste (restricción del modo sin dominio verificado).
 
-## 14. Cron Service para el envío de cierre por email
+## 14. Envío del PDF de cierre a Teams
 
-El comando `python manage.py send_pending_closures` recorre los matches con cierre pasado y sin `BetsClosingReport.sent_at`, genera el PDF y lo envía por email. En PythonAnywhere esto era un *scheduled task*; en Railway se monta como un **Cron Service** dentro del mismo proyecto.
+El envío no es automático por cron — lo dispara el **gestor** desde la UI con un botón. Razón: la porra son ~104 partidos en todo el Mundial; un cron `*/10 min` haría miles de invocaciones para mover solo 100 emails (mal ratio), y el gestor ya entra a la plataforma para introducir el resultado oficial, así que pulsar el botón es trivial.
 
-### 14.1 Crear el Cron Service
+### 14.1 Disparo desde la UI
 
-1. Railway → proyecto → **+ New → Empty Service** (no GitHub repo, lo configuras a mano).
-2. **Settings → Source**: enlaza al mismo repo `apuestas-interna`, rama `main`. Así comparte build con el web service.
-3. **Settings → Deploy → Cron Schedule**: `*/10 * * * *` (cada 10 min — el cierre se hace 2h antes del saque, sobra margen).
-4. **Settings → Deploy → Start Command**:
-   ```
-   DJANGO_SETTINGS_MODULE=porra26.settings.prod python manage.py send_pending_closures
-   ```
-   El prefijo es por la misma razón que en el web service: `manage.py` cae a `dev` si no se le inyecta la variable.
-5. **Variables**: pulsa *Service Variables → Add Reference* y enlaza el servicio web. Heredas `DATABASE_URL`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`, `DEFAULT_FROM_EMAIL` y `TEAMS_DESTINATION_EMAIL` automáticamente.
+1. Gestor → `/competicion/resultados/`.
+2. En la fila del partido (sección **PENDIENTES** o **FINALIZADOS**) hay un botón **✉️ Enviar** que llama al endpoint `POST /competicion/api/teams/cierres/<id>/enviar/`.
+3. Si el match ya tiene `BetsClosingReport.sent_at` fijado, el botón se transforma en **↻ Reenviar** y vuelve a generar + enviar (resetea `sent_at` antes de llamar al service).
+4. Tras enviar, la página se recarga y el toast superior muestra "PDF enviado a Teams para X vs Y".
 
-### 14.2 Validar manualmente antes del primer cron
+El endpoint acepta sesión de gestor o `Authorization: Bearer <TEAMS_API_TOKEN>`. Detecta navegador vs API por la cabecera `Accept`: si el cliente pide HTML, redirige a la pantalla de Resultados con mensaje flash; si es API, devuelve JSON `{match_id, sent_at}`.
 
-Desde tu Mac:
+### 14.2 Reenvío masivo desde CLI (emergencia)
+
+El comando `send_pending_closures` se mantiene como herramienta de batch para casos extremos (caída del SMTP durante la fase de grupos, varios partidos pendientes de reenviar tras una incidencia):
 
 ```bash
-railway run --service <nombre-del-servicio-cron> python manage.py send_pending_closures --dry-run
+# Lista lo que mandaría sin hacerlo
+railway run python manage.py send_pending_closures --dry-run
+
+# Envía solo un partido concreto
+railway run python manage.py send_pending_closures --match-id <id>
+
+# Envía todos los pendientes (los que tengan kickoff − 2h pasado y sent_at NULL)
+railway run python manage.py send_pending_closures
 ```
 
-Debe listar los matches pendientes (los que tengan `kickoff - 2h <= now` y sin `sent_at`). Si la lista cuadra, deja que el cron arranque.
-
-Si quieres forzar un envío puntual:
-
-```bash
-railway run --service <nombre-del-servicio-cron> python manage.py send_pending_closures --match-id <id>
-```
+No hay cron service enlazado al comando — corre solo cuando lo invocas explícitamente.
 
 ### 14.3 Observabilidad
 
-Cada ejecución del cron deja:
-
-- En **Resend → Logs**: una entrada por email enviado con estado `Delivered`.
-- En **Railway → servicio cron → Logs**: `OK · <slug>` por cada éxito y `ERR · <slug> · <exc>` por cada fallo.
-- En la BD: `BetsClosingReport.sent_at` actualizado y `accounts.AuditLog` con `action="bets_pdf_emailed"`.
-
-Si el cron falla 3 veces seguidas Railway lo marca como degradado en el dashboard del proyecto.
-
-### 14.4 Tira hacia atrás
-
-Si necesitas reenviar un match concreto (porque el destinatario lo perdió, Power Automate no lo recogió, etc.):
-
-```bash
-railway run --service web python manage.py shell -c "from competition.models import BetsClosingReport; BetsClosingReport.objects.filter(match_id=<id>).update(sent_at=None)"
-railway run --service <nombre-del-servicio-cron> python manage.py send_pending_closures --match-id <id>
-```
-
-(Sólo limpia `sent_at`; `attempts` se mantiene como histórico.)
+- **Resend → Logs**: una entrada por email enviado con estado `Delivered`.
+- **Railway → servicio web → Logs**: el endpoint logea cualquier excepción de SMTP. Si `send_closure_email` lanza, el botón devuelve 500 y la UI mostraría el error de Django.
+- **BD**: `BetsClosingReport.sent_at`, `attempts` y `last_sha256` se actualizan en cada envío. `accounts.AuditLog` lleva `action="bets_pdf_emailed"` con el match y destinatario.
+- **UI**: la sección colapsable *"ESTADO DE ENVÍOS A TEAMS"* de `/competicion/resultados/` lista todos los `BetsClosingReport` con su estado (Generado / Enviado / Intentos / Última generación).

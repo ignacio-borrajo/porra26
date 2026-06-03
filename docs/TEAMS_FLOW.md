@@ -1,14 +1,14 @@
-# Flujo de Power Automate — Cierre de apuestas a Teams (email-driven)
+# Flujo de Power Automate — Cierre de apuestas a Teams (email-driven on-demand)
 
 Esta guía describe cómo configurar el *flow* que recibe los emails de cierre que envía PORRA 26 y los publica en el chat de grupo de Teams. Usa **solo conectores estándar** (Outlook + Teams) — sin licencia Power Automate Premium.
 
-> **Cambio respecto a versiones anteriores:** la primera versión de esta guía usaba acciones HTTP para sondear directamente la API de PORRA 26 desde Power Automate. Esas acciones son premium (≈ €12/usuario/mes) y la organización no lo paga. La versión actual delega el sondeo a un Cron Service de Railway (`*/10 min`) que envía un email con el PDF adjunto al buzón corporativo del autor del flow, y este flow solo escucha esa bandeja.
+> **Cambio respecto a versiones anteriores:** la primera versión usaba acciones HTTP para sondear directamente la API de PORRA 26 — esas acciones son premium (≈ €12/usuario/mes). La segunda versión disparaba el envío con un Cron Service de Railway cada 10 min — la descartamos por ratio invocaciones/eventos malo (~4 500/mes para mover 100 emails durante el Mundial). La versión vigente es **on-demand**: el gestor pulsa "Enviar" tras introducir el resultado oficial en `/competicion/resultados/`, Django envía el email al instante, y este flow lo recoge.
 
 ## Arquitectura del flujo end-to-end
 
 ```
-Railway (Cron */10 min)
-   └─ python manage.py send_pending_closures
+Gestor → /competicion/resultados/ → pulsa "✉️ Enviar" o "↻ Reenviar"
+   └─ POST /competicion/api/teams/cierres/<id>/enviar/
        └─ send_closure_email(match)
            └─ EmailMessage con PDF adjunto
                ↓ SMTP por puerto 2587
@@ -25,9 +25,9 @@ Railway (Cron */10 min)
 
 - Cuenta de Microsoft 365 con licencia Power Automate Standard (incluida en la mayoría de planes Business).
 - Pertenencia al chat de grupo de Teams de destino.
-- Railway con el Cron Service de `send_pending_closures` configurado y enviando emails al buzón corporativo (ver `docs/DEPLOY_RAILWAY.md` §14).
-- Resend configurado en Railway con `EMAIL_HOST=smtp.resend.com`, `EMAIL_PORT=2587`, etc. (ver `docs/DEPLOY_RAILWAY.md` §3.4).
-- Recibir el email de smoke test en el buzón corporativo: confirma que `[Porra26][TEST]` llega y no se queda en spam.
+- Railway con SMTP de Resend configurado por el puerto 2587 (ver `docs/DEPLOY_RAILWAY.md` §3.4).
+- Botón **✉️ Enviar** visible en el panel del gestor en `/competicion/resultados/` (ver `docs/DEPLOY_RAILWAY.md` §14).
+- Para probar antes de tener un partido finalizado: `railway run python manage.py send_pending_closures --match-id <id>` desde local. Disparable también desde el botón si el partido ya tiene resultado registrado.
 
 ## 1. Crear regla en Outlook (recomendado)
 

@@ -8,11 +8,15 @@
 <h2 class="eyebrow" style="margin-top:18px">PENDIENTES DE FINALIZAR · {{ pending|length }}</h2>
 <div class="table-scroll" style="display:flex;flex-direction:column;gap:8px">
   {% for m in pending %}
-  <div class="glass table-row" style="display:grid;grid-template-columns:auto 1fr auto auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
+  <div class="glass table-row" style="display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
     <span class="mono" style="color:var(--text-faint)">Grupo {{ m.group }}</span>
     <span>{{ m.home.flag }} {{ m.home.name }} vs {{ m.away.flag }} {{ m.away.name }}</span>
     <span class="chip chip-{{ m.status }}">{{ m.status }}</span>
     <a class="btn btn-ghost" href="{% url 'competicion:api:cierre_pdf' m.id %}" style="padding:6px 12px;font-size:12px" title="Descargar PDF de cierre">📄 PDF</a>
+    <form method="post" action="{% url 'competicion:api:cierre_enviar' m.id %}" style="margin:0">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-ghost" style="padding:6px 12px;font-size:12px" title="{% if m.closing_report.sent_at %}Reenviar PDF a Teams{% else %}Enviar PDF a Teams{% endif %}">{% if m.closing_report.sent_at %}↻ Reenviar{% else %}✉️ Enviar{% endif %}</button>
+    </form>
     <a class="btn btn-primary" href="{% url 'competicion:official' m.id %}" data-modal-url="{% url 'competicion:official' m.id %}" style="padding:6px 12px;font-size:12px">Finalizar</a>
   </div>
   {% endfor %}
@@ -35,11 +39,15 @@
 <h2 class="eyebrow" style="margin-top:18px">FINALIZADOS · {{ done|length }}</h2>
 <div class="table-scroll" style="display:flex;flex-direction:column;gap:8px">
   {% for m in done %}
-  <div class="glass table-row" style="display:grid;grid-template-columns:auto 1fr auto auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
+  <div class="glass table-row" style="display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
     <span class="mono" style="color:var(--text-faint)">Grupo {{ m.group }}</span>
     <span>{{ m.home.flag }} {{ m.home.name }} {{ m.result_home }}–{{ m.result_away }} {{ m.away.flag }} {{ m.away.name }}</span>
     <span class="chip chip-done">Final</span>
     <a class="btn btn-ghost" href="{% url 'competicion:api:cierre_pdf' m.id %}" style="padding:6px 12px;font-size:12px" title="Descargar PDF de cierre">📄 PDF</a>
+    <form method="post" action="{% url 'competicion:api:cierre_enviar' m.id %}" style="margin:0">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-ghost" style="padding:6px 12px;font-size:12px" title="{% if m.closing_report.sent_at %}Reenviar PDF a Teams{% else %}Enviar PDF a Teams{% endif %}">{% if m.closing_report.sent_at %}↻ Reenviar{% else %}✉️ Enviar{% endif %}</button>
+    </form>
     <a class="btn btn-ghost" href="{% url 'competicion:official' m.id %}" data-modal-url="{% url 'competicion:official' m.id %}" style="padding:6px 12px;font-size:12px">Editar</a>
   </div>
   {% endfor %}

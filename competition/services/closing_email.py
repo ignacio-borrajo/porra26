@@ -35,12 +35,15 @@ def _build_body(match: Match) -> str:
 def send_closure_email(match: Match) -> BetsClosingReport:
     """Envía email de cierre para un match. Idempotente.
 
-    - Si el match aún no está cerrado, lanza ValueError.
+    - Si el match aún no está cerrado y no tiene resultado, lanza ValueError.
+      Un match con resultado entrado se considera cerrado a efectos del PDF
+      aunque kickoff − 2h todavía esté en el futuro (admin override que el
+      gestor puede usar para probar el flujo o forzar el envío).
     - Si BetsClosingReport.sent_at ya está fijado, no-op (devuelve el report).
     - Si SMTP falla, propaga la excepción tras incrementar `attempts`.
     """
     now = timezone.now()
-    if match.kickoff - timedelta(hours=BET_CLOSE_HOURS) > now:
+    if not match.has_result and match.kickoff - timedelta(hours=BET_CLOSE_HOURS) > now:
         raise ValueError(f"El match {match.id} aún no está cerrado")
 
     with transaction.atomic():
