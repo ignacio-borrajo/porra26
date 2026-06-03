@@ -1,22 +1,50 @@
+from datetime import timedelta
+
 from django.contrib import messages
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views import View
 
+from competition.models import BET_CLOSE_HOURS, Match
+from competition.services.standings import standings
+from pot.models import Payment, Prize
+
 from .forms import ChangePasswordForm, LoginForm, ProfileForm
-from .models import AuditLog
+from .models import AuditLog, User
 
 
 class LoginView(View):
     template_name = "accounts/login.html"
 
+    def _info_context(self) -> dict:
+        first_prize = (
+            Prize.objects.filter(scope="global", position=1).values_list("amount", flat=True).first()
+        )
+        next_matches = list(
+            Match.objects.filter(kickoff__gt=timezone.now())
+            .select_related("home", "away", "round")
+            .order_by("kickoff")[:3]
+        )
+        for m in next_matches:
+            m.close_at = m.kickoff - timedelta(hours=BET_CLOSE_HOURS)
+        top_rows = standings()[:5]
+        users_by_id = User.objects.in_bulk([r.player_id for r in top_rows])
+        return {
+            "players_count": Payment.objects.filter(paid=True).count(),
+            "first_prize": int(first_prize) if first_prize is not None else 0,
+            "next_matches": next_matches,
+            "top_rows": top_rows,
+            "top_users": users_by_id,
+        }
+
     def get(self, request):
         if request.user.is_authenticated:
             return redirect("competicion:dashboard")
-        return render(request, self.template_name, {"form": LoginForm()})
+        return render(request, self.template_name, {"form": LoginForm(), **self._info_context()})
 
     def post(self, request):
         form = LoginForm(request.POST)
@@ -28,7 +56,7 @@ class LoginView(View):
                     return redirect("accounts:change_password")
                 return redirect("competicion:dashboard")
             messages.error(request, "Correo o contraseña incorrectos.")
-        return render(request, self.template_name, {"form": form})
+        return render(request, self.template_name, {"form": form, **self._info_context()})
 
 
 class LogoutView(View):
