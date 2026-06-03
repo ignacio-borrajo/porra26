@@ -6,6 +6,15 @@
   <div class="winner-trophy" aria-hidden="true">🏆</div>
   <h2 id="winner-title" class="winner-title">{{ announcement.title }}</h2>
   <p class="winner-points">{{ announcement.points }} puntos</p>
+  {% if announcement.share %}
+    <p class="winner-share">
+      {% if announcement.tied %}
+        Cada uno se lleva <strong>{{ announcement.share|floatformat:2 }} €</strong>
+      {% else %}
+        Se lleva <strong>{{ announcement.share|floatformat:2 }} €</strong>
+      {% endif %}
+    </p>
+  {% endif %}
   <div class="winner-list">
     {% for w in announcement.winners.all %}
       <div class="winner-card">

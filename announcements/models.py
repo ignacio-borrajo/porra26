@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 from django.db.models import Q, UniqueConstraint
 
@@ -20,6 +22,7 @@ class WinnerAnnouncement(models.Model):
     )
     points = models.PositiveIntegerField()
     tied = models.BooleanField(default=False)
+    share = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("0"))
     winners = models.ManyToManyField(
         "accounts.User",
         related_name="winning_announcements",

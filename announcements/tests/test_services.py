@@ -63,6 +63,22 @@ class TestMatchdayScope:
         assert ann.tied is True
         assert {w.id for w in ann.winners.all()} == {a.id, b.id}
 
+    def test_share_is_persisted_from_matchday_winners(self, groups_round, settings):
+        from decimal import Decimal
+
+        from pot.models import PotSettings
+
+        pot = PotSettings.load()
+        pot.matchday_winner_prize = Decimal("20.00")
+        pot.save(update_fields=["matchday_winner_prize"])
+        a = UserFactory()
+        b = UserFactory()
+        m = MatchFactory(round=groups_round, matchday=1, result_home=1, result_away=0)
+        PredictionFactory(player=a, match=m, earned=3)
+        PredictionFactory(player=b, match=m, earned=3)
+        created = detect_after_match(m)
+        assert created[0].share == Decimal("10.00")
+
     def test_announcement_idempotent_on_second_call(self, groups_round):
         user = UserFactory()
         m = MatchFactory(round=groups_round, matchday=1, result_home=1, result_away=0)

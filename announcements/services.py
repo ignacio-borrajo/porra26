@@ -60,6 +60,7 @@ def _try_create(
         scope_round_id=round_id,
         points=result.points,
         tied=result.tied,
+        share=result.share,
     )
     if result.winners:
         ann.winners.set(result.winners)
