@@ -184,3 +184,35 @@ def test_rules_hides_matchday_winner_prize_when_zero(client):
     content = r.content.decode("utf-8")
     assert "rules-matchday-prize" not in content
     assert "Premio por ganador de jornada" not in content
+
+
+@pytest.mark.django_db
+def test_rules_shows_maintenance_cost_when_set(client):
+    s = PotSettings.load()
+    s.maintenance_cost = Decimal("45.50")
+    s.save()
+    client.force_login(UserFactory())
+    r = client.get(reverse("core:rules"))
+    content = r.content.decode("utf-8")
+    assert "Gastos de mantenimiento" in content
+    assert "45" in content
+
+
+@pytest.mark.django_db
+def test_rules_hides_maintenance_cost_when_zero(client):
+    s = PotSettings.load()
+    s.maintenance_cost = Decimal("0")
+    s.save()
+    client.force_login(UserFactory())
+    r = client.get(reverse("core:rules"))
+    assert "Gastos de mantenimiento" not in r.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+def test_rules_shows_knockout_90min_rule(client):
+    client.force_login(UserFactory())
+    r = client.get(reverse("core:rules"))
+    content = r.content.decode("utf-8")
+    assert "90 minutos" in content
+    assert "prórrogas" in content
+    assert "penaltis" in content

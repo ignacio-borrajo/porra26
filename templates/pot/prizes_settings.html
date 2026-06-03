@@ -27,6 +27,10 @@
       <strong style="font-family:Sora,sans-serif;font-size:26px">{{ paid_count }}</strong>
       <span class="eyebrow">Pagos confirmados</span>
     </div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <strong style="font-family:Sora,sans-serif;font-size:26px">{{ settings.maintenance_cost|floatformat:"-2" }} €</strong>
+      <span class="eyebrow">Gastos mantenimiento</span>
+    </div>
   </section>
 
   <form method="post" style="display:flex;flex-direction:column;gap:24px">
@@ -77,9 +81,31 @@
       </div>
     </section>
 
+    <section class="glass prizes-matchday-card" style="padding:24px;border-radius:var(--r-lg);display:flex;flex-direction:column;gap:18px">
+      <header style="display:flex;flex-direction:column;gap:4px">
+        <span class="eyebrow">03 · Gastos de mantenimiento</span>
+        <h2 style="margin:0;font-family:Sora,sans-serif;font-weight:700;font-size:20px">Gastos de mantenimiento del bote</h2>
+        <p style="color:var(--text-dim);margin:0;font-size:13px">
+          Importe que se descuenta del bote para cubrir gastos comunes (por ejemplo, comisiones o material).
+          Se publica en la página de Reglas para que los jugadores lo vean.
+        </p>
+      </header>
+
+      <div class="prizes-matchday-row">
+        <div class="prizes-matchday-icon">{% icon "euro" width=28 height=28 %}</div>
+        <label class="prizes-matchday-label" for="maintenance_cost">Importe</label>
+        <div class="prizes-matchday-input">
+          <input class="input" type="number" min="0" step="0.01" inputmode="decimal"
+                 id="maintenance_cost" name="maintenance_cost"
+                 value="{{ settings.maintenance_cost|floatformat:'-2' }}">
+          <span class="mono">€</span>
+        </div>
+      </div>
+    </section>
+
     <section class="glass" style="padding:24px;border-radius:var(--r-lg);display:flex;flex-direction:column;gap:18px">
       <header style="display:flex;flex-direction:column;gap:4px">
-        <span class="eyebrow">03 · Puntuación por ronda</span>
+        <span class="eyebrow">04 · Puntuación por ronda</span>
         <h2 style="margin:0;font-family:Sora,sans-serif;font-weight:700;font-size:20px">Cuánto vale cada acierto</h2>
         <p style="color:var(--text-dim);margin:0;font-size:13px">
           Los cambios se aplican solo a los partidos cuyo resultado aún no se ha confirmado.

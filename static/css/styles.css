@@ -807,6 +807,62 @@ select.input {
   font-size: 13px;
 }
 
+.rules-knockout-rule {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 18px;
+  padding: 20px 22px;
+  border-radius: var(--r-md);
+  border: 1.5px solid oklch(from var(--c-yellow) l c h / 0.55);
+  background: linear-gradient(
+    135deg,
+    oklch(from var(--c-yellow) l c h / 0.12),
+    oklch(from var(--c-red) l c h / 0.08)
+  );
+  align-items: center;
+  overflow: hidden;
+}
+.rules-knockout-rule::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at top right,
+    oklch(from var(--c-yellow) l c h / 0.2),
+    transparent 60%
+  );
+  pointer-events: none;
+}
+.rules-knockout-rule > * { position: relative; }
+.rules-knockout-rule-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm, 10px);
+  background: oklch(from var(--c-yellow) l c h / 0.22);
+  color: var(--c-yellow);
+  border: 1px solid oklch(from var(--c-yellow) l c h / 0.5);
+}
+.rules-knockout-rule-body { display: flex; flex-direction: column; gap: 6px; }
+.rules-knockout-rule-body .eyebrow {
+  color: var(--c-yellow);
+}
+.rules-knockout-rule-body strong {
+  font-family: Sora, sans-serif;
+  font-weight: 700;
+  font-size: clamp(16px, 2.2vw, 19px);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+.rules-knockout-rule-body p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
 .rules-tiebreak {
   list-style: none;
   margin: 0;

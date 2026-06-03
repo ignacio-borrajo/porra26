@@ -11,10 +11,12 @@ class RulesView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        pot_settings = PotSettings.load()
         ctx["rounds"] = Round.objects.all()
-        ctx["pot_per_player"] = PotSettings.load().per_player
+        ctx["pot_per_player"] = pot_settings.per_player
         ctx["pot_prizes"] = Prize.objects.filter(scope="global").order_by("position")
         ctx["bet_close_hours"] = BET_CLOSE_HOURS
         ctx["rules_updated_at"] = settings.RULES_UPDATED_AT
-        ctx["matchday_winner_prize"] = PotSettings.load().matchday_winner_prize
+        ctx["matchday_winner_prize"] = pot_settings.matchday_winner_prize
+        ctx["maintenance_cost"] = pot_settings.maintenance_cost
         return ctx
