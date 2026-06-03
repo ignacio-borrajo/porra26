@@ -81,19 +81,111 @@ def test_import_skips_empty_rows_and_missing_fields():
 
 
 @pytest.mark.django_db
-def test_import_does_not_update_existing_user():
+def test_import_does_not_update_existing_user_when_no_paid_column():
     existing = UserFactory(email="x@edisa.com", name="Original")
     existing.set_password("old-pass")
     existing.save()
+    Payment.objects.create(player=existing, paid=True)
     buf = _wb([
         ["email", "nombre", "contraseña"],
         ["x@edisa.com", "Cambiado", "new-pass"],
     ])
     result = import_players_from_xlsx(buf)
     assert result.skipped_existing == 1
+    assert result.updated == 0
     existing.refresh_from_db()
     assert existing.name == "Original"
     assert existing.check_password("old-pass")
+    assert existing.payment.paid is True
+
+
+@pytest.mark.django_db
+def test_import_existing_user_only_updates_paid_field():
+    existing = UserFactory(email="x@edisa.com", name="Original")
+    existing.set_password("old-pass")
+    existing.save()
+    Payment.objects.create(player=existing, paid=False)
+    buf = _wb([
+        ["email", "nombre", "contraseña", "pagado"],
+        ["x@edisa.com", "Cambiado", "new-pass", "S"],
+    ])
+    result = import_players_from_xlsx(buf)
+    assert result.updated == 1
+    assert result.created == 0
+    assert result.skipped_existing == 0
+    existing.refresh_from_db()
+    assert existing.name == "Original"
+    assert existing.check_password("old-pass")
+    assert existing.payment.paid is True
+    assert existing.payment.paid_at is not None
+
+
+@pytest.mark.django_db
+def test_import_existing_user_paid_to_pending_when_value_not_S():
+    existing = UserFactory(email="x@edisa.com")
+    Payment.objects.create(player=existing, paid=True)
+    buf = _wb([
+        ["email", "nombre", "contraseña", "pagado"],
+        ["x@edisa.com", "X", "pw", "N"],
+    ])
+    result = import_players_from_xlsx(buf)
+    assert result.updated == 1
+    existing.refresh_from_db()
+    assert existing.payment.paid is False
+    assert existing.payment.paid_at is None
+
+
+@pytest.mark.django_db
+def test_import_existing_user_unchanged_paid_counts_as_skipped():
+    existing = UserFactory(email="x@edisa.com")
+    Payment.objects.create(player=existing, paid=False)
+    buf = _wb([
+        ["email", "nombre", "contraseña", "pagado"],
+        ["x@edisa.com", "X", "pw", "N"],
+    ])
+    result = import_players_from_xlsx(buf)
+    assert result.updated == 0
+    assert result.skipped_existing == 1
+    existing.refresh_from_db()
+    assert existing.payment.paid is False
+
+
+@pytest.mark.django_db
+def test_import_new_user_with_paid_S_creates_paid_payment():
+    buf = _wb([
+        ["email", "nombre", "contraseña", "pagado"],
+        ["new@edisa.com", "Nuevo", "pw", "S"],
+    ])
+    result = import_players_from_xlsx(buf)
+    assert result.created == 1
+    user = User.objects.get(email="new@edisa.com")
+    assert user.payment.paid is True
+    assert user.payment.paid_at is not None
+
+
+@pytest.mark.django_db
+def test_import_new_user_with_paid_blank_creates_unpaid_payment():
+    buf = _wb([
+        ["email", "nombre", "contraseña", "pagado"],
+        ["new@edisa.com", "Nuevo", "pw", ""],
+    ])
+    result = import_players_from_xlsx(buf)
+    assert result.created == 1
+    user = User.objects.get(email="new@edisa.com")
+    assert user.payment.paid is False
+
+
+@pytest.mark.django_db
+def test_import_paid_column_case_insensitive():
+    buf = _wb([
+        ["email", "nombre", "contraseña", "Pagado"],
+        ["a@edisa.com", "A", "pw", "s"],
+        ["b@edisa.com", "B", "pw", "Sí"],
+    ])
+    result = import_players_from_xlsx(buf)
+    assert result.created == 2
+    assert User.objects.get(email="a@edisa.com").payment.paid is True
+    assert User.objects.get(email="b@edisa.com").payment.paid is True
 
 
 @pytest.mark.django_db

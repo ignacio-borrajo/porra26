@@ -1,8 +1,14 @@
 """Importación masiva de jugadores desde un fichero Excel (.xlsx).
 
-Reglas: nunca actualiza usuarios existentes. Si el email ya está dado de
-alta, la fila se cuenta como saltada y se continúa. No aplica validadores
-de contraseña fuerte; la contraseña del Excel se asigna tal cual.
+Reglas:
+- Columnas obligatorias: email, nombre, contraseña.
+- Columna opcional: pagado. Si está presente, la Excel es la fuente de verdad:
+  valor "S" (case-insensitive) → Pagado; cualquier otro valor → Pendiente.
+- Si el email ya existe, NO se actualizan nombre/contraseña/rol; sólo se aplica
+  el nuevo valor de pagado (si la columna está presente). Si el pagado cambia,
+  la fila se cuenta como "actualizada"; si no cambia, como "saltada".
+- Los validadores de contraseña fuerte no se aplican: la contraseña del Excel
+  se asigna tal cual.
 """
 
 from dataclasses import dataclass
@@ -11,6 +17,7 @@ from io import BytesIO
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
 from django.db import transaction
+from django.utils import timezone
 
 from accounts.models import AuditLog, User
 from accounts.validators import validate_email_domain
@@ -26,14 +33,20 @@ _HEADER_ALIASES = {
     "password": "password",
     "clave": "password",
     "contrasea": "password",
+    "pagado": "paid",
+    "paid": "paid",
+    "pago": "paid",
 }
 
 _ACCENTS = str.maketrans("áéíóúñ", "aeioun")
+
+_PAID_TRUE_VALUES = {"s", "si", "sí", "yes", "y", "1", "true"}
 
 
 @dataclass
 class ImportResult:
     created: int = 0
+    updated: int = 0
     skipped_existing: int = 0
     skipped_invalid_email: int = 0
     skipped_empty: int = 0
@@ -45,7 +58,7 @@ class ImportResult:
 
     @property
     def total_rows(self) -> int:
-        return self.created + self.skipped_total
+        return self.created + self.updated + self.skipped_total
 
 
 def _normalize_header(value) -> str:
@@ -67,6 +80,16 @@ def _detect_columns(row) -> dict[str, int] | None:
 
 def _cell(row, idx):
     return row[idx] if idx < len(row) else None
+
+
+def _parse_paid(raw) -> bool:
+    if raw is None:
+        return False
+    if isinstance(raw, bool):
+        return raw
+    if isinstance(raw, (int, float)):
+        return raw == 1
+    return str(raw).strip().lower().translate(_ACCENTS) in _PAID_TRUE_VALUES
 
 
 def import_players_from_xlsx(uploaded_file, *, actor=None) -> ImportResult:
@@ -98,6 +121,7 @@ def import_players_from_xlsx(uploaded_file, *, actor=None) -> ImportResult:
             error="No se encontraron las columnas 'email', 'nombre' y 'contraseña'."
         )
 
+    has_paid_column = "paid" in header_map
     email_validator = EmailValidator()
     result = ImportResult()
 
@@ -127,8 +151,29 @@ def import_players_from_xlsx(uploaded_file, *, actor=None) -> ImportResult:
             result.skipped_invalid_email += 1
             continue
 
-        if User.objects.filter(email=email).exists():
-            result.skipped_existing += 1
+        paid = _parse_paid(_cell(row, header_map["paid"])) if has_paid_column else None
+
+        existing = User.objects.filter(email=email).first()
+        if existing is not None:
+            if not has_paid_column:
+                result.skipped_existing += 1
+                continue
+            pay, _ = Payment.objects.get_or_create(player=existing)
+            if pay.paid == paid:
+                result.skipped_existing += 1
+                continue
+            with transaction.atomic():
+                pay.paid = paid
+                pay.paid_at = timezone.now() if paid else None
+                pay.save()
+                AuditLog.objects.create(
+                    actor=actor,
+                    action="payment_toggled",
+                    target_type="user",
+                    target_id=str(existing.id),
+                    payload={"paid": paid, "source": "xlsx_import"},
+                )
+            result.updated += 1
             continue
 
         with transaction.atomic():
@@ -140,13 +185,20 @@ def import_players_from_xlsx(uploaded_file, *, actor=None) -> ImportResult:
                 is_gestor=False,
                 must_change_password=True,
             )
-            Payment.objects.get_or_create(player=user)
+            payment, _ = Payment.objects.get_or_create(player=user)
+            if has_paid_column and paid:
+                payment.paid = True
+                payment.paid_at = timezone.now()
+                payment.save()
             AuditLog.objects.create(
                 actor=actor,
                 action="player_created",
                 target_type="user",
                 target_id=str(user.id),
-                payload={"source": "xlsx_import"},
+                payload={
+                    "source": "xlsx_import",
+                    "paid": bool(has_paid_column and paid),
+                },
             )
         result.created += 1
 

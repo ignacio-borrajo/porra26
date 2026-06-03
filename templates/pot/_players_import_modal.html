@@ -11,7 +11,7 @@
   <form method="post" action="{% url 'pot:players_import' %}" enctype="multipart/form-data">
     {% csrf_token %}
     <p class="mono" style="margin:0 0 16px;font-size:11.5px;color:var(--text-faint);padding:10px 12px;border-radius:10px;background:var(--surface-hi);line-height:1.5">
-      El fichero debe ser <strong>.xlsx</strong> con una fila de cabecera y las columnas <strong>email</strong>, <strong>nombre</strong> y <strong>contraseña</strong>. Los emails ya existentes se omiten; no se actualiza ningún usuario. La contraseña se asigna tal cual y el jugador deberá cambiarla al primer acceso.
+      El fichero debe ser <strong>.xlsx</strong> con una fila de cabecera y las columnas <strong>email</strong>, <strong>nombre</strong> y <strong>contraseña</strong>. Opcional: <strong>pagado</strong> (<code>S</code> = pagado, vacío o cualquier otro valor = pendiente). En los emails ya existentes sólo se actualiza el valor de <em>pagado</em>; nombre, contraseña y rol no se tocan. La contraseña se asigna tal cual y el jugador deberá cambiarla al primer acceso.
     </p>
 
     <div class="field">
