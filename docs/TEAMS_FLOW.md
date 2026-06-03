@@ -1,187 +1,168 @@
-# Flujo de Power Automate — Cierre de apuestas a Teams
+# Flujo de Power Automate — Cierre de apuestas a Teams (email-driven)
 
-Esta guía describe cómo configurar el *Scheduled cloud flow* que sondea PORRA 26 cada 10 minutos, descarga el PDF de cada cierre pendiente y lo publica en el **chat de grupo** de Teams junto con un enlace al fichero subido a OneDrive.
+Esta guía describe cómo configurar el *flow* que recibe los emails de cierre que envía PORRA 26 y los publica en el chat de grupo de Teams. Usa **solo conectores estándar** (Outlook + Teams) — sin licencia Power Automate Premium.
 
-> **Nota sobre UI en español**: Power Automate está disponible en español. Esta guía usa los nombres en inglés porque la documentación oficial de Microsoft también, pero al final del documento hay una tabla de equivalencias.
->
-> **Nota sobre el destino**: esta versión publica en un **chat de grupo**, así que los PDFs se almacenan en el OneDrive personal del autor del flow. Si en el futuro queréis migrar a un canal de Teams, los archivos pasan a vivir en SharePoint y son más persistentes — la estructura del flow es la misma cambiando OneDrive por SharePoint.
+> **Cambio respecto a versiones anteriores:** la primera versión de esta guía usaba acciones HTTP para sondear directamente la API de PORRA 26 desde Power Automate. Esas acciones son premium (≈ €12/usuario/mes) y la organización no lo paga. La versión actual delega el sondeo a un Cron Service de Railway (`*/10 min`) que envía un email con el PDF adjunto al buzón corporativo del autor del flow, y este flow solo escucha esa bandeja.
+
+## Arquitectura del flujo end-to-end
+
+```
+Railway (Cron */10 min)
+   └─ python manage.py send_pending_closures
+       └─ send_closure_email(match)
+           └─ EmailMessage con PDF adjunto
+               ↓ SMTP por puerto 2587
+           Resend (smtp.resend.com:2587, onboarding@resend.dev)
+               ↓
+           Outlook (ignacio.borrajo@edisa.com)
+               ↓ trigger "When a new email arrives (V3)"
+           Power Automate flow
+               ↓ acción "Post message in a chat or channel"
+           Teams chat de grupo (PDF como adjunto)
+```
 
 ## Prerrequisitos
 
 - Cuenta de Microsoft 365 con licencia Power Automate Standard (incluida en la mayoría de planes Business).
 - Pertenencia al chat de grupo de Teams de destino.
-- Carpeta `/Apps/Porra26/Cierres` creada en tu OneDrive (créala una vez a mano desde OneDrive web).
-- Token de la API expuesto por la aplicación: variable `TEAMS_API_TOKEN` en el `.env` de PythonAnywhere (ver `docs/DEPLOY.md`).
-- URL pública de la aplicación: `https://porra26.pythonanywhere.com`.
+- Railway con el Cron Service de `send_pending_closures` configurado y enviando emails al buzón corporativo (ver `docs/DEPLOY_RAILWAY.md` §14).
+- Resend configurado en Railway con `EMAIL_HOST=smtp.resend.com`, `EMAIL_PORT=2587`, etc. (ver `docs/DEPLOY_RAILWAY.md` §3.4).
+- Recibir el email de smoke test en el buzón corporativo: confirma que `[Porra26][TEST]` llega y no se queda en spam.
 
-## 1. Crear el flow
+## 1. Crear regla en Outlook (recomendado)
+
+Antes de crear el flow conviene asegurar que los emails llegan a una carpeta dedicada — evita ruido en bandeja y facilita el filtro del flow.
+
+1. Outlook web → **Configuración → Reglas → + Añadir nueva regla**.
+2. Condición: **De → `onboarding@resend.dev`** (o tu dominio verificado en Resend si ya lo tienes).
+3. Condición adicional: **Asunto contiene → `[Porra26]`**.
+4. Acción: **Mover a carpeta → PORRA26** (créala antes).
+5. Acción adicional: **Marcar como leído** (opcional).
+
+Con esto los emails caen en `PORRA26` y la bandeja queda limpia, pero el flow los sigue viendo igual (la regla se ejecuta después del trigger).
+
+## 2. Crear el flow
 
 1. Entra en https://make.powerautomate.com.
-2. **Crear → Flujo de nube programado** (*Scheduled cloud flow*). Nombre sugerido: `PORRA 26 · Cierre apuestas a Teams`.
-3. Recurrencia (*Recurrence*): **cada 10 minutos**.
+2. **+ Crear → Flujo automatizado en la nube** (*Automated cloud flow*).
+3. Nombre: `PORRA 26 · Cierre apuestas a Teams`.
+4. Trigger: **When a new email arrives (V3)** del conector *Outlook 365*. Pulsa **Crear**.
 
-## 2. Acción 1 — Obtener pendientes
+## 3. Configurar el trigger
 
-Añade acción **HTTP**:
+| Campo | Valor |
+|---|---|
+| Folder | `PORRA26` si creaste la regla del paso 1, o `Inbox` si prefieres filtrar todo desde aquí. |
+| From | `onboarding@resend.dev` (o el remitente que uses si tienes dominio verificado en Resend). |
+| Subject Filter | `[Porra26]` — el management command pone exactamente este prefijo. |
+| Importance | `Any`. |
+| Only with Attachments | **Yes**. |
+| Include Attachments | **Yes**. |
 
-- Method: `GET`
-- URI: `https://porra26.pythonanywhere.com/competicion/api/teams/cierres-pendientes/`
-- Headers:
-  - `Authorization`: `Bearer <pegar TEAMS_API_TOKEN>`
-- En `...` (opciones) marca el campo **Authorization** como *Secure input* (en español: **Entrada segura**).
+> Dejar el filtro de **From** vacío es un error: el flow se dispararía con cualquier email que tenga `[Porra26]` en el asunto y un adjunto.
 
-## 3. Parsear la respuesta
+## 4. Añadir acción para postear en Teams
 
-Añade **Parse JSON** (*Analizar JSON*):
+1. Después del trigger, **+ Nuevo paso → Add an action**.
+2. Busca **Microsoft Teams** → **Post message in a chat or channel**.
+3. Configuración:
 
-- Content: el **Body** de la acción HTTP anterior (selecciónalo desde Contenido dinámico).
-- Schema: pulsa **"Generate from sample"** (*Generar a partir de una muestra*) y pega una respuesta real del endpoint; o copia literal este esquema:
+| Campo | Valor |
+|---|---|
+| Post as | `Flow bot` |
+| Post in | `Group chat` |
+| Group chat | Selecciona el chat de grupo de la porra. |
+| Message | Ver bloque de abajo. |
 
-```json
-{
-  "type": "object",
-  "properties": {
-    "matches": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "id": {"type": "integer"},
-          "slug": {"type": "string"},
-          "round": {"type": "string"},
-          "group": {"type": "string"},
-          "home": {"type": "object", "properties": {"code": {"type": "string"}, "name": {"type": "string"}}},
-          "away": {"type": "object", "properties": {"code": {"type": "string"}, "name": {"type": "string"}}},
-          "kickoff": {"type": "string"},
-          "closed_at": {"type": "string"}
-        }
-      }
-    }
-  }
-}
+Mensaje (HTML, pegar tal cual en *Code view*):
+
+```html
+<p>🔒 <b>Cierre de apuestas</b></p>
+<p>Adjunto el PDF con los pronósticos de @{triggerOutputs()?['body/Subject']}.</p>
+<p><i>Generado por la porra desde Railway · @{utcNow()}</i></p>
 ```
 
-## 4. Bucle sobre cada partido
+> El conector estándar de Teams **no permite adjuntos directamente en este paso**. Hay dos opciones:
+> - **A**: añadir un paso intermedio que sube el PDF a OneDrive personal y luego publica el enlace en Teams. Requiere licencia OneDrive (incluida en M365 Business).
+> - **B**: usar la acción **Post adaptive card and wait for a response** que sí permite adjuntar contenido binario inline. Más complejo.
 
-Añade la acción **Apply to each** (en español: **Aplicar a cada uno**) del conector **Control**.
+## 5. Opción A — Subir a OneDrive y enlazar (recomendado)
 
-> ¿No la encuentras buscando? En el diseñador nuevo está en la pestaña **Built-in** → conector **Control**. Alternativa más fácil: **no la añadas manualmente**. Crea directamente la acción 4.1 fuera del bucle; cuando referencies un campo dentro de `matches` (que es un array), Power Automate envuelve automáticamente esa acción en un Apply to each.
+Entre el trigger y la acción de Teams, inserta dos pasos.
 
-En el campo "Select an output from previous steps" (*Seleccionar una salida de los pasos anteriores*) selecciona, desde el panel **Contenido dinámico**, el ítem **`matches`** del bloque Parse JSON.
+### 5.1 Apply to each (sobre attachments)
 
-Las tres acciones que siguen van **dentro** del Apply to each, en este orden:
+- **+ Nuevo paso → Add an action → Apply to each**.
+- Input: **Attachments** del trigger (selecciónalo desde Contenido dinámico).
 
-### 4.1 Descargar el PDF
+### 5.2 Dentro del bucle: Create file en OneDrive
 
-Acción **HTTP**:
-
-- Method: `GET`
-- URI: `https://porra26.pythonanywhere.com/competicion/api/teams/cierres/@{items('Apply_to_each')?['id']}/pdf/`
-  > Para construir esa URI sin teclear la expresión: escribe la parte fija, abre Contenido dinámico cuando llegues al `@{…}` y elige **`id`** (aparece bajo "Apply to each").
-- Headers:
-  - `Authorization`: `Bearer <TEAMS_API_TOKEN>` (también *Secure input*).
-
-Renombra esta acción a algo legible como **"HTTP descargar PDF"** (`...` → *Rename*), así las referencias posteriores serán más claras.
-
-### 4.2 Subir el PDF a OneDrive
-
-Acción **OneDrive para la Empresa → Crear archivo** (*Create file*).
+- **Add an action → OneDrive for Business → Create file**.
+- Configuración:
 
 | Campo | Valor |
-|-------|-------|
-| Ruta de carpeta (*Folder Path*) | `/Apps/Porra26/Cierres` |
-| Nombre de archivo (*File Name*) | `cierre-@{items('Apply_to_each')?['slug']}.pdf` |
-| Contenido del archivo (*File Content*) | El **Body** del HTTP del paso 4.1 (selecciona desde Contenido dinámico → *Body* de "HTTP descargar PDF"). |
+|---|---|
+| Folder Path | `/Apps/Porra26/Cierres` (crea la carpeta a mano una vez en OneDrive web). |
+| File Name | `@{items('Apply_to_each')?['Name']}` (el nombre original del adjunto, e.g. `cierre-esp-vs-arg-2026-06-15.pdf`). |
+| File Content | `@{items('Apply_to_each')?['ContentBytes']}` |
 
-### 4.3 Crear vínculo para compartir
+### 5.3 Adapta el mensaje de Teams
 
-Acción **OneDrive para la Empresa → Crear vínculo para compartir** (*Create share link*).
+Cambia el `Message` a:
 
-| Campo | Valor |
-|-------|-------|
-| Archivo (*File*) | El **Id** del archivo del paso 4.2 (Contenido dinámico → "Crear archivo" → *Id*). |
-| Tipo de vínculo (*Link Type*) | **Ver** (*View*). |
-| Ámbito del vínculo (*Link Scope*) | **Organización** (*Organization*) — solo gente de la empresa puede abrirlo. |
+```html
+<p>🔒 <b>Cierre de apuestas</b> · @{triggerOutputs()?['body/Subject']}</p>
+<p>📄 <a href="@{body('Create_file')?['webUrl']}">Descargar PDF</a></p>
+<p><i>Generado por la porra desde Railway · @{utcNow()}</i></p>
+```
 
-Esta acción devuelve un campo **WebUrl** (o "Vínculo web") que se usa en el paso siguiente.
+> La acción **Post message in a chat or channel** debe quedar **fuera** del `Apply to each` para no postear un mensaje por adjunto (el cierre siempre lleva un solo PDF, pero por defensa nos quedamos con un mensaje único).
 
-### 4.4 Publicar mensaje en el chat de grupo
+## 6. Guardar y probar
 
-Acción **Microsoft Teams → Publicar mensaje en un chat o canal** (*Post message in a chat or channel*).
+1. **Guardar** el flow.
+2. Forzar un smoke test:
+   ```bash
+   railway run --service <cron-service> python manage.py send_pending_closures --match-id <id-de-test>
+   ```
+3. Esperar 1-2 minutos. El flow debería dispararse y publicar el mensaje en Teams con el enlace al PDF en OneDrive.
+4. Si no dispara: **Power Automate → Flujos → tu flow → Historial de ejecuciones**. Cada ejecución te dice exactamente dónde falló (con los inputs/outputs de cada paso).
 
-- **Publicar como** (*Post as*): **Flow bot**.
-- **Publicar en** (*Post in*): **Chat de grupo** (*Group chat*).
-- **Chat de grupo** (*Group chat*): selecciona del desplegable el chat de Porra 26. Si no aparece, comprueba que tu cuenta está en ese chat.
-- **Mensaje** (*Message*) — acepta HTML básico:
+## 7. Diagnóstico de problemas comunes
 
-  ```html
-  📣 <b>Cierre de apuestas</b> — @{items('Apply_to_each')?['home']?['name']} vs @{items('Apply_to_each')?['away']?['name']}<br>
-  @{items('Apply_to_each')?['round']} · Grupo @{items('Apply_to_each')?['group']} · Saque @{formatDateTime(items('Apply_to_each')?['kickoff'], 'dd/MM/yyyy HH:mm')}<br><br>
-  📄 <a href="@{outputs('Crear_vínculo_para_compartir')?['body/link/webUrl']}">Descargar PDF de cierre</a>
-  ```
+| Síntoma | Causa probable | Cómo confirmarlo / arreglarlo |
+|---|---|---|
+| El flow no se dispara. | El email no está cayendo en la carpeta que vigila el trigger, o el filtro `From`/`Subject Filter` no matchea. | Confirma en Outlook que el email llega. Revisa que `Folder` del trigger es donde realmente cae el email. Ojo: si Outlook tiene reglas que lo marquen como leído + lo muevan antes del trigger, depende de la rapidez con que Power Automate sondee la carpeta. |
+| El flow se dispara pero falla en "Create file". | `Folder Path` no existe, o la sesión OneDrive caducó. | Abre OneDrive web y comprueba la carpeta. Re-autentica el conector OneDrive en Power Automate. |
+| El mensaje se publica pero sin enlace al PDF. | El `Apply to each` no encontró attachments. | Trigger configurado sin `Include Attachments: Yes`. Edita el trigger. |
+| Resend marca el envío como `Delivered` pero el flow nunca dispara. | El email cae directamente en *Junk Email* / *Correo no deseado*. | Marca el primer email como "no es correo no deseado" + crea una regla que no lo mueva a junk. |
 
-  > El nombre exacto del campo de salida es `link/webUrl`; en Contenido dinámico aparece como **"Vínculo web"** del paso "Crear vínculo para compartir". Si renombraste esa acción, ajusta el `'Crear_vínculo_para_compartir'` al nombre que le pusiste (los espacios se sustituyen por `_`).
+## 8. Migrar a dominio propio (cuando esté en Resend)
 
-### 4.5 Marcar como enviado
+Cuando verifiques un dominio propio en Resend (ver `docs/DEPLOY_RAILWAY.md` §12), actualiza:
 
-Acción **HTTP**:
+1. `DEFAULT_FROM_EMAIL` en Railway pasa a `PORRA 26 <bot@tu-dominio>`.
+2. En el trigger del flow, cambia `From` a `bot@tu-dominio`.
+3. En la regla de Outlook (paso 1), idem.
 
-- Method: `POST`
-- URI: `https://porra26.pythonanywhere.com/competicion/api/teams/cierres/@{items('Apply_to_each')?['id']}/marcar-enviado/`
-- Headers:
-  - `Authorization`: `Bearer <TEAMS_API_TOKEN>` (*Secure input*)
-  - `Content-Type`: `application/json`
-- Body:
+## 9. Cuando lo migremos a un canal de Teams
 
-  ```json
-  {"teams_message_id": "@{outputs('Publicar_mensaje_en_un_chat_o_canal')?['body/messageId']}"}
-  ```
+Si en el futuro queremos publicar en un canal (no en un chat de grupo), los archivos pasan a vivir en SharePoint en vez de OneDrive personal:
 
-- En **Configure run after** (menú `...` de la acción → en español **Configurar ejecutar después**), márcala para que se ejecute **solo si "Publicar mensaje" terminó como `is successful`** (*correcto*). Si Teams falla, no marcamos enviado → el partido reaparece en el próximo ciclo.
+1. **Post in** → `Channel` en lugar de `Group chat`.
+2. **Create file** → conector **SharePoint** en lugar de **OneDrive**, apuntando a la biblioteca de documentos del equipo.
 
-  > Idealmente, configura *Configurar ejecutar después* en CADA paso desde 4.2 en adelante para que solo se ejecute si el anterior fue *correcto*. Así, si OneDrive falla en 4.2, no se intenta el mensaje y el partido reaparece para reintentarse en el siguiente ciclo.
+La estructura del flow es idéntica.
 
-## 5. Probar el flow
-
-1. Pulsa **Save** (*Guardar*).
-2. Pulsa **Test → Manually** (*Probar → Manualmente*).
-3. Comprueba:
-   - En tu OneDrive, dentro de `/Apps/Porra26/Cierres`, aparece el fichero `cierre-<slug>.pdf`.
-   - En el chat de grupo de Teams llega el mensaje con el enlace clicable, y al pulsarlo se abre el PDF.
-   - En la app, entra como gestor a `/competicion/resultados/` y verifica que el partido aparece en la sección "Estado de envíos a Teams" con ✓ en Enviado.
-
-## 6. Rotar el token
-
-Si se sospecha que `TEAMS_API_TOKEN` se ha filtrado:
-
-1. Genera un nuevo token con `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
-2. Actualiza `TEAMS_API_TOKEN` en `.env` de PythonAnywhere y recarga la web app.
-3. Actualiza el token en las **tres** acciones HTTP del flow (pasos 2, 4.1 y 4.5).
-4. Guarda y prueba.
-
-## 7. Consideraciones de almacenamiento
-
-- Los PDFs viven en el OneDrive de la cuenta que creó el flow. Si esa cuenta se desactiva o cambia de propietario, los enlaces dejan de funcionar y el histórico se pierde.
-- Para retención a largo plazo de los cierres (todo el campeonato), considera migrar a un **canal de Teams**: los ficheros pasan a vivir en la biblioteca SharePoint del equipo, son persistentes y accesibles por todo el equipo aunque cambie quién mantiene el flow. La adaptación es sustituir los pasos 4.2 y 4.3 por **SharePoint → Crear archivo** apuntando a `/Shared Documents/General/...` del sitio del equipo, y el paso 4.4 cambia "Chat de grupo" por "Canal".
-
-## 8. Equivalencias UI inglés ⇄ español
+## Equivalencias UI español/inglés
 
 | Inglés | Español |
-|--------|---------|
-| Scheduled cloud flow | Flujo de nube programado |
-| Recurrence | Periodicidad |
-| Apply to each / For each | Aplicar a cada uno |
-| Parse JSON | Analizar JSON |
-| Built-in | Integrado / Incorporado |
-| Dynamic content | Contenido dinámico |
-| Expression | Expresión |
-| Secure input | Entrada segura |
-| Configure run after | Configurar ejecutar después |
+|---|---|
+| When a new email arrives (V3) | Cuando llega un correo nuevo (V3) |
+| Subject Filter | Filtro de asunto |
+| Include Attachments | Incluir datos adjuntos |
+| Apply to each | Aplicar a cada uno |
+| Create file | Crear archivo |
 | Post message in a chat or channel | Publicar mensaje en un chat o canal |
 | Group chat | Chat de grupo |
-| Channel | Canal |
-| Create file | Crear archivo |
-| Create share link | Crear vínculo para compartir |
-| WebUrl / Link to item | Vínculo web / Vínculo al elemento |
-| Run after: is successful | Ejecutar después: correcto |
-| Save / Test | Guardar / Probar |
+| Run history | Historial de ejecuciones |
