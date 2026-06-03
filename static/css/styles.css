@@ -1326,3 +1326,194 @@ img.avatar { object-fit: cover; }
   .prizes-matchday-row { grid-template-columns: 1fr; }
   .prizes-matchday-input .input { width: 100%; }
 }
+
+/* ============================================================
+   Pantalla /login/ — layout split (form + info)
+   ============================================================ */
+.login-screen {
+  position: relative;
+  z-index: 1;
+  min-height: calc(100vh - clamp(32px, 4.8vw, 64px));
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 3vw, 36px);
+}
+.login-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.login-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(28px, 5vw, 72px);
+  align-items: center;
+}
+.login-form-card {
+  border-radius: 28px;
+  padding: clamp(28px, 3vw, 44px);
+  justify-self: center;
+  width: 100%;
+  max-width: 460px;
+}
+.login-input-wrap { position: relative; }
+.login-input-wrap > svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+.login-input-with-icon { padding-left: 42px; }
+.login-info {
+  justify-self: center;
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.login-info-title {
+  margin: 0 0 4px;
+  font-size: clamp(24px, 2.4vw, 32px);
+  line-height: 1.05;
+}
+.login-pot-strip {
+  display: flex;
+  gap: 10px;
+}
+.login-pot-tile {
+  flex: 1;
+  padding: 12px 10px;
+  border-radius: 14px;
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.login-pot-tile__value { font-size: 19px; font-weight: 800; }
+.login-pot-tile__label { font-size: 9px; margin-top: 2px; }
+
+.login-info-card {
+  border-radius: 20px;
+  padding: 16px;
+}
+.login-info-card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.login-info-card__head svg { color: var(--accent); }
+
+.login-next-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.login-next-match {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: var(--surface-hi);
+  border: 1px solid var(--border);
+}
+.login-next-match__teams {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.login-next-match__flag { font-size: 22px; }
+.login-next-match__id { flex: 1; min-width: 0; }
+.login-next-match__name {
+  font-size: 13px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.login-next-match__when {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.login-next-match__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+.login-next-match__chip { gap: 5px; padding: 3px 9px; }
+.login-next-match__close {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  text-align: right;
+}
+
+.login-top {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.login-top__row {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px solid transparent;
+}
+.login-top__row--lead {
+  background: oklch(from var(--c-gold) l c h / 0.10);
+  border-color: oklch(from var(--c-gold) l c h / 0.30);
+}
+.login-top__pos {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-align: center;
+}
+.login-top__pos--podium { color: var(--c-gold); }
+.login-top__id {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.login-top__name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.login-top__pts { font-size: 14px; font-weight: 800; }
+
+.login-footer {
+  font-size: 11px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .login-body {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+  .login-form-card { order: 1; }
+  .login-info { order: 2; }
+}

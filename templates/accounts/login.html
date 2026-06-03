@@ -1,24 +1,140 @@
 {% extends "base.html" %}
-{% load icons static %}
+{% load icons static avatar_extras %}
 {% block main %}
-<section class="glass pop" style="max-width:460px;margin:6vh auto;padding:32px;border-radius:24px">
-  <img src="{% static 'img/logo.png' %}" alt="EDISA · Mundial 2026 · Tu porra interna" style="display:block;margin:0 auto 14px;height:140px;width:auto">
-  <div class="eyebrow" style="text-align:center">PORRA 26 · MUNDIAL 2026</div>
-  <h1 class="display" style="font-size:34px;margin:4px 0 18px;text-align:center">Bienvenido de nuevo</h1>
-  <form method="post" novalidate>
-    {% csrf_token %}
-    <div class="field"><label>Correo</label>
-      <input class="input" type="email" name="email" required value="{{ form.email.value|default:'' }}">
+<section class="login-screen">
+  <header class="login-header">
+    <a href="{% url 'accounts:login' %}" class="logo" style="text-decoration:none;color:inherit" title="EDISA · Mundial 2026">
+      <img src="{% static 'img/logo.png' %}" alt="EDISA · Mundial 2026 · Tu porra interna" style="height:48px;width:auto;display:block">
+    </a>
+    <span class="chip">Edición interna · Mundial 2026</span>
+  </header>
+
+  <div class="login-body">
+    <div class="glass rise login-form-card">
+      <form method="post" novalidate style="display:flex;flex-direction:column;gap:18px">
+        {% csrf_token %}
+
+        <div>
+          <h1 class="display" style="margin:0;font-size:30px;letter-spacing:-0.03em">Bienvenido de nuevo</h1>
+          <p style="margin:8px 0 0;color:var(--text-dim);font-size:14px">
+            Accede con tu correo de empresa para jugar la porra.
+          </p>
+        </div>
+
+        <div class="field">
+          <label for="login-email">Correo electrónico</label>
+          <div class="login-input-wrap">
+            {% icon "mail" width=17 height=17 %}
+            <input id="login-email" class="input login-input-with-icon" type="email" name="email"
+                   value="{{ form.email.value|default:'' }}" placeholder="nombre@empresa.com" required autofocus>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="login-password">Contraseña</label>
+          <div class="login-input-wrap">
+            {% icon "lock" width=17 height=17 %}
+            <input id="login-password" class="input login-input-with-icon" type="password" name="password"
+                   placeholder="••••••••" required>
+          </div>
+        </div>
+
+        {% if form.non_field_errors %}
+          <p style="margin:0;color:var(--c-red);font-size:13px">{{ form.non_field_errors|join:' ' }}</p>
+        {% endif %}
+        {% for f in form %}{% for e in f.errors %}
+          <p style="margin:0;color:var(--c-red);font-size:13px">{{ e }}</p>
+        {% endfor %}{% endfor %}
+
+        <button class="btn btn-primary" type="submit" style="padding:14px;font-size:15.5px">
+          Entrar al torneo {% icon "ball" width=17 height=17 %}
+        </button>
+
+        <p style="margin:0;font-size:12px;color:var(--text-faint);text-align:center;line-height:1.5">
+          ¿Olvidaste tu contraseña? Pídele a un gestor que la restablezca.
+        </p>
+      </form>
     </div>
-    <div class="field" style="margin-top:14px"><label>Contraseña</label>
-      <input class="input" type="password" name="password" required>
-    </div>
-    {% if form.non_field_errors %}<p style="color:var(--c-red)">{{ form.non_field_errors|join:' ' }}</p>{% endif %}
-    {% for f in form %}{% for e in f.errors %}<p style="color:var(--c-red)">{{ e }}</p>{% endfor %}{% endfor %}
-    <button type="submit" class="btn btn-primary" style="margin-top:20px;width:100%">Entrar al torneo</button>
-    <p class="mono" style="margin-top:14px;color:var(--text-faint);font-size:11px">
-      ¿Olvidaste tu contraseña? Pídele a un gestor que la restablezca.
-    </p>
-  </form>
+
+    <aside class="rise login-info" style="animation-delay:.1s">
+      <h2 class="display login-info-title">
+        El torneo <span class="grad-text">ya está en juego</span>
+      </h2>
+
+      <div class="login-pot-strip">
+        <div class="login-pot-tile">
+          <div class="display grad-text login-pot-tile__value">{{ pot_total|default:0 }} €</div>
+          <div class="eyebrow login-pot-tile__label">Bote</div>
+        </div>
+        <div class="login-pot-tile">
+          <div class="display grad-text login-pot-tile__value">{{ players_count|default:0 }}</div>
+          <div class="eyebrow login-pot-tile__label">Jugadores</div>
+        </div>
+        <div class="login-pot-tile">
+          <div class="display grad-text login-pot-tile__value">{{ first_prize|default:0 }} €</div>
+          <div class="eyebrow login-pot-tile__label">1er premio</div>
+        </div>
+      </div>
+
+      {% if next_matches %}
+      <div class="glass login-info-card">
+        <div class="login-info-card__head">
+          {% icon "cal" width=15 height=15 %}
+          <span class="eyebrow">Próximos partidos</span>
+        </div>
+        <div class="login-next-matches">
+          {% for m in next_matches %}
+          <div class="login-next-match">
+            <div class="login-next-match__teams">
+              <span class="login-next-match__flag">{{ m.home.flag }}</span>
+              <div class="login-next-match__id">
+                <div class="display login-next-match__name">
+                  {{ m.home.name }} <span style="color:var(--text-faint);font-weight:400">vs</span> {{ m.away.name }}
+                </div>
+                <div class="mono login-next-match__when">{{ m.kickoff|date:"D j M · H:i" }}</div>
+              </div>
+              <span class="login-next-match__flag">{{ m.away.flag }}</span>
+            </div>
+            <div class="login-next-match__foot">
+              {% if m.editable %}
+                <span class="chip chip-open login-next-match__chip">{% icon "clock" width=11 height=11 %} Apuestas abiertas</span>
+                <span class="mono login-next-match__close">Cierra {{ m.close_at|date:"d M · H:i" }}</span>
+              {% else %}
+                <span class="chip chip-closed login-next-match__chip">Apuestas cerradas</span>
+                <span class="mono login-next-match__close">Cerró</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if top_rows %}
+      <div class="glass login-info-card">
+        <div class="login-info-card__head" style="margin-bottom:10px">
+          {% icon "trophy" width=15 height=15 style="color:var(--c-gold)" %}
+          <span class="eyebrow">Top 5 · clasificación</span>
+        </div>
+        <ol class="login-top">
+          {% for r in top_rows %}
+          {% with u=top_users|get_item:r.player_id %}
+          <li class="login-top__row{% if forloop.counter == 1 %} login-top__row--lead{% endif %}">
+            <span class="mono login-top__pos{% if forloop.counter <= 3 %} login-top__pos--podium{% endif %}">{{ forloop.counter }}</span>
+            <div class="login-top__id">
+              {% if u %}{% include "partials/_avatar.html" with u=u size=28 %}{% endif %}
+              <span class="login-top__name">{{ r.name }}</span>
+            </div>
+            <span class="display mono login-top__pts">{{ r.pts }}</span>
+          </li>
+          {% endwith %}
+          {% endfor %}
+        </ol>
+      </div>
+      {% endif %}
+    </aside>
+  </div>
+
+  <footer class="login-footer mono">Mundial FIFA 2026 · Edición interna</footer>
 </section>
 {% endblock %}
