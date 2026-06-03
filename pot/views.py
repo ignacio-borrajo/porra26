@@ -340,11 +340,12 @@ class PlayersImportView(GestorRequiredMixin, View):
 
         request.session["players_import_result"] = {
             "created": result.created,
+            "updated": result.updated,
             "skipped_existing": result.skipped_existing,
             "skipped_invalid_email": result.skipped_invalid_email,
             "skipped_empty": result.skipped_empty,
         }
-        if result.created:
+        if result.created or result.updated:
             AuditLog.objects.create(
                 actor=request.user,
                 action="players_imported",
@@ -352,6 +353,7 @@ class PlayersImportView(GestorRequiredMixin, View):
                 target_id="*",
                 payload={
                     "created": result.created,
+                    "updated": result.updated,
                     "skipped_existing": result.skipped_existing,
                     "skipped_invalid_email": result.skipped_invalid_email,
                     "skipped_empty": result.skipped_empty,
