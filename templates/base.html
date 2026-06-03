@@ -4,6 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}PORRA 26 · Mundial 2026{% endblock %}</title>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("porra26:theme");
+        if (t) document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    })();
+  </script>
   <link rel="icon" type="image/png" href="{% static 'img/logo.png' %}">
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
