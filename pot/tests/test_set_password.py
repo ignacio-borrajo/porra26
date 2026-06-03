@@ -88,17 +88,15 @@ def test_get_renders_modal_with_suggestion(client):
     body = r.content.decode()
     assert body.count('name="new1"') == 1
     assert 'value="' in body  # algún value sugerido
-    assert 'data-suggest-url=' in body
-    assert 'data-toggle-reveal' in body
+    assert "data-suggest-url=" in body
+    assert "data-toggle-reveal" in body
 
 
 @pytest.mark.django_db
 def test_get_suggest_returns_json(client):
     client.force_login(GestorFactory())
     target = UserFactory()
-    r = client.get(
-        reverse("pot:player_set_password", args=[target.id]) + "?suggest=1"
-    )
+    r = client.get(reverse("pot:player_set_password", args=[target.id]) + "?suggest=1")
     assert r.status_code == 200
     assert r["Content-Type"].startswith("application/json")
     payload = json.loads(r.content)

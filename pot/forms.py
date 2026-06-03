@@ -39,11 +39,13 @@ def generate_suggested_password() -> str:
     symbols = "!@#$%&*?-"
     pool = alphabet + uppers + digits + symbols
     body = [secrets.choice(pool) for _ in range(9)]
-    body.extend([
-        secrets.choice(uppers),
-        secrets.choice(digits),
-        secrets.choice(alphabet),
-    ])
+    body.extend(
+        [
+            secrets.choice(uppers),
+            secrets.choice(digits),
+            secrets.choice(alphabet),
+        ]
+    )
     secrets.SystemRandom().shuffle(body)
     return "".join(body)
 

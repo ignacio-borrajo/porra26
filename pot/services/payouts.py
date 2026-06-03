@@ -27,8 +27,7 @@ def podium_payouts() -> list[PodiumPayout]:
     if not rows:
         return []
     base = {
-        p.position: p.amount
-        for p in Prize.objects.filter(scope="global", position__in=[1, 2, 3])
+        p.position: p.amount for p in Prize.objects.filter(scope="global", position__in=[1, 2, 3])
     }
     out: list[PodiumPayout] = []
     for position, group_iter in groupby(rows, key=lambda r: r.position):

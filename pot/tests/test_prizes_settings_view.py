@@ -142,13 +142,17 @@ def test_prizes_post_rejects_negative_amount(client):
     )
     p1.refresh_from_db()
     assert p1.amount == Decimal("50")  # ignorado
-    assert PotSettings.load().matchday_winner_prize == Decimal("0")  # default tras load (sin cambio si rechazamos)
+    assert PotSettings.load().matchday_winner_prize == Decimal(
+        "0"
+    )  # default tras load (sin cambio si rechazamos)
 
 
 @pytest.mark.django_db
 def test_prizes_get_context_has_rounds(client):
     client.force_login(GestorFactory(must_change_password=False))
-    RoundFactory(id="groups", points=3, partial_points=1, label="Fase de grupos", short="GRP", order=1)
+    RoundFactory(
+        id="groups", points=3, partial_points=1, label="Fase de grupos", short="GRP", order=1
+    )
     RoundFactory(id="final", points=20, partial_points=2, label="Final", short="FIN", order=6)
     r = client.get(reverse("pot:prizes"))
     ctx = r.context
@@ -160,7 +164,9 @@ def test_prizes_get_context_has_rounds(client):
 @pytest.mark.django_db
 def test_prizes_get_renders_inputs_per_round(client):
     client.force_login(GestorFactory(must_change_password=False))
-    RoundFactory(id="groups", points=3, partial_points=1, label="Fase de grupos", short="GRP", order=1)
+    RoundFactory(
+        id="groups", points=3, partial_points=1, label="Fase de grupos", short="GRP", order=1
+    )
     r = client.get(reverse("pot:prizes"))
     content = r.content.decode("utf-8")
     assert 'name="exact_groups"' in content

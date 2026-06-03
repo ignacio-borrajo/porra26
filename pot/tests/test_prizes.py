@@ -110,5 +110,3 @@ def test_matchday_winners_share_full_when_single(groups_round):
     assert res.tied is False
     assert res.share == Decimal("25")
     assert [w.id for w in res.winners] == [a.id]
-
-

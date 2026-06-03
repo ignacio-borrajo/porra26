@@ -335,18 +335,14 @@ def _match_hero(match: Match, styles) -> list:
     kickoff_local = timezone.localtime(match.kickoff)
     close_local = timezone.localtime(match.kickoff - timedelta(hours=2))
 
-    fecha_text = formats.date_format(
-        kickoff_local, r"l j \d\e F \d\e Y · H:i"
-    ).capitalize()
+    fecha_text = formats.date_format(kickoff_local, r"l j \d\e F \d\e Y · H:i").capitalize()
 
     home_para = Paragraph(match.home.name, styles["hero-team"])
     away_para = Paragraph(match.away.name, styles["hero-team"])
 
     has_result = match.result_home is not None and match.result_away is not None
     if has_result:
-        center_para = Paragraph(
-            f"{match.result_home} - {match.result_away}", styles["hero-score"]
-        )
+        center_para = Paragraph(f"{match.result_home} - {match.result_away}", styles["hero-score"])
     else:
         center_para = Paragraph("VS", styles["hero-vs"])
 
@@ -367,9 +363,7 @@ def _match_hero(match: Match, styles) -> list:
         )
     )
 
-    meta_text = (
-        f"{match.round.label} · Grupo {match.group} · Cierre {close_local:%H:%M}"
-    )
+    meta_text = f"{match.round.label} · Grupo {match.group} · Cierre {close_local:%H:%M}"
 
     return [
         Paragraph(fecha_text, styles["hero-date"]),

@@ -38,7 +38,9 @@ def test_rules_context_has_required_keys(client):
 
 @pytest.mark.django_db
 def test_rules_table_shows_partial_points_column(client):
-    RoundFactory(id="groups", label="Fase de grupos", short="GRP", points=3, partial_points=1, order=1)
+    RoundFactory(
+        id="groups", label="Fase de grupos", short="GRP", points=3, partial_points=1, order=1
+    )
     RoundFactory(id="final", label="Final", short="FIN", points=20, partial_points=2, order=6)
     client.force_login(UserFactory())
     r = client.get(reverse("core:rules"))
@@ -51,7 +53,9 @@ def test_rules_table_shows_partial_points_column(client):
 
 @pytest.mark.django_db
 def test_rules_does_not_claim_partial_is_always_one(client):
-    RoundFactory(id="groups", label="Fase de grupos", short="GRP", points=3, partial_points=2, order=1)
+    RoundFactory(
+        id="groups", label="Fase de grupos", short="GRP", points=3, partial_points=2, order=1
+    )
     client.force_login(UserFactory())
     r = client.get(reverse("core:rules"))
     content = r.content.decode("utf-8")
