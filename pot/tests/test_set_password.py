@@ -88,6 +88,8 @@ def test_get_renders_modal_with_suggestion(client):
     body = r.content.decode()
     assert body.count('name="new1"') == 1
     assert 'value="' in body  # algún value sugerido
+    assert 'data-suggest-url=' in body
+    assert 'data-toggle-reveal' in body
 
 
 @pytest.mark.django_db
@@ -222,3 +224,18 @@ def test_manage_players_renders_set_password_button(client):
     assert r.status_code == 200
     expected_url = reverse("pot:player_set_password", args=[target.id])
     assert expected_url.encode() in r.content
+
+
+@pytest.mark.django_db
+def test_modal_template_has_no_inline_script(client):
+    """El JS del modal vive en static/js/modal.js como delegated listener.
+    Un <script> inline aquí no se ejecutaría (mount() usa innerHTML)."""
+    client.force_login(GestorFactory())
+    target = UserFactory()
+    r = client.get(
+        reverse("pot:player_set_password", args=[target.id]),
+        HTTP_X_MODAL="1",
+    )
+    assert r.status_code == 200
+    body = r.content.decode().lower()
+    assert "<script" not in body
