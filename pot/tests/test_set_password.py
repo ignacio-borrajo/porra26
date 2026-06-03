@@ -1,7 +1,9 @@
 import re
 
 import pytest
+from django.urls import reverse
 
+from accounts.tests.factories import GestorFactory, UserFactory
 from pot.forms import generate_suggested_password, SetPlayerPasswordForm
 
 
@@ -59,3 +61,11 @@ def test_set_player_password_form_renders_value_for_re_render():
     form = SetPlayerPasswordForm(initial={"new1": "Hola12345A", "new2": "Hola12345A"})
     html = form.as_p()
     assert 'value="Hola12345A"' in html
+
+
+@pytest.mark.django_db
+def test_get_requires_gestor(client):
+    client.force_login(UserFactory())
+    target = UserFactory()
+    r = client.get(reverse("pot:player_set_password", args=[target.id]))
+    assert r.status_code == 302  # redirect a dashboard

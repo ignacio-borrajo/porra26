@@ -1,5 +1,6 @@
 from django.contrib import messages
-from django.http import HttpResponse
+from django.contrib.auth import update_session_auth_hash
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -7,7 +8,12 @@ from django.views import View
 
 from accounts.mixins import GestorRequiredMixin
 from accounts.models import AuditLog, User
-from pot.forms import PlayerForm, generate_temp_password
+from pot.forms import (
+    PlayerForm,
+    SetPlayerPasswordForm,
+    generate_suggested_password,
+    generate_temp_password,
+)
 from pot.models import Payment, PotSettings, Prize
 
 
@@ -203,3 +209,56 @@ class PrizesSettingsView(GestorRequiredMixin, View):
 class AuditLogView(GestorRequiredMixin, View):
     def get(self, request):
         return render(request, "accounts/audit_log.html", {"logs": AuditLog.objects.all()[:200]})
+
+
+class SetPasswordView(GestorRequiredMixin, View):
+    template_name = "pot/_password_set_modal.html"
+
+    def _is_modal(self, request) -> bool:
+        return request.headers.get("X-Modal") == "1"
+
+    def _ctx(self, request, player, form):
+        return {
+            "form": form,
+            "player": player,
+            "is_self": player.id == request.user.id,
+            "modal": self._is_modal(request),
+        }
+
+    def get(self, request, pk):
+        player = get_object_or_404(User, pk=pk)
+        if request.GET.get("suggest") == "1":
+            return JsonResponse({"password": generate_suggested_password()})
+        suggested = generate_suggested_password()
+        form = SetPlayerPasswordForm(initial={"new1": suggested, "new2": suggested})
+        return render(request, self.template_name, self._ctx(request, player, form))
+
+    def post(self, request, pk):
+        player = get_object_or_404(User, pk=pk)
+        form = SetPlayerPasswordForm(request.POST)
+        if not form.is_valid():
+            response = render(request, self.template_name, self._ctx(request, player, form))
+            if self._is_modal(request):
+                response["X-Modal-Errors"] = "1"
+            return response
+
+        is_self = player.id == request.user.id
+        player.set_password(form.cleaned_data["new1"])
+        player.must_change_password = not is_self
+        player.save(update_fields=["password", "must_change_password"])
+        if is_self:
+            update_session_auth_hash(request, player)
+        AuditLog.objects.create(
+            actor=request.user,
+            action="password_set_by_manager",
+            target_type="user",
+            target_id=str(player.id),
+            payload={"self": is_self},
+        )
+        messages.success(request, "Contraseña actualizada.")
+        target = reverse("pot:manage_players")
+        if self._is_modal(request):
+            response = HttpResponse(status=200)
+            response["X-Modal-Redirect"] = target
+            return response
+        return redirect(target)
