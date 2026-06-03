@@ -23,6 +23,7 @@ class Round(models.Model):
     label = models.CharField(max_length=40)
     short = models.CharField(max_length=10)
     points = models.PositiveSmallIntegerField()
+    partial_points = models.PositiveSmallIntegerField(default=1)
     order = models.PositiveSmallIntegerField()
 
     class Meta:
