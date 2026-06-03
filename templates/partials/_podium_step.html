@@ -1,22 +1,30 @@
 {% load avatar_extras %}
-<div class="podium-slot podium-slot--{{ rank }} pop{% if me and row.player_id == me.id %} is-me{% endif %}">
+{% with first=rows.0 multi=rows|length %}
+<div class="podium-slot podium-slot--{{ rank }}{% if multi > 1 %} podium-slot--multi{% endif %} pop">
   <div class="podium-medal" aria-hidden="true">
     {% if rank == 1 %}🥇{% elif rank == 2 %}🥈{% else %}🥉{% endif %}
   </div>
-  {% if user %}
-    {% if rank == 1 %}
-      {% include "partials/_avatar.html" with u=user size=50 %}
-    {% else %}
-      {% include "partials/_avatar.html" with u=user size=42 %}
-    {% endif %}
-  {% endif %}
-  <div class="podium-info">
-    <div class="podium-name display{% if me and row.player_id == me.id %} is-me{% endif %}" title="{{ row.name }}">
-      {% if me and row.player_id == me.id %}Tú{% else %}{{ row.name }}{% endif %}
-    </div>
-    <div class="podium-pts mono grad-text">{{ row.pts }}</div>
-  </div>
+  <ul class="podium-people" role="list">
+    {% for r in rows %}
+    <li class="podium-person{% if me and r.player_id == me.id %} is-me{% endif %}">
+      {% with u=users|get_item:r.player_id %}
+        {% if u %}
+          {% if rank == 1 and multi == 1 %}
+            {% include "partials/_avatar.html" with u=u size=50 %}
+          {% else %}
+            {% include "partials/_avatar.html" with u=u size=42 %}
+          {% endif %}
+        {% endif %}
+      {% endwith %}
+      <span class="podium-name display{% if me and r.player_id == me.id %} is-me{% endif %}" title="{{ r.name }}">
+        {% if me and r.player_id == me.id %}Tú{% else %}{{ r.name }}{% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  <div class="podium-pts mono grad-text">{{ first.pts }}</div>
   <div class="podium-pedestal podium-pedestal--{{ rank }}">
-    <span class="podium-rank-number">{{ rank }}</span>
+    <span class="podium-rank-number">{% if multi > 1 %}={% endif %}{{ rank }}</span>
   </div>
 </div>
+{% endwith %}

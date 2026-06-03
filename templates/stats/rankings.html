@@ -28,7 +28,7 @@
             {% icon "trophy" width=18 height=18 %}
             <h2 class="display" style="font-size:16px;margin:0">General</h2>
           </div>
-          {% if my_rank %}<span class="chip chip-accent">Tú · #{{ my_rank }}</span>{% endif %}
+          {% if my_rank %}<span class="chip chip-accent">Tú · {% if my_is_tied %}=#{% else %}#{% endif %}{{ my_rank }}</span>{% endif %}
         </header>
         {% include "partials/_leaderboard_panel.html" with rows=standings users=standings_users me=request.user max_pts=max_pts %}
       </section>
@@ -40,7 +40,7 @@
             {% icon "trophy" width=18 height=18 %}
             <h2 class="display" style="font-size:16px;margin:0">{{ scope_label|default:"Jornada" }}</h2>
           </div>
-          {% if scope_my_rank %}<span class="chip chip-accent">Tú · #{{ scope_my_rank }}</span>{% endif %}
+          {% if scope_my_rank %}<span class="chip chip-accent">Tú · {% if scope_my_is_tied %}=#{% else %}#{% endif %}{{ scope_my_rank }}</span>{% endif %}
         </header>
         {% include "partials/_leaderboard_panel.html" with rows=scope_standings users=standings_users me=request.user max_pts=scope_max_pts %}
       </section>

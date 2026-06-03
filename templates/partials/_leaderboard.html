@@ -10,10 +10,10 @@
     </div>
     <div class="lb-scope-rank">
       <span class="lb-scope-rank__global">
-        {% if my_rank %}<span class="chip chip-accent">Tú · #{{ my_rank }}</span>{% endif %}
+        {% if my_rank %}<span class="chip chip-accent">Tú · {% if my_is_tied %}=#{% else %}#{% endif %}{{ my_rank }}</span>{% endif %}
       </span>
       <span class="lb-scope-rank__local">
-        {% if scope_my_rank %}<span class="chip chip-accent">Tú · #{{ scope_my_rank }}</span>{% endif %}
+        {% if scope_my_rank %}<span class="chip chip-accent">Tú · {% if scope_my_is_tied %}=#{% else %}#{% endif %}{{ scope_my_rank }}</span>{% endif %}
       </span>
     </div>
   </header>
