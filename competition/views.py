@@ -221,15 +221,21 @@ class ManageResultsView(GestorRequiredMixin, View):
             {"matchday": md, "open": True, "active": md == active_md} for md in matchdays
         ]
 
-        pending, upcoming, done = [], [], []
+        pending, upcoming, done, pending_teams_matches = [], [], [], []
         for m in ms:
             st = m.status
             if st == "done":
                 done.append(m)
             elif st in ("live", "closed"):
                 pending.append(m)
+            elif st == "pending_teams":
+                pending_teams_matches.append(m)
             else:
                 upcoming.append(m)
+
+        from competition.models import Team
+
+        all_teams = list(Team.objects.order_by("name"))
 
         from django.db.models import Count
 
@@ -280,6 +286,8 @@ class ManageResultsView(GestorRequiredMixin, View):
                 "pending": pending,
                 "upcoming": upcoming,
                 "done": done,
+                "pending_teams_matches": pending_teams_matches,
+                "all_teams": all_teams,
                 "reports": reports,
                 "pending_counts": pending_counts,
                 "last_reminders": last_reminders,
