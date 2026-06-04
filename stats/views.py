@@ -1,18 +1,13 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import render
 from django.views import View
 
 from accounts.models import User
-from competition.services.standings import standings
-from stats.services.group_standings import group_standings
+from stats.services.group_standings import CHOICES_BY_DIMENSION, group_standings
 from stats.services.history import per_player_history
 from stats.services.kpis import donut, kpis
-from stats.services.matchday_options import (
-    current_option,
-    matchday_options,
-    parse_scope_key,
-)
+from stats.services.rankings_context import build_general_context
 
 
 class StatsView(LoginRequiredMixin, View):
@@ -61,52 +56,7 @@ class RankingsView(LoginRequiredMixin, View):
             "tabs": [(k, self.TAB_LABELS[k]) for k in self.VALID_TABS],
         }
         if tab == "general":
-            rows = standings()[:50]
-            my_row = next((r for r in rows if r.player_id == request.user.id), None)
-            my_rank = my_row.position if my_row else None
-            my_is_tied = bool(my_row and my_row.is_tied)
-            max_pts = max((r.pts for r in rows), default=0) or 1
-
-            md_opts = matchday_options()
-            requested = parse_scope_key(request.GET.get("scope"), md_opts)
-            current = current_option(md_opts)
-            scope = requested or current
-            for o in md_opts:
-                o.is_active = scope is not None and o.key == scope.key
-
-            scope_rows: list = []
-            scope_my_rank = None
-            scope_my_is_tied = False
-            scope_max_pts = 1
-            scope_label = None
-            if scope is not None:
-                scope_rows = standings(round_id=scope.round_id, matchday=scope.matchday)[:50]
-                scope_my_row = next(
-                    (r for r in scope_rows if r.player_id == request.user.id),
-                    None,
-                )
-                scope_my_rank = scope_my_row.position if scope_my_row else None
-                scope_my_is_tied = bool(scope_my_row and scope_my_row.is_tied)
-                scope_max_pts = max((r.pts for r in scope_rows), default=0) or 1
-                scope_label = scope.label
-
-            all_ids = {r.player_id for r in rows} | {r.player_id for r in scope_rows}
-            users_by_id = User.objects.in_bulk(all_ids)
-            ctx.update(
-                {
-                    "standings": rows,
-                    "standings_users": users_by_id,
-                    "my_rank": my_rank,
-                    "my_is_tied": my_is_tied,
-                    "max_pts": max_pts,
-                    "scope_standings": scope_rows,
-                    "scope_my_rank": scope_my_rank,
-                    "scope_my_is_tied": scope_my_is_tied,
-                    "scope_max_pts": scope_max_pts,
-                    "scope_label": scope_label,
-                    "md_options": md_opts,
-                }
-            )
+            ctx.update(build_general_context(request.user, request.GET.get("scope")))
         else:
             rows = group_standings(tab)
             my_group = getattr(request.user, tab, "") or "__none__"
@@ -120,3 +70,30 @@ class RankingsView(LoginRequiredMixin, View):
                 }
             )
         return render(request, "stats/rankings.html", ctx)
+
+
+class GroupRankingsView(LoginRequiredMixin, View):
+    VALID_DIMS = ("sede", "puesto", "dept")
+
+    def get(self, request, dim: str, key: str):
+        if dim not in self.VALID_DIMS:
+            raise Http404("Dimensión desconocida")
+        labels = dict(CHOICES_BY_DIMENSION[dim])
+        if key not in labels:
+            raise Http404("Grupo desconocido")
+        player_ids = list(
+            User.objects.filter(is_active=True, is_jugador=True, **{dim: key}).values_list(
+                "id", flat=True
+            )
+        )
+        ctx = build_general_context(request.user, request.GET.get("scope"), player_ids=player_ids)
+        ctx.update(
+            {
+                "dim": dim,
+                "dim_label": RankingsView.TAB_LABELS[dim],
+                "group_label": labels[key],
+                "group_key": key,
+                "player_count": len(player_ids),
+            }
+        )
+        return render(request, "stats/rankings_group.html", ctx)
