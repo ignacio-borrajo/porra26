@@ -8,6 +8,11 @@ from competition.tests.factories import MatchFactory, RoundFactory, TeamFactory
 @pytest.fixture(autouse=True)
 def _rounds(db):
     RoundFactory(id="groups", points=3, label="Fase de grupos", short="GRP", order=1)
+    RoundFactory(id="r32", points=5, label="Dieciseisavos", short="R32", order=2)
+    RoundFactory(id="r16", points=7, label="Octavos", short="R16", order=3)
+    RoundFactory(id="qf", points=10, label="Cuartos", short="QF", order=4)
+    RoundFactory(id="sf", points=15, label="Semifinales", short="SF", order=5)
+    RoundFactory(id="final", points=25, label="Final", short="FIN", order=6)
 
 
 @pytest.mark.django_db
@@ -22,6 +27,26 @@ def test_seed_creates_48_teams_and_72_matches():
 
 
 @pytest.mark.django_db
+def test_seed_creates_31_ko_matches_with_slots_and_null_teams():
+    call_command("seed_world_cup_2026")
+    ko = Match.objects.exclude(round_id="groups")
+    assert ko.count() == 31
+    # Cada cruce KO arranca sin equipos y con ambos slots no vacíos
+    for m in ko:
+        assert m.home_id is None
+        assert m.away_id is None
+        assert m.bracket_code is not None and m.bracket_code != ""
+        assert m.home_slot != ""
+        assert m.away_slot != ""
+    # Distribución por ronda
+    assert ko.filter(round_id="r32").count() == 16
+    assert ko.filter(round_id="r16").count() == 8
+    assert ko.filter(round_id="qf").count() == 4
+    assert ko.filter(round_id="sf").count() == 2
+    assert ko.filter(round_id="final").count() == 1
+
+
+@pytest.mark.django_db
 def test_seed_is_idempotent():
     from competition.models import Team
 
@@ -29,6 +54,25 @@ def test_seed_is_idempotent():
     call_command("seed_world_cup_2026")
     assert Team.objects.count() == 48
     assert Match.objects.filter(round_id="groups").count() == 72
+    assert Match.objects.exclude(round_id="groups").count() == 31
+
+
+@pytest.mark.django_db
+def test_seed_preserves_manually_assigned_ko_teams():
+    """Los equipos ya asignados a un cruce KO (por propagate_after_match o
+    por el gestor) no se pierden al re-seedear: el seed solo refresca
+    slots y kickoff."""
+    call_command("seed_world_cup_2026")
+    ko = Match.objects.exclude(round_id="groups").first()
+    esp = TeamFactory(code="ESP")
+    arg = TeamFactory(code="ARG")
+    ko.home = esp
+    ko.away = arg
+    ko.save(update_fields=["home", "away"])
+    call_command("seed_world_cup_2026")
+    ko.refresh_from_db()
+    assert ko.home == esp
+    assert ko.away == arg
 
 
 @pytest.mark.django_db

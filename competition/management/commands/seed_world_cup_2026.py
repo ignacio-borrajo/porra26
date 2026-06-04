@@ -1,8 +1,11 @@
-"""Carga el calendario del Mundial 2026: 48 selecciones + 72 partidos de fase de grupos.
+"""Carga el calendario del Mundial 2026: 48 selecciones + 72 partidos de grupos + 31 KO.
 
-Idempotente. Clave funcional de un partido: (round, group, matchday, home, away).
-Las selecciones se identifican por su `code`. Con --prune borra partidos en `groups`
-que no estén en el calendario canónico (junto a sus pronósticos).
+Idempotente. Claves funcionales:
+- Partidos de grupos (sin `bracket_code`): `(round, group, matchday, home, away)`.
+- Partidos KO (con `bracket_code`): el propio `bracket_code` (único).
+
+Las selecciones se identifican por su `code`. Con `--prune` borra partidos de `groups`
+que no estén en el calendario canónico (junto a sus pronósticos). Los KO no se podan.
 """
 
 import json
@@ -19,7 +22,7 @@ FIXTURES_DIR = Path(__file__).resolve().parents[3] / "fixtures"
 
 
 class Command(BaseCommand):
-    help = "Carga el calendario del Mundial 2026 (48 equipos + 72 partidos de grupos)."
+    help = "Carga el calendario del Mundial 2026 (48 equipos + 72 grupos + 31 KO)."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -57,32 +60,81 @@ class Command(BaseCommand):
             else:
                 updated_t += 1
 
-        created_m, updated_m, unchanged_m = 0, 0, 0
-        canonical_keys = set()
+        created_g, updated_g, unchanged_g = 0, 0, 0
+        created_ko, updated_ko, unchanged_ko = 0, 0, 0
+        canonical_groups: set = set()
+
         for entry in matches:
             f = entry["fields"]
-            key = (f["round"], f["group"], f["matchday"], f["home"], f["away"])
-            canonical_keys.add(key)
             kickoff = _parse_dt(f["kickoff"])
-            obj, created = Match.objects.update_or_create(
-                round_id=f["round"],
-                group=f["group"],
-                matchday=f["matchday"],
-                home_id=f["home"],
-                away_id=f["away"],
-                defaults={"kickoff": kickoff},
-            )
-            if created:
-                created_m += 1
-            elif obj.kickoff != kickoff:
-                updated_m += 1
+            bracket_code = f.get("bracket_code")
+
+            if bracket_code:
+                # Partido KO: key = bracket_code.
+                # En CREACIÓN tomamos home/away del fixture (normalmente null).
+                # En ACTUALIZACIÓN nunca pisamos home/away ya asignados (por
+                # propagación o por el gestor); solo refrescamos slots/kickoff.
+                existing = Match.objects.filter(bracket_code=bracket_code).first()
+                if existing is None:
+                    Match.objects.create(
+                        bracket_code=bracket_code,
+                        round_id=f["round"],
+                        group=f["group"],
+                        matchday=f.get("matchday"),
+                        home_id=f.get("home"),
+                        away_id=f.get("away"),
+                        home_slot=f.get("home_slot", ""),
+                        away_slot=f.get("away_slot", ""),
+                        kickoff=kickoff,
+                    )
+                    created_ko += 1
+                else:
+                    changed = False
+                    if existing.kickoff != kickoff:
+                        existing.kickoff = kickoff
+                        changed = True
+                    new_home_slot = f.get("home_slot", "")
+                    new_away_slot = f.get("away_slot", "")
+                    if existing.home_slot != new_home_slot:
+                        existing.home_slot = new_home_slot
+                        changed = True
+                    if existing.away_slot != new_away_slot:
+                        existing.away_slot = new_away_slot
+                        changed = True
+                    if existing.group != f["group"]:
+                        existing.group = f["group"]
+                        changed = True
+                    if existing.round_id != f["round"]:
+                        existing.round_id = f["round"]
+                        changed = True
+                    if changed:
+                        existing.save()
+                        updated_ko += 1
+                    else:
+                        unchanged_ko += 1
             else:
-                unchanged_m += 1
+                # Partido de grupos: key = (round, group, matchday, home, away)
+                key = (f["round"], f["group"], f["matchday"], f["home"], f["away"])
+                canonical_groups.add(key)
+                obj, created = Match.objects.update_or_create(
+                    round_id=f["round"],
+                    group=f["group"],
+                    matchday=f["matchday"],
+                    home_id=f["home"],
+                    away_id=f["away"],
+                    defaults={"kickoff": kickoff},
+                )
+                if created:
+                    created_g += 1
+                elif obj.kickoff != kickoff:
+                    updated_g += 1
+                else:
+                    unchanged_g += 1
 
         orphans = []
         for m in Match.objects.filter(round_id="groups").select_related("home", "away"):
             key = (m.round_id, m.group, m.matchday, m.home_id, m.away_id)
-            if key not in canonical_keys:
+            if key not in canonical_groups:
                 orphans.append(m)
 
         pruned = 0
@@ -103,14 +155,17 @@ class Command(BaseCommand):
             transaction.set_rollback(True)
             self.stdout.write(self.style.NOTICE("DRY RUN — sin cambios persistidos"))
 
+        groups_total = Match.objects.filter(round_id="groups").count()
+        ko_total = Match.objects.exclude(round_id="groups").count()
         self.stdout.write(
             self.style.SUCCESS(
                 f"Equipos: +{created_t} creados, ~{updated_t} actualizados "
                 f"(total {Team.objects.count()}).\n"
-                f"Partidos: +{created_m} creados, ~{updated_m} actualizados, "
-                f"={unchanged_m} sin cambios "
-                f"(total {Match.objects.filter(round_id='groups').count()}).\n"
-                f"Huérfanos: {len(orphans)} "
+                f"Grupos: +{created_g} creados, ~{updated_g} actualizados, "
+                f"={unchanged_g} sin cambios (total {groups_total}).\n"
+                f"KO: +{created_ko} creados, ~{updated_ko} actualizados, "
+                f"={unchanged_ko} sin cambios (total {ko_total}).\n"
+                f"Huérfanos en grupos: {len(orphans)} "
                 f"({'borrados' if prune else 'intactos'}, pruned={pruned})."
             )
         )

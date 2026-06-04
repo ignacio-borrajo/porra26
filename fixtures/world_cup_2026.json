@@ -862,5 +862,470 @@
       "away": "GHA",
       "kickoff": "2026-06-27T21:00:00Z"
     }
+  },
+  {
+    "model": "competition.match",
+    "pk": 73,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "1A",
+      "away_slot": "3WG_S1",
+      "bracket_code": "M73",
+      "kickoff": "2026-06-28T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 74,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "1B",
+      "away_slot": "2I",
+      "bracket_code": "M74",
+      "kickoff": "2026-06-28T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 75,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "1C",
+      "away_slot": "2H",
+      "bracket_code": "M75",
+      "kickoff": "2026-06-29T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 76,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "1D",
+      "away_slot": "3WG_S2",
+      "bracket_code": "M76",
+      "kickoff": "2026-06-29T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 77,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "2A",
+      "away_slot": "2C",
+      "bracket_code": "M77",
+      "kickoff": "2026-06-30T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 78,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "1E",
+      "away_slot": "3WG_S3",
+      "bracket_code": "M78",
+      "kickoff": "2026-06-30T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 79,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "1F",
+      "away_slot": "2K",
+      "bracket_code": "M79",
+      "kickoff": "2026-07-01T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 80,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "2D",
+      "away_slot": "3WG_S4",
+      "bracket_code": "M80",
+      "kickoff": "2026-07-01T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 81,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "1G",
+      "away_slot": "3WG_S5",
+      "bracket_code": "M81",
+      "kickoff": "2026-07-02T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 82,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "1H",
+      "away_slot": "2L",
+      "bracket_code": "M82",
+      "kickoff": "2026-07-02T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 83,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "1I",
+      "away_slot": "3WG_S6",
+      "bracket_code": "M83",
+      "kickoff": "2026-07-03T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 84,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "1J",
+      "away_slot": "2E",
+      "bracket_code": "M84",
+      "kickoff": "2026-07-03T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 85,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "2B",
+      "away_slot": "2G",
+      "bracket_code": "M85",
+      "kickoff": "2026-07-03T01:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 86,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "1K",
+      "away_slot": "3WG_S7",
+      "bracket_code": "M86",
+      "kickoff": "2026-07-03T04:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 87,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "1L",
+      "away_slot": "2J",
+      "bracket_code": "M87",
+      "kickoff": "2026-07-04T01:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 88,
+    "fields": {
+      "round": "r32",
+      "group": "Dieciseisavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "2F",
+      "away_slot": "3WG_S8",
+      "bracket_code": "M88",
+      "kickoff": "2026-07-04T04:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 89,
+    "fields": {
+      "round": "r16",
+      "group": "Octavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "WM73",
+      "away_slot": "WM75",
+      "bracket_code": "M89",
+      "kickoff": "2026-07-04T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 90,
+    "fields": {
+      "round": "r16",
+      "group": "Octavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "WM74",
+      "away_slot": "WM76",
+      "bracket_code": "M90",
+      "kickoff": "2026-07-04T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 91,
+    "fields": {
+      "round": "r16",
+      "group": "Octavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "WM77",
+      "away_slot": "WM79",
+      "bracket_code": "M91",
+      "kickoff": "2026-07-05T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 92,
+    "fields": {
+      "round": "r16",
+      "group": "Octavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "WM78",
+      "away_slot": "WM80",
+      "bracket_code": "M92",
+      "kickoff": "2026-07-05T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 93,
+    "fields": {
+      "round": "r16",
+      "group": "Octavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "WM81",
+      "away_slot": "WM83",
+      "bracket_code": "M93",
+      "kickoff": "2026-07-06T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 94,
+    "fields": {
+      "round": "r16",
+      "group": "Octavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "WM82",
+      "away_slot": "WM84",
+      "bracket_code": "M94",
+      "kickoff": "2026-07-06T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 95,
+    "fields": {
+      "round": "r16",
+      "group": "Octavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "WM85",
+      "away_slot": "WM87",
+      "bracket_code": "M95",
+      "kickoff": "2026-07-07T19:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 96,
+    "fields": {
+      "round": "r16",
+      "group": "Octavos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "WM86",
+      "away_slot": "WM88",
+      "bracket_code": "M96",
+      "kickoff": "2026-07-07T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 97,
+    "fields": {
+      "round": "qf",
+      "group": "Cuartos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "WM89",
+      "away_slot": "WM90",
+      "bracket_code": "M97",
+      "kickoff": "2026-07-09T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 98,
+    "fields": {
+      "round": "qf",
+      "group": "Cuartos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "WM91",
+      "away_slot": "WM92",
+      "bracket_code": "M98",
+      "kickoff": "2026-07-10T01:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 99,
+    "fields": {
+      "round": "qf",
+      "group": "Cuartos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "WM93",
+      "away_slot": "WM94",
+      "bracket_code": "M99",
+      "kickoff": "2026-07-11T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 100,
+    "fields": {
+      "round": "qf",
+      "group": "Cuartos",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "WM95",
+      "away_slot": "WM96",
+      "bracket_code": "M100",
+      "kickoff": "2026-07-12T01:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 101,
+    "fields": {
+      "round": "sf",
+      "group": "Semifinales",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "WM97",
+      "away_slot": "WM98",
+      "bracket_code": "M101",
+      "kickoff": "2026-07-14T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 102,
+    "fields": {
+      "round": "sf",
+      "group": "Semifinales",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "WM99",
+      "away_slot": "WM100",
+      "bracket_code": "M102",
+      "kickoff": "2026-07-15T22:00:00Z"
+    }
+  },
+  {
+    "model": "competition.match",
+    "pk": 103,
+    "fields": {
+      "round": "final",
+      "group": "Final",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "WM101",
+      "away_slot": "WM102",
+      "bracket_code": "M103",
+      "kickoff": "2026-07-19T19:00:00Z"
+    }
   }
 ]
