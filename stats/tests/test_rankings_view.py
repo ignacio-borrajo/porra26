@@ -110,3 +110,23 @@ def test_rankings_unknown_tab_falls_back_to_general(client):
     r = client.get(reverse("stats:rankings") + "?tab=hack")
     assert r.status_code == 200
     assert b"podium-slot--1" in r.content
+
+
+@pytest.mark.django_db
+def test_rankings_group_invalid_dim_returns_404(client):
+    client.force_login(UserFactory())
+    r = client.get("/stats/rankings/foo/bar/")
+    assert r.status_code == 404
+
+
+@pytest.mark.django_db
+def test_rankings_group_invalid_key_returns_404(client):
+    client.force_login(UserFactory())
+    r = client.get("/stats/rankings/sede/atlantis/")
+    assert r.status_code == 404
+
+
+@pytest.mark.django_db
+def test_rankings_group_requires_login(client):
+    r = client.get("/stats/rankings/sede/madrid/")
+    assert r.status_code == 302

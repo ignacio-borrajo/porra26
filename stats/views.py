@@ -1,10 +1,10 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import render
 from django.views import View
 
 from accounts.models import User
-from stats.services.group_standings import group_standings
+from stats.services.group_standings import CHOICES_BY_DIMENSION, group_standings
 from stats.services.history import per_player_history
 from stats.services.kpis import donut, kpis
 from stats.services.rankings_context import build_general_context
@@ -70,3 +70,32 @@ class RankingsView(LoginRequiredMixin, View):
                 }
             )
         return render(request, "stats/rankings.html", ctx)
+
+
+class GroupRankingsView(LoginRequiredMixin, View):
+    VALID_DIMS = ("sede", "puesto", "dept")
+
+    def get(self, request, dim: str, key: str):
+        if dim not in self.VALID_DIMS:
+            raise Http404("Dimensión desconocida")
+        labels = dict(CHOICES_BY_DIMENSION[dim])
+        if key not in labels:
+            raise Http404("Grupo desconocido")
+        player_ids = list(
+            User.objects.filter(is_active=True, is_jugador=True, **{dim: key}).values_list(
+                "id", flat=True
+            )
+        )
+        ctx = build_general_context(
+            request.user, request.GET.get("scope"), player_ids=player_ids
+        )
+        ctx.update(
+            {
+                "dim": dim,
+                "dim_label": RankingsView.TAB_LABELS[dim],
+                "group_label": labels[key],
+                "group_key": key,
+                "player_count": len(player_ids),
+            }
+        )
+        return render(request, "stats/rankings_group.html", ctx)
