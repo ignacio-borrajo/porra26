@@ -72,9 +72,7 @@ class PorraPasswordResetTokenGenerator(PasswordResetTokenGenerator):
 
     def _make_hash_value(self, user, timestamp, purpose="reset"):
         login_ts = (
-            ""
-            if user.last_login is None
-            else user.last_login.replace(microsecond=0, tzinfo=None)
+            "" if user.last_login is None else user.last_login.replace(microsecond=0, tzinfo=None)
         )
         return f"{user.pk}{user.password}{login_ts}{timestamp}{user.email}{purpose}"
 

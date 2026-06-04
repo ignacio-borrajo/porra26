@@ -38,9 +38,7 @@ def jugador_veterano(db):
 
 
 def test_resend_pendiente_envia_welcome(gestor, client, jugador_pendiente):
-    response = client.post(
-        reverse("pot:player_resend_invite", args=[jugador_pendiente.id])
-    )
+    response = client.post(reverse("pot:player_resend_invite", args=[jugador_pendiente.id]))
     assert response.status_code == 200
     data = json.loads(response.content)
     assert data["ok"] is True
@@ -53,9 +51,7 @@ def test_resend_pendiente_envia_welcome(gestor, client, jugador_pendiente):
 
 
 def test_resend_veterano_envia_reset(gestor, client, jugador_veterano):
-    response = client.post(
-        reverse("pot:player_resend_invite", args=[jugador_veterano.id])
-    )
+    response = client.post(reverse("pot:player_resend_invite", args=[jugador_veterano.id]))
     data = json.loads(response.content)
     assert data["purpose"] == "reset"
     assert "Restablece" in mail.outbox[0].subject
@@ -64,23 +60,17 @@ def test_resend_veterano_envia_reset(gestor, client, jugador_veterano):
 def test_resend_a_inactivo_404(gestor, client, jugador_pendiente):
     jugador_pendiente.is_active = False
     jugador_pendiente.save(update_fields=["is_active"])
-    response = client.post(
-        reverse("pot:player_resend_invite", args=[jugador_pendiente.id])
-    )
+    response = client.post(reverse("pot:player_resend_invite", args=[jugador_pendiente.id]))
     assert response.status_code == 404
 
 
 def test_resend_no_gestor_redirige(client, jugador_pendiente, db):
     no_gestor = UserFactory(email="player@edisa.com", password="OldPwd1234!")
     client.force_login(no_gestor)
-    response = client.post(
-        reverse("pot:player_resend_invite", args=[jugador_pendiente.id])
-    )
+    response = client.post(reverse("pot:player_resend_invite", args=[jugador_pendiente.id]))
     assert response.status_code in (302, 403)
 
 
 def test_resend_anonimo_redirige_a_login(client, jugador_pendiente):
-    response = client.post(
-        reverse("pot:player_resend_invite", args=[jugador_pendiente.id])
-    )
+    response = client.post(reverse("pot:player_resend_invite", args=[jugador_pendiente.id]))
     assert response.status_code == 302

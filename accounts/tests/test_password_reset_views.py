@@ -32,9 +32,7 @@ def test_request_get_renderiza(client, db):
 
 
 def test_request_post_email_existente_envia_email(client, alice):
-    response = client.post(
-        reverse("accounts:password_reset"), {"email": "alice@edisa.com"}
-    )
+    response = client.post(reverse("accounts:password_reset"), {"email": "alice@edisa.com"})
     assert response.status_code == 302
     assert response.url == reverse("accounts:password_reset_sent")
     assert len(mail.outbox) == 1
@@ -46,9 +44,7 @@ def test_request_post_email_existente_envia_email(client, alice):
 
 
 def test_request_post_email_inexistente_no_envia_pero_redirige(client, db):
-    response = client.post(
-        reverse("accounts:password_reset"), {"email": "nadie@edisa.com"}
-    )
+    response = client.post(reverse("accounts:password_reset"), {"email": "nadie@edisa.com"})
     assert response.status_code == 302
     assert response.url == reverse("accounts:password_reset_sent")
     assert len(mail.outbox) == 0
@@ -58,17 +54,13 @@ def test_request_post_email_inexistente_no_envia_pero_redirige(client, db):
 
 
 def test_request_post_email_fuera_dominio_no_envia(client, db):
-    response = client.post(
-        reverse("accounts:password_reset"), {"email": "alguien@gmail.com"}
-    )
+    response = client.post(reverse("accounts:password_reset"), {"email": "alguien@gmail.com"})
     assert response.status_code == 302
     assert len(mail.outbox) == 0
 
 
 def test_request_post_email_inactivo_no_envia(client, inactive_bob):
-    response = client.post(
-        reverse("accounts:password_reset"), {"email": "bob@edisa.com"}
-    )
+    response = client.post(reverse("accounts:password_reset"), {"email": "bob@edisa.com"})
     assert response.status_code == 302
     assert len(mail.outbox) == 0
 
@@ -145,9 +137,7 @@ def test_confirm_post_welcome_marca_must_change_false(client, alice):
     alice.must_change_password = True
     alice.save(update_fields=["must_change_password"])
     url = _confirm_url_for(alice, "welcome")
-    client.post(
-        url, {"new_password1": "NuevaPwd1234!", "new_password2": "NuevaPwd1234!"}
-    )
+    client.post(url, {"new_password1": "NuevaPwd1234!", "new_password2": "NuevaPwd1234!"})
     alice.refresh_from_db()
     assert alice.must_change_password is False
 
@@ -164,12 +154,8 @@ def test_confirm_post_passwords_no_coinciden_re_renderiza(client, alice):
 
 def test_confirm_post_token_usado_segunda_vez_falla(client, alice):
     url = _confirm_url_for(alice, "reset")
-    client.post(
-        url, {"new_password1": "NuevaPwd1234!", "new_password2": "NuevaPwd1234!"}
-    )
-    response = client.post(
-        url, {"new_password1": "OtraPwd1234!", "new_password2": "OtraPwd1234!"}
-    )
+    client.post(url, {"new_password1": "NuevaPwd1234!", "new_password2": "NuevaPwd1234!"})
+    response = client.post(url, {"new_password1": "OtraPwd1234!", "new_password2": "OtraPwd1234!"})
     assert response.status_code == 410
 
 

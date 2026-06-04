@@ -13,6 +13,12 @@
     })();
   </script>
   <link rel="icon" type="image/png" href="{% static 'img/logo.png' %}">
+  <link rel="manifest" href="{% url 'pwa-manifest' %}">
+  <meta name="theme-color" content="#1a1530">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PORRA 26">
+  <link rel="apple-touch-icon" href="{% static 'img/pwa/apple-touch-icon.png' %}">
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
@@ -29,6 +35,15 @@
   <script defer src="{% static 'js/podium-tied.js' %}"></script>
   <script src="{% static 'js/vendor/canvas-confetti.min.js' %}"></script>
   <script type="module" src="{% static 'js/winner-confetti.js' %}"></script>
+  <script>
+    // Registro del service worker. `load` (no DOMContentLoaded) para no
+    // competir con los recursos críticos del primer paint.
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("{% url 'pwa-sw' %}", { scope: "/" });
+      });
+    }
+  </script>
   {% block scripts %}{% endblock %}
 </body>
 </html>
