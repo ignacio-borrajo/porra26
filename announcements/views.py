@@ -4,6 +4,8 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views import View
 
+from accounts.mixins import GestorRequiredMixin
+
 from .models import WinnerAnnouncement, WinnerAnnouncementSeen
 
 
@@ -35,3 +37,8 @@ class AnnouncementSeenView(LoginRequiredMixin, View):
         if next_ann is not None:
             resp["X-Modal-Next"] = reverse("announcements:modal", args=[next_ann.id])
         return resp
+
+
+class AnnouncementPreviewView(GestorRequiredMixin, View):
+    def get(self, request):
+        return HttpResponse("preview")
