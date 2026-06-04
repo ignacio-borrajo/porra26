@@ -33,14 +33,25 @@
         </div>
       </div>
     </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
-      <button class="btn btn-ghost" type="button" data-modal-close>Cancelar</button>
-      {% if has_next %}
-      <button class="btn btn-ghost" type="submit">Guardar resultado</button>
-      <button class="btn btn-primary" type="submit" name="chain" value="1">Guardar y siguiente</button>
-      {% else %}
-      <button class="btn btn-primary" type="submit">Guardar resultado</button>
-      {% endif %}
+    <div style="display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap">
+      <div>
+        {% if match.has_result %}
+        <button class="btn btn-ghost" type="submit" name="action" value="delete"
+                style="color:var(--c-red);border-color:oklch(from var(--c-red) l c h / 0.45)"
+                onclick="return confirm('¿Borrar el resultado de {{ match.home.name }} {{ match.result_home }}–{{ match.result_away }} {{ match.away.name }}? Se descongelarán los puntos y se reiniciarán los aciertos de los jugadores. Los envíos a Teams que ya se hayan hecho se conservan.');">
+          Borrar resultado
+        </button>
+        {% endif %}
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost" type="button" data-modal-close>Cancelar</button>
+        {% if has_next %}
+        <button class="btn btn-ghost" type="submit">Guardar resultado</button>
+        <button class="btn btn-primary" type="submit" name="chain" value="1">Guardar y siguiente</button>
+        {% else %}
+        <button class="btn btn-primary" type="submit">Guardar resultado</button>
+        {% endif %}
+      </div>
     </div>
   </form>
 </section>

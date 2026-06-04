@@ -7,7 +7,7 @@ from django.views import View
 from accounts.mixins import GestorRequiredMixin
 from accounts.models import User
 from competition.models import Match, Prediction, Round
-from competition.services.resolve import resolve_match
+from competition.services.resolve import clear_match_result, resolve_match
 from competition.services.standings import standings
 
 
@@ -330,6 +330,16 @@ class ResultOfficialView(GestorRequiredMixin, View):
 
     def post(self, request, match_id):
         m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
+        if request.POST.get("action") == "delete":
+            if not m.has_result:
+                messages.error(request, "Este partido aún no tiene resultado que borrar.")
+                return redirect("competicion:manage_results")
+            clear_match_result(m, actor=request.user)
+            messages.success(
+                request,
+                f"Resultado borrado · {m.home.name} vs {m.away.name}",
+            )
+            return redirect("competicion:manage_results")
         try:
             h = max(0, int(request.POST.get("home", 0)))
             a = max(0, int(request.POST.get("away", 0)))
