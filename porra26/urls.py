@@ -6,6 +6,8 @@ from django.http import HttpResponse
 from django.urls import include, path, re_path
 from django.views.static import serve
 
+from pwa import views as pwa_views
+
 
 def _serve_media(request, path):
     """Sirve los archivos de MEDIA_ROOT.
@@ -19,6 +21,10 @@ def _serve_media(request, path):
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("healthz/", lambda r: HttpResponse("ok", content_type="text/plain")),
+    # Endpoints PWA: deben servirse desde la raíz para que el scope del
+    # service worker sea "/" y controle toda la app.
+    path("manifest.webmanifest", pwa_views.manifest, name="pwa-manifest"),
+    path("service-worker.js", pwa_views.service_worker, name="pwa-sw"),
     path("", include(("accounts.urls", "accounts"), namespace="accounts")),
     path("competicion/", include(("competition.urls", "competicion"), namespace="competicion")),
     path("stats/", include(("stats.urls", "stats"), namespace="stats")),
