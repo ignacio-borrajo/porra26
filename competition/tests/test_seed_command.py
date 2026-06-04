@@ -106,3 +106,34 @@ def test_seed_keeps_orphans_without_prune():
     MatchFactory(round=grp, group="Z", matchday=1, home=foreign_a, away=foreign_b)
     call_command("seed_world_cup_2026")
     assert Match.objects.filter(group="Z").exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_seed_dry_run_does_not_crash_with_real_transactions():
+    """Regresión: las queries que se ejecutaban DESPUÉS de
+    `transaction.set_rollback(True)` rompían con TransactionManagementError en
+    Postgres. Esta variante con `transaction=True` reproduce el bug (SQLite
+    permisivo dentro del wrapper de pytest-django no lo cubría)."""
+    from competition.models import Team
+
+    # transaction=True descarta el autouse fixture compartido — recreamos rounds.
+    for rid, label, short, pts, order in [
+        ("groups", "Fase de grupos", "GRP", 3, 1),
+        ("r32", "Dieciseisavos", "R32", 5, 2),
+        ("r16", "Octavos", "R16", 7, 3),
+        ("qf", "Cuartos", "QF", 10, 4),
+        ("sf", "Semifinales", "SF", 15, 5),
+        ("final", "Final", "FIN", 25, 6),
+    ]:
+        Round.objects.get_or_create(
+            id=rid,
+            defaults={"label": label, "short": short, "points": pts, "order": order},
+        )
+
+    try:
+        call_command("seed_world_cup_2026", "--dry-run")
+        # Dry-run no persiste nada
+        assert Team.objects.count() == 0
+        assert Match.objects.count() == 0
+    finally:
+        Round.objects.all().delete()
