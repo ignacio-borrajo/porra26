@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "stats",
     "core",
     "announcements",
+    "pwa",
     "axes",
 ]
 
