@@ -443,8 +443,15 @@ a.match-card:hover {
   position: sticky;
   /* Deja hueco para el topbar sticky encima. */
   top: 88px;
-  max-height: calc(100vh - 110px);
-  overflow: auto;
+  /* Llena siempre el espacio vertical visible del viewport: la card no
+     se encoge al alto del contenido sino que ocupa hasta el fondo. La
+     lista interna .leaderboard-list scrollea cuando hay muchos
+     jugadores. overflow:hidden contiene al card sin recortar tooltips
+     que sean position:fixed. */
+  height: calc(100dvh - 110px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 /* Por debajo de ~1000px apilamos el sidebar bajo los partidos para que
    ambos puedan crecer y la página pueda scrollear de forma natural. */
@@ -452,7 +459,7 @@ a.match-card:hover {
   .dashboard-grid { grid-template-columns: 1fr; }
   .leaderboard-aside {
     position: static;
-    max-height: none;
+    height: auto;
     overflow: visible;
   }
 }
@@ -1004,15 +1011,19 @@ img.avatar { object-fit: cover; }
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 28px;
-  align-items: start;
+  align-items: stretch;
+  /* Llena hasta el fondo del viewport: ~228px arriba van para topbar,
+     padding de main, h1 y la barra de tabs. */
+  min-height: calc(100dvh - 228px);
 }
 .rankings-clas__col {
   display: flex;
   justify-content: center;
   gap: 16px;
   min-width: 0;
+  align-items: stretch;
 }
-.rankings-clas__col--scope { align-items: flex-start; }
+.rankings-clas__col--scope { align-items: stretch; }
 .rankings-clas__board {
   width: 100%;
   max-width: 440px;
@@ -1021,6 +1032,10 @@ img.avatar { object-fit: cover; }
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* Que crezca con la columna y contenga la lista scrollable dentro,
+     sin recortar tooltips (los popovers usan position:fixed). */
+  flex: 1;
+  overflow: hidden;
 }
 .rankings-md-selector {
   display: flex;
@@ -1040,7 +1055,8 @@ img.avatar { object-fit: cover; }
 }
 .rankings-md-selector__item.is-active { font-weight: 700; }
 @media (max-width: 1100px) {
-  .rankings-clas { grid-template-columns: 1fr; }
+  .rankings-clas { grid-template-columns: 1fr; min-height: 0; }
+  .rankings-clas__board { flex: initial; overflow: visible; }
   .rankings-clas__col--scope { flex-direction: column; align-items: center; }
   .rankings-md-selector {
     position: static;
@@ -1071,7 +1087,7 @@ img.avatar { object-fit: cover; }
 }
 .lb-scope-rank__global,
 .lb-scope-rank__local { display: none; }
-.lb-pane { display: none; flex-direction: column; min-height: 0; }
+.lb-pane { display: none; flex-direction: column; min-height: 0; flex: 1; }
 #lb-scope-global:checked ~ .lb-pane--global,
 #lb-scope-local:checked ~ .lb-pane--local { display: flex; }
 #lb-scope-global:checked ~ .leaderboard-header .lb-scope-rank__global,
@@ -1230,10 +1246,14 @@ img.avatar { object-fit: cover; }
 .podium-tied__label { font-size: 13px; font-weight: 700; line-height: 1.1; }
 
 .podium-tied__tooltip {
-  position: absolute;
-  left: 50%;
-  top: calc(100% + 8px);
-  transform: translateX(-50%) translateY(-4px);
+  /* position:fixed permite escapar de ancestros con overflow:hidden/auto
+     (como .leaderboard-aside o .rankings-clas__board). JS coloca top/left
+     desde el botón antes de mostrar; placement="top" para invertir cuando
+     no hay sitio debajo del botón. */
+  position: fixed;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -4px);
   min-width: 200px;
   max-width: 260px;
   max-height: 320px;
@@ -1249,9 +1269,12 @@ img.avatar { object-fit: cover; }
   visibility: hidden;
   pointer-events: none;
   transition: opacity .15s, transform .15s, visibility .15s;
-  z-index: 5;
+  z-index: 50;
   text-align: left;
   color: var(--text);
+}
+.podium-tied__tooltip[data-placement="top"] {
+  transform: translate(-50%, calc(-100% + 4px));
 }
 .podium-tied:hover .podium-tied__tooltip,
 .podium-tied:focus-within .podium-tied__tooltip,
@@ -1259,7 +1282,12 @@ img.avatar { object-fit: cover; }
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
-  transform: translateX(-50%) translateY(0);
+  transform: translate(-50%, 0);
+}
+.podium-tied:hover .podium-tied__tooltip[data-placement="top"],
+.podium-tied:focus-within .podium-tied__tooltip[data-placement="top"],
+.podium-tied[data-open="true"] .podium-tied__tooltip[data-placement="top"] {
+  transform: translate(-50%, -100%);
 }
 
 .podium-tied__head {
@@ -1306,6 +1334,10 @@ img.avatar { object-fit: cover; }
   overflow-y: auto;
   padding-right: 2px;
   min-height: 0;
+  /* Crece para ocupar el espacio restante del card cuando éste tiene
+     altura fija; con pocos jugadores no añade huecos porque sus items
+     no se estiran. */
+  flex: 1;
 }
 
 .leaderboard-row {
