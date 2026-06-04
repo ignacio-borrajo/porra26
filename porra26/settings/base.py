@@ -119,3 +119,11 @@ TEAMS_DESTINATION_EMAIL = os.getenv("TEAMS_DESTINATION_EMAIL", "")
 # distinto de Power Automate filtra por este prefijo y republica el cuerpo
 # del email (HTML) directamente en el chat de Teams.
 TEAMS_REMINDER_SUBJECT_PREFIX = os.getenv("TEAMS_REMINDER_SUBJECT_PREFIX", "[Porra26 RECORDATORIO]")
+
+# Sender de los emails de reset y bienvenida. Distinto del DEFAULT_FROM_EMAIL
+# (bot@…) porque Power Automate filtra los recordatorios por aquel `From` y
+# cambiarlo globalmente rompería el trigger. Estos emails van a usuarios
+# reales, así que conviene un remitente "de marca".
+PASSWORD_RESET_FROM_EMAIL = os.getenv(
+    "PASSWORD_RESET_FROM_EMAIL", "El Jefe <eljefe@laporradeljefe.es>"
+)
