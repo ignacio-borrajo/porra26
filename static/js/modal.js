@@ -40,7 +40,10 @@ async function onSubmit(event) {
   if (submitter && submitter.name) {
     data.append(submitter.name, submitter.value || "");
   }
-  const res = await fetch(form.action, {
+  // Usa getAttribute en vez de form.action: si el form tiene un hijo con
+  // name="action" (o cualquier otro nombre que colisione con una propiedad de
+  // HTMLFormElement) el acceso por propiedad devuelve el elemento, no la URL.
+  const res = await fetch(form.getAttribute("action"), {
     method: "POST",
     body: data,
     headers: { "X-Modal": "1" },
