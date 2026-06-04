@@ -8,6 +8,7 @@
   </header>
   <form method="post" action="{% url 'competicion:official' match.id %}">
     {% csrf_token %}
+    <input type="hidden" name="action" value="">
     <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:14px;margin:18px 0">
       <div>
         <div style="display:flex;align-items:center;justify-content:center;gap:10px">
@@ -36,9 +37,9 @@
     <div style="display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap">
       <div>
         {% if match.has_result %}
-        <button class="btn btn-ghost" type="submit" name="action" value="delete"
+        <button class="btn btn-ghost" type="submit"
                 style="color:var(--c-red);border-color:oklch(from var(--c-red) l c h / 0.45)"
-                onclick="return confirm('¿Borrar el resultado de {{ match.home.name }} {{ match.result_home }}–{{ match.result_away }} {{ match.away.name }}? Se descongelarán los puntos y se reiniciarán los aciertos de los jugadores. Los envíos a Teams que ya se hayan hecho se conservan.');">
+                onclick="if (!confirm('¿Borrar el resultado de {{ match.home.name }} {{ match.result_home }}–{{ match.result_away }} {{ match.away.name }}? Se descongelarán los puntos y se reiniciarán los aciertos de los jugadores. Los envíos a Teams que ya se hayan hecho se conservan.')) return false; this.form.querySelector('input[name=action]').value='delete';">
           Borrar resultado
         </button>
         {% endif %}

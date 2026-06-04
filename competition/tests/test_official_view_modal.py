@@ -144,6 +144,31 @@ def test_official_modal_shows_delete_button_only_when_resolved(client, grp):
 
 
 @pytest.mark.django_db
+def test_official_modal_uses_hidden_action_input(client, grp):
+    """El botón de borrar pasa `action=delete` por un input oculto que su
+    onclick actualiza, no por `name`/`value` del botón. Esto hace que el flujo
+    funcione en navegadores sin soporte para `SubmitEvent.submitter` (Safari
+    < 15.4): la action queda en el FormData aunque modal.js no pueda inferir
+    qué botón disparó el submit."""
+    g = GestorFactory(must_change_password=False)
+    client.force_login(g)
+    m = MatchFactory(
+        round=grp,
+        home=TeamFactory(),
+        away=TeamFactory(),
+        kickoff=timezone.now() - timedelta(hours=3),
+        result_home=1,
+        result_away=0,
+    )
+
+    r = client.get(reverse("competicion:official", args=[m.id]))
+
+    assert b'<input type="hidden" name="action" value="">' in r.content
+    assert b"input[name=action]" in r.content
+    assert b'name="action" value="delete"' not in r.content
+
+
+@pytest.mark.django_db
 def test_manage_results_finalize_link_uses_modal_url(client, grp):
     g = GestorFactory(must_change_password=False)
     client.force_login(g)
