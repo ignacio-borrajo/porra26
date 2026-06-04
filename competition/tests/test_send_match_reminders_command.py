@@ -101,9 +101,7 @@ def test_command_match_id_filter():
     )
 
     assert len(mail.outbox) == 1
-    assert mail.outbox[0].subject.endswith(
-        timezone.localtime(m1.kickoff).strftime("%d/%m %H:%M")
-    )
+    assert mail.outbox[0].subject.endswith(timezone.localtime(m1.kickoff).strftime("%d/%m %H:%M"))
 
 
 @pytest.mark.django_db

@@ -57,8 +57,7 @@ def _format_names(pending: list[User]) -> tuple[str, int]:
 def _build_subject(match: Match) -> str:
     kickoff_local = timezone.localtime(match.kickoff)
     return (
-        f"{_subject_prefix()} {match.home.name} vs {match.away.name} "
-        f"· {kickoff_local:%d/%m %H:%M}"
+        f"{_subject_prefix()} {match.home.name} vs {match.away.name} · {kickoff_local:%d/%m %H:%M}"
     )
 
 
@@ -67,8 +66,7 @@ def _build_plain(match: Match, kind: str, pending: list[User], now) -> str:
     remaining = _remaining_phrase(match, kind, now)
     names_str, overflow = _format_names(pending)
     lines = [
-        f"{match.home.name} vs {match.away.name} cierra apuestas a las "
-        f"{closure_local:%H:%M}.",
+        f"{match.home.name} vs {match.away.name} cierra apuestas a las {closure_local:%H:%M}.",
         "",
         f"Faltan {remaining} y quedan {len(pending)} jugadores sin apostar:",
         names_str + (f" … y {overflow} más." if overflow else ""),

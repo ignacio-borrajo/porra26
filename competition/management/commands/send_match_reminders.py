@@ -63,9 +63,7 @@ class Command(BaseCommand):
                     result = send_reminder_email(match, kind)
                 except Exception as exc:  # noqa: BLE001
                     ko += 1
-                    logger.exception(
-                        "send_reminder_email falló · match=%s kind=%s", match.id, kind
-                    )
+                    logger.exception("send_reminder_email falló · match=%s kind=%s", match.id, kind)
                     self.stderr.write(f"ERR · {kind} · {match.teams_slug} · {exc}")
                     continue
                 if result is None:
@@ -86,6 +84,4 @@ class Command(BaseCommand):
             return
 
         if not dry_run:
-            self.stdout.write(
-                f"send_match_reminders: {ok} OK · {ko} ERR · {skipped} SKIP"
-            )
+            self.stdout.write(f"send_match_reminders: {ok} OK · {ko} ERR · {skipped} SKIP")

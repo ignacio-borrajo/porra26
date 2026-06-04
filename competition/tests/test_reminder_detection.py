@@ -8,7 +8,6 @@ from competition.models import BetsReminderLog
 from competition.services.reminders import get_pending_bettors, matches_due_for_kind
 from competition.tests.factories import MatchFactory, PredictionFactory
 
-
 # -------------------------------------------------------------------
 # get_pending_bettors
 # -------------------------------------------------------------------
