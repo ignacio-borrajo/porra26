@@ -193,3 +193,38 @@ def test_rankings_group_chip_absent_when_user_not_in_group(client):
     client.force_login(me_vigo)
     r = client.get("/stats/rankings/sede/madrid/")
     assert "Tú · " not in r.content.decode()
+
+
+@pytest.mark.django_db
+def test_rankings_sede_tab_rows_are_links(client):
+    client.force_login(UserFactory())
+    r = client.get(reverse("stats:rankings") + "?tab=sede")
+    body = r.content.decode()
+    assert 'href="/stats/rankings/sede/madrid/"' in body
+    assert 'href="/stats/rankings/sede/vigo/"' in body
+
+
+@pytest.mark.django_db
+def test_rankings_puesto_tab_rows_are_links(client):
+    client.force_login(UserFactory())
+    r = client.get(reverse("stats:rankings") + "?tab=puesto")
+    body = r.content.decode()
+    assert 'href="/stats/rankings/puesto/desarrollo/"' in body
+
+
+@pytest.mark.django_db
+def test_rankings_dept_tab_rows_are_links(client):
+    client.force_login(UserFactory())
+    r = client.get(reverse("stats:rankings") + "?tab=dept")
+    body = r.content.decode()
+    assert 'href="/stats/rankings/dept/nominas/"' in body
+
+
+@pytest.mark.django_db
+def test_rankings_unassigned_row_is_not_a_link(client):
+    UserFactory(email="orphan@e.com", sede="")
+    client.force_login(UserFactory())
+    r = client.get(reverse("stats:rankings") + "?tab=sede")
+    body = r.content.decode()
+    assert "Sin asignar" in body
+    assert 'href="/stats/rankings/sede/__none__/"' not in body
