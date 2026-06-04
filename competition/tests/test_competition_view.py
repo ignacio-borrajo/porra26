@@ -270,7 +270,8 @@ def test_dashboard_scope_tab_uses_round_label_outside_groups(client):
 
 
 @pytest.mark.django_db
-def test_dashboard_shows_locked_banner_for_blocked_matchday(client):
+def test_dashboard_no_locked_banner_for_future_matchday(client):
+    """Sin gate de jornada: J2 nunca aparece bloqueada aunque J1 esté pendiente."""
     u = UserFactory(must_change_password=False)
     client.force_login(u)
     grp = RoundFactory(id="groups", points=3, label="Grupos", short="G", order=1)
@@ -291,7 +292,7 @@ def test_dashboard_shows_locked_banner_for_blocked_matchday(client):
         )
         r = client.get(reverse("competicion:dashboard") + "?round=groups&matchday=2")
         body = r.content.decode().lower()
-        assert "bloqueada" in body or "se desbloquea" in body
+        assert "bloqueada" not in body and "se desbloquea" not in body
 
 
 @pytest.mark.django_db

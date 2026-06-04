@@ -13,11 +13,6 @@ from competition.services.standings import standings
 
 class CompetitionView(LoginRequiredMixin, View):
     def get(self, request):
-        from competition.services.matchday_gate import (
-            is_matchday_open,
-            previous_matchday_close_info,
-        )
-
         rounds = list(Round.objects.all())
         active_id = request.GET.get("round", rounds[0].id if rounds else "groups")
 
@@ -54,24 +49,9 @@ class CompetitionView(LoginRequiredMixin, View):
             else:
                 open_matches.append(m)
 
-        matchday_state = []
-        locked = False
-        locked_last_match = None
-        locked_last_kickoff = None
-        if active_md is not None:
-            for md in matchdays:
-                matchday_state.append(
-                    {
-                        "matchday": md,
-                        "open": is_matchday_open(active_id, md),
-                        "active": md == active_md,
-                    }
-                )
-            locked = not is_matchday_open(active_id, active_md)
-            if locked:
-                locked_last_match, locked_last_kickoff = previous_matchday_close_info(
-                    active_id, active_md
-                )
+        matchday_state = [
+            {"matchday": md, "open": True, "active": md == active_md} for md in matchdays
+        ]
 
         rows = standings()[:50]
         my_row = next((r for r in rows if r.player_id == request.user.id), None)
@@ -114,9 +94,6 @@ class CompetitionView(LoginRequiredMixin, View):
                 "matchdays": matchdays,
                 "active_matchday": active_md,
                 "matchday_state": matchday_state,
-                "locked": locked,
-                "locked_last_match": locked_last_match,
-                "locked_last_kickoff": locked_last_kickoff,
                 "open_matches": open_matches,
                 "live_matches": live_matches,
                 "done_matches": done_matches,
@@ -154,21 +131,19 @@ class PredictView(LoginRequiredMixin, View):
         m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
         if not request.user.is_jugador:
             raise PermissionDenied("Solo los jugadores pueden pronosticar.")
+        if not m.has_teams:
+            messages.error(
+                request, "Este cruce aún no tiene los dos equipos definidos."
+            )
+            return redirect("competicion:dashboard")
         if not m.editable:
             messages.error(request, "Las apuestas para este partido están cerradas.")
             return redirect("competicion:dashboard")
-        from competition.services.matchday_gate import is_matchday_open
         from competition.services.predictions import (
             next_pending_match,
             pending_matches_count,
         )
 
-        if not is_matchday_open(m.round_id, m.matchday):
-            messages.error(
-                request,
-                f"La Jornada {m.matchday} se desbloqueará cuando termine la Jornada {m.matchday - 1}.",
-            )
-            return redirect("competicion:dashboard")
         pred = Prediction.objects.filter(player=request.user, match=m).first()
         pending_count = pending_matches_count(request.user)
         has_next = next_pending_match(request.user, after_match=m) is not None
@@ -188,7 +163,7 @@ class PredictView(LoginRequiredMixin, View):
         if not request.user.is_jugador:
             raise PermissionDenied("Solo los jugadores pueden pronosticar.")
         if not m.predictions_open:
-            raise PermissionDenied("Apuestas cerradas o jornada bloqueada.")
+            raise PermissionDenied("Apuestas cerradas.")
         try:
             h = max(0, int(request.POST.get("home", 0)))
             a = max(0, int(request.POST.get("away", 0)))
