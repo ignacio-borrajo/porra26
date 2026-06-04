@@ -409,3 +409,47 @@ class MatchDetailView(LoginRequiredMixin, View):
                 "round_points": round_points,
             },
         )
+
+
+class AssignTeamsView(GestorRequiredMixin, View):
+    """Asigna o corrige los dos equipos de un cruce KO. Si el partido ya tenía
+    equipos asignados y existen pronósticos, requiere `confirm_invalidate=1` y
+    borra los pronósticos para no quedar inconsistentes con los nuevos equipos."""
+
+    def post(self, request, match_id):
+        from competition.models import Team
+
+        m = get_object_or_404(Match, pk=match_id)
+        home_code = (request.POST.get("home_code") or "").strip()
+        away_code = (request.POST.get("away_code") or "").strip()
+        if not home_code or not away_code or home_code == away_code:
+            messages.error(request, "Selecciona dos equipos distintos.")
+            return redirect("competicion:manage_results")
+
+        home = Team.objects.filter(code=home_code).first()
+        away = Team.objects.filter(code=away_code).first()
+        if home is None or away is None:
+            messages.error(request, "Equipo no encontrado.")
+            return redirect("competicion:manage_results")
+
+        was_assigned = m.has_teams
+        existing_preds = Prediction.objects.filter(match=m).exists()
+
+        if was_assigned and existing_preds and request.POST.get("confirm_invalidate") != "1":
+            messages.error(
+                request,
+                "Este cruce ya tiene pronósticos. Marca la casilla de confirmación "
+                "para sobrescribir los equipos y borrar los pronósticos existentes.",
+            )
+            return redirect("competicion:manage_results")
+
+        if was_assigned and existing_preds:
+            Prediction.objects.filter(match=m).delete()
+
+        m.home = home
+        m.away = away
+        m.save(update_fields=["home", "away"])
+        messages.success(
+            request, f"Cruce actualizado · {home.name} vs {away.name}"
+        )
+        return redirect("competicion:manage_results")
