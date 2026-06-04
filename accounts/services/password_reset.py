@@ -19,8 +19,8 @@ from accounts.models import AuditLog, User
 from accounts.services.token_generator import token_generator
 
 SUBJECTS = {
-    "welcome": "[Porra26] Bienvenido a la porra del Mundial",
-    "reset": "[Porra26] Restablece tu contraseña",
+    "welcome": "Bienvenido a la porra del Mundial",
+    "reset": "Restablece tu contraseña",
 }
 
 
@@ -54,7 +54,7 @@ def send_password_reset_email(user, purpose: str, actor=None) -> None:
     message = EmailMultiAlternatives(
         subject=subject,
         body=text,
-        from_email=settings.DEFAULT_FROM_EMAIL,
+        from_email=settings.PASSWORD_RESET_FROM_EMAIL,
         to=[user.email],
     )
     message.attach_alternative(html, "text/html")

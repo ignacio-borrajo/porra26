@@ -29,7 +29,7 @@ def test_send_reset_envia_email_con_asunto_y_destinatario(alice):
     assert len(mail.outbox) == 1
     msg = mail.outbox[0]
     assert msg.to == ["alice@edisa.com"]
-    assert msg.subject == "[Porra26] Restablece tu contraseña"
+    assert msg.subject == "Restablece tu contraseña"
     assert "restablecer" in msg.body.lower() or "Restablece" in msg.body
 
 
@@ -38,8 +38,16 @@ def test_send_welcome_usa_otro_asunto_y_copy(alice):
 
     assert len(mail.outbox) == 1
     msg = mail.outbox[0]
-    assert msg.subject == "[Porra26] Bienvenido a la porra del Mundial"
+    assert msg.subject == "Bienvenido a la porra del Mundial"
     assert "bienvenido" in msg.body.lower() or "te han creado cuenta" in msg.body.lower()
+
+
+def test_send_usa_password_reset_from_email(alice, settings):
+    settings.PASSWORD_RESET_FROM_EMAIL = "El Jefe <eljefe@laporradeljefe.es>"
+    send_password_reset_email(alice, purpose="reset")
+
+    msg = mail.outbox[0]
+    assert msg.from_email == "El Jefe <eljefe@laporradeljefe.es>"
 
 
 def test_send_incluye_html_alternative(alice):
