@@ -96,13 +96,13 @@ def _draw_header_band(canvas, doc):
         canvas.rect(i * width / strips, y0, width / strips + 0.5, band_h, stroke=0, fill=1)
     canvas.setFillColor(colors.white)
     canvas.setFont("Helvetica-Bold", 18)
-    canvas.drawString(18 * mm, y0 + 16 * mm, "PORRA 26")
+    canvas.drawString(18 * mm, y0 + 16 * mm, "La Porra del Jefe")
     canvas.setFont("Helvetica", 12)
     canvas.drawString(18 * mm, y0 + 8 * mm, "Cierre de apuestas")
     # Pie
     canvas.setFillColor(HexColor("#555555"))
     canvas.setFont("Helvetica", 8)
-    footer = f"Generado el {timezone.localtime():%d %b %Y · %H:%M} · porra26.pythonanywhere.com"
+    footer = f"Generado el {timezone.localtime():%d %b %Y · %H:%M} · laporradeljefe.es"
     canvas.drawString(18 * mm, 10 * mm, footer)
     canvas.drawRightString(width - 18 * mm, 10 * mm, f"Página {doc.page}")
     canvas.restoreState()
