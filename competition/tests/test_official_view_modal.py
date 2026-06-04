@@ -96,6 +96,54 @@ def test_official_post_without_chain_redirects(client, grp):
 
 
 @pytest.mark.django_db
+def test_official_post_delete_clears_result(client, grp):
+    g = GestorFactory(must_change_password=False)
+    client.force_login(g)
+    m = MatchFactory(
+        round=grp,
+        home=TeamFactory(),
+        away=TeamFactory(),
+        kickoff=timezone.now() - timedelta(hours=3),
+        result_home=2,
+        result_away=1,
+    )
+
+    r = client.post(
+        reverse("competicion:official", args=[m.id]),
+        {"action": "delete"},
+    )
+
+    assert r.status_code == 302
+    assert r["Location"] == reverse("competicion:manage_results")
+    m.refresh_from_db()
+    assert m.result_home is None
+    assert m.result_away is None
+    assert m.finished_at is None
+    assert m.exact_points_applied is None
+
+
+@pytest.mark.django_db
+def test_official_modal_shows_delete_button_only_when_resolved(client, grp):
+    g = GestorFactory(must_change_password=False)
+    client.force_login(g)
+    m_open = _closed_match(grp)
+    m_done = MatchFactory(
+        round=grp,
+        home=TeamFactory(),
+        away=TeamFactory(),
+        kickoff=timezone.now() - timedelta(hours=3),
+        result_home=1,
+        result_away=0,
+    )
+
+    r_open = client.get(reverse("competicion:official", args=[m_open.id]))
+    r_done = client.get(reverse("competicion:official", args=[m_done.id]))
+
+    assert b"Borrar resultado" not in r_open.content
+    assert b"Borrar resultado" in r_done.content
+
+
+@pytest.mark.django_db
 def test_manage_results_finalize_link_uses_modal_url(client, grp):
     g = GestorFactory(must_change_password=False)
     client.force_login(g)
