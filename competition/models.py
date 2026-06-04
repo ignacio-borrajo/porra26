@@ -37,8 +37,23 @@ class Match(models.Model):
     round = models.ForeignKey(Round, on_delete=models.PROTECT, related_name="matches")
     group = models.CharField(max_length=20)
     matchday = models.PositiveSmallIntegerField(null=True, blank=True)
-    home = models.ForeignKey(Team, on_delete=models.PROTECT, related_name="home_matches")
-    away = models.ForeignKey(Team, on_delete=models.PROTECT, related_name="away_matches")
+    home = models.ForeignKey(
+        Team,
+        on_delete=models.PROTECT,
+        related_name="home_matches",
+        null=True,
+        blank=True,
+    )
+    away = models.ForeignKey(
+        Team,
+        on_delete=models.PROTECT,
+        related_name="away_matches",
+        null=True,
+        blank=True,
+    )
+    home_slot = models.CharField(max_length=12, blank=True)
+    away_slot = models.CharField(max_length=12, blank=True)
+    bracket_code = models.CharField(max_length=12, blank=True, null=True, unique=True)
     kickoff = models.DateTimeField()
     result_home = models.PositiveSmallIntegerField(null=True, blank=True)
     result_away = models.PositiveSmallIntegerField(null=True, blank=True)
