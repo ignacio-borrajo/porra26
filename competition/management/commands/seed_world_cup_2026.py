@@ -151,16 +151,22 @@ class Command(BaseCommand):
                     )
                 )
 
+        # IMPORTANTE: contar antes del set_rollback. Tras marcar la transacción
+        # para rollback, Django/Postgres prohíbe ejecutar más queries hasta
+        # cerrar el bloque atomic — SQLite es más permisivo, por eso este bug
+        # solo se manifestaba en producción.
+        teams_total = Team.objects.count()
+        groups_total = Match.objects.filter(round_id="groups").count()
+        ko_total = Match.objects.exclude(round_id="groups").count()
+
         if dry_run:
             transaction.set_rollback(True)
             self.stdout.write(self.style.NOTICE("DRY RUN — sin cambios persistidos"))
 
-        groups_total = Match.objects.filter(round_id="groups").count()
-        ko_total = Match.objects.exclude(round_id="groups").count()
         self.stdout.write(
             self.style.SUCCESS(
                 f"Equipos: +{created_t} creados, ~{updated_t} actualizados "
-                f"(total {Team.objects.count()}).\n"
+                f"(total {teams_total}).\n"
                 f"Grupos: +{created_g} creados, ~{updated_g} actualizados, "
                 f"={unchanged_g} sin cambios (total {groups_total}).\n"
                 f"KO: +{created_ko} creados, ~{updated_ko} actualizados, "
