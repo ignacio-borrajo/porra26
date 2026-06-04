@@ -1,5 +1,6 @@
-{% load avatar_extras %}
+{% load icons avatar_extras %}
 {% with first=rows.0 multi=rows|length %}
+{% if multi < 3 %}
 <div class="podium-slot podium-slot--{{ rank }}{% if multi > 1 %} podium-slot--multi{% endif %} pop">
   <div class="podium-medal" aria-hidden="true">
     {% if rank == 1 %}🥇{% elif rank == 2 %}🥈{% else %}🥉{% endif %}
@@ -27,4 +28,36 @@
     <span class="podium-rank-number">{% if multi > 1 %}={% endif %}{{ rank }}</span>
   </div>
 </div>
+{% else %}
+<div class="podium-slot podium-slot--{{ rank }} podium-slot--collapsed pop">
+  <div class="podium-medal" aria-hidden="true">
+    {% if rank == 1 %}🥇{% elif rank == 2 %}🥈{% else %}🥉{% endif %}
+  </div>
+  <button type="button"
+          class="podium-tied{% for r in rows %}{% if me and r.player_id == me.id %} is-me{% endif %}{% endfor %}"
+          aria-haspopup="dialog"
+          aria-expanded="false"
+          aria-label="Ver {{ multi }} jugadores empatados en {{ rank }}º">
+    <span class="podium-tied__icon" aria-hidden="true">{% icon "users" width=22 height=22 %}</span>
+    <span class="podium-tied__label display">Varios ({{ multi }})</span>
+    <div class="podium-tied__tooltip" role="dialog" aria-label="Empatados en {{ rank }}º">
+      <div class="podium-tied__head eyebrow">Empatados en ={{ rank }}º · {{ first.pts }} pts</div>
+      <ul class="podium-tied__list no-scrollbar">
+        {% for r in rows %}
+        <li class="podium-tied__item{% if me and r.player_id == me.id %} is-me{% endif %}">
+          {% with u=users|get_item:r.player_id %}
+            {% if u %}{% include "partials/_avatar.html" with u=u size=22 %}{% endif %}
+          {% endwith %}
+          <span>{% if me and r.player_id == me.id %}Tú{% else %}{{ r.name }}{% endif %}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </button>
+  <div class="podium-pts mono grad-text">{{ first.pts }}</div>
+  <div class="podium-pedestal podium-pedestal--{{ rank }}">
+    <span class="podium-rank-number">={{ rank }}</span>
+  </div>
+</div>
+{% endif %}
 {% endwith %}
