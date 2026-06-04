@@ -9,9 +9,7 @@ from django.shortcuts import render
 # proceso arranca con otra versión y los clientes detectan que el SW ha
 # cambiado.
 _VERSION = (
-    os.environ.get("GIT_SHA")
-    or os.environ.get("RAILWAY_GIT_COMMIT_SHA")
-    or str(int(time.time()))
+    os.environ.get("GIT_SHA") or os.environ.get("RAILWAY_GIT_COMMIT_SHA") or str(int(time.time()))
 )
 
 

@@ -1,4 +1,5 @@
 """Tests de la vista /manifest.webmanifest."""
+
 import json
 
 import pytest

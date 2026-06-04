@@ -1,4 +1,5 @@
 """Tests de la vista /service-worker.js."""
+
 import pytest
 
 

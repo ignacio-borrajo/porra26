@@ -8,6 +8,7 @@ Escribe en `static/img/pwa/`.
 Uso:
     python bin/generate_pwa_icons.py
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -55,7 +56,7 @@ def main() -> None:
         out_path = OUT_DIR / filename
         icon = render_icon(source, size, ratio)
         icon.save(out_path, format="PNG", optimize=True)
-        print(f"✔ {out_path.relative_to(ROOT)} ({size}×{size}, logo {int(ratio*100)}%)")
+        print(f"✔ {out_path.relative_to(ROOT)} ({size}×{size}, logo {int(ratio * 100)}%)")
 
 
 if __name__ == "__main__":
