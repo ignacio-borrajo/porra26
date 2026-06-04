@@ -7,6 +7,7 @@ from django.views import View
 from accounts.mixins import GestorRequiredMixin
 
 from .models import WinnerAnnouncement, WinnerAnnouncementSeen
+from .preview import build_preview
 
 
 class AnnouncementModalView(LoginRequiredMixin, View):
@@ -41,4 +42,11 @@ class AnnouncementSeenView(LoginRequiredMixin, View):
 
 class AnnouncementPreviewView(GestorRequiredMixin, View):
     def get(self, request):
-        return HttpResponse("preview")
+        scope = request.GET.get("scope", "matchday")
+        tied = request.GET.get("tied") == "1"
+        ann, winners = build_preview(scope, tied=tied, current_user=request.user)
+        return render(
+            request,
+            "announcements/_winner_modal.html",
+            {"announcement": ann, "preview": True, "preview_winners": winners},
+        )
