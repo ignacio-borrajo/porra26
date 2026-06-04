@@ -71,3 +71,29 @@ def resolve_slot(code: str) -> Team | None:
             return None  # empate 90': el gestor decide
         return match.home if match.result_home > match.result_away else match.away
     return None
+
+
+def propagate_after_match(match: Match) -> list[Match]:
+    """Rellena home/away en todos los partidos cuyos slots queden resolvibles
+    tras procesar `match`. Idempotente: solo escribe donde está a None."""
+    pending = (
+        Match.objects.filter(home__isnull=True).exclude(home_slot="")
+        | Match.objects.filter(away__isnull=True).exclude(away_slot="")
+    ).distinct()
+    updated: list[Match] = []
+    for m in pending:
+        update_fields: list[str] = []
+        if m.home_id is None and m.home_slot:
+            team = resolve_slot(m.home_slot)
+            if team is not None:
+                m.home = team
+                update_fields.append("home")
+        if m.away_id is None and m.away_slot:
+            team = resolve_slot(m.away_slot)
+            if team is not None:
+                m.away = team
+                update_fields.append("away")
+        if update_fields:
+            m.save(update_fields=update_fields)
+            updated.append(m)
+    return updated

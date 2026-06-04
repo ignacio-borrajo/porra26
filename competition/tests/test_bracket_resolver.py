@@ -4,7 +4,7 @@ import pytest
 from django.utils import timezone
 
 from competition.models import Match
-from competition.services.bracket import resolve_slot
+from competition.services.bracket import propagate_after_match, resolve_slot
 from competition.tests.factories import MatchFactory, RoundFactory, TeamFactory
 
 
@@ -141,3 +141,127 @@ def test_resolve_wm_returns_none_when_no_result():
 @pytest.mark.django_db
 def test_resolve_wm_unknown_code(db):
     assert resolve_slot("WM999") is None
+
+
+@pytest.mark.django_db
+def test_propagate_fills_r32_when_groups_a_and_b_close(groups_round):
+    """Al cerrar el grupo A, el R32 que dependía de 1A/2B se rellena
+    (si el grupo B ya estaba cerrado)."""
+    r32 = RoundFactory(id="r32", points=5, label="R32", short="R32", order=2)
+    esp = TeamFactory(code="ESP")
+    arg = TeamFactory(code="ARG")
+    fra = TeamFactory(code="FRA")
+    bra = TeamFactory(code="BRA")
+    ned = TeamFactory(code="NED")
+    ger = TeamFactory(code="GER")
+    bel = TeamFactory(code="BEL")
+    por = TeamFactory(code="POR")
+    # Grupo B ya cerrado: NED 1º, GER 2º
+    _played(groups_round, "B", ned, ger, 1, 0, matchday=1)
+    _played(groups_round, "B", bel, por, 0, 0, matchday=1)
+    _played(groups_round, "B", ned, bel, 1, 0, matchday=2)
+    _played(groups_round, "B", ger, por, 2, 0, matchday=2)
+    _played(groups_round, "B", ned, por, 3, 0, matchday=3)
+    _played(groups_round, "B", ger, bel, 1, 0, matchday=3)
+    # Grupo A: cerramos todos los partidos. ESP 1º, ARG 2º.
+    _played(groups_round, "A", esp, arg, 1, 0, matchday=1)
+    _played(groups_round, "A", fra, bra, 1, 0, matchday=1)
+    _played(groups_round, "A", arg, fra, 2, 0, matchday=2)
+    _played(groups_round, "A", esp, bra, 2, 0, matchday=2)
+    _played(groups_round, "A", arg, bra, 3, 0, matchday=3)
+    last = _played(groups_round, "A", esp, fra, 1, 0, matchday=3)
+
+    ko = MatchFactory(
+        round=r32,
+        group="R32",
+        matchday=None,
+        home=None,
+        away=None,
+        home_slot="1A",
+        away_slot="2B",
+        bracket_code="M73",
+        kickoff=timezone.now() + timedelta(days=10),
+    )
+
+    updated = propagate_after_match(last)
+    ko.refresh_from_db()
+    assert ko.home == esp
+    assert ko.away == ger
+    assert ko in updated
+
+
+@pytest.mark.django_db
+def test_propagate_is_idempotent_does_not_overwrite(groups_round):
+    """Si el gestor ya asignó manualmente un equipo, propagate no lo sobrescribe."""
+    r32 = RoundFactory(id="r32", points=5, label="R32", short="R32", order=2)
+    custom = TeamFactory(code="ZZZ")
+    ko = MatchFactory(
+        round=r32,
+        group="R32",
+        matchday=None,
+        home=custom,
+        away=None,
+        home_slot="1A",
+        away_slot="",
+        bracket_code="M74",
+        kickoff=timezone.now() + timedelta(days=10),
+    )
+    propagate_after_match(ko)
+    ko.refresh_from_db()
+    assert ko.home == custom
+
+
+@pytest.mark.django_db
+def test_resolve_match_hooks_propagation(groups_round):
+    """Confirmar un resultado debe invocar propagate y rellenar KO dependientes."""
+    from accounts.models import User
+
+    from competition.services.resolve import resolve_match
+
+    r32 = RoundFactory(id="r32", points=5, label="R32", short="R32", order=2)
+    esp = TeamFactory(code="ESP")
+    arg = TeamFactory(code="ARG")
+    fra = TeamFactory(code="FRA")
+    bra = TeamFactory(code="BRA")
+    ned = TeamFactory(code="NED")
+    ger = TeamFactory(code="GER")
+    bel = TeamFactory(code="BEL")
+    por = TeamFactory(code="POR")
+    _played(groups_round, "B", ned, ger, 1, 0, matchday=1)
+    _played(groups_round, "B", bel, por, 0, 0, matchday=1)
+    _played(groups_round, "B", ned, bel, 1, 0, matchday=2)
+    _played(groups_round, "B", ger, por, 2, 0, matchday=2)
+    _played(groups_round, "B", ned, por, 3, 0, matchday=3)
+    _played(groups_round, "B", ger, bel, 1, 0, matchday=3)
+    _played(groups_round, "A", esp, arg, 1, 0, matchday=1)
+    _played(groups_round, "A", fra, bra, 1, 0, matchday=1)
+    _played(groups_round, "A", arg, fra, 2, 0, matchday=2)
+    _played(groups_round, "A", esp, bra, 2, 0, matchday=2)
+    _played(groups_round, "A", arg, bra, 3, 0, matchday=3)
+    # Último partido del grupo A sin resolver todavía
+    last = MatchFactory(
+        round=groups_round,
+        group="A",
+        matchday=3,
+        home=esp,
+        away=fra,
+        kickoff=timezone.now() - timedelta(hours=1),
+    )
+    ko = MatchFactory(
+        round=r32,
+        group="R32",
+        matchday=None,
+        home=None,
+        away=None,
+        home_slot="1A",
+        away_slot="2B",
+        bracket_code="M75",
+        kickoff=timezone.now() + timedelta(days=10),
+    )
+
+    gestor = User.objects.create(email="g@x.es", is_gestor=True, name="G", is_active=True)
+    resolve_match(last, home=1, away=0, actor=gestor)
+
+    ko.refresh_from_db()
+    assert ko.home == esp
+    assert ko.away == ger
