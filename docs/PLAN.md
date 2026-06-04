@@ -131,6 +131,29 @@ Plan de implementación: [`docs/superpowers/plans/2026-06-01-cierre-apuestas-ema
 
 ---
 
+## Fase 8 — Recordatorios pre-cierre → Teams
+
+**Objetivo:** evitar que se olviden jugadores apostando. Publicar un mensaje en el chat de Teams 2 h y 30 min antes del cierre de cada partido con la lista de quienes aún no han apostado. Además, botón manual del gestor para forzarlo en cualquier momento.
+
+Spec: [`docs/superpowers/specs/2026-06-04-recordatorios-apuestas-design.md`](superpowers/specs/2026-06-04-recordatorios-apuestas-design.md).
+Plan: [`docs/superpowers/plans/2026-06-04-recordatorios-apuestas.md`](superpowers/plans/2026-06-04-recordatorios-apuestas.md).
+
+**Arquitectura distinta de Fase 7**: aquí el cron sí hace falta (la naturaleza del aviso es temporal, no on-demand). Pero **fuera de Railway**: GitHub Actions cron `*/15 * * * *` llama un endpoint Bearer del backend. Coste Railway = 0 cuando no hay trabajo.
+
+- [x] Modelo `BetsReminderLog` (kind ∈ {T_MINUS_4H, T_MINUS_2_5H, MANUAL}) + migración.
+- [x] Service `get_pending_bettors` y `matches_due_for_kind`.
+- [x] Service `send_reminder_email(match, kind)` con `EmailMultiAlternatives` (HTML + plain).
+- [x] Management command `send_match_reminders`.
+- [x] Endpoints `POST /api/recordatorios/disparar/` (cron) y `POST /api/recordatorios/<id>/enviar/` (botón gestor).
+- [x] UI en `/competicion/resultados/`: pill `🟠 N sin apostar` y botón `✉ Recordatorio` por partido upcoming.
+- [x] GitHub Actions workflow `.github/workflows/match-reminders.yml`.
+- [ ] Power Automate flow nuevo configurado (subject filter `[Porra26 RECORDATORIO]`).
+- [ ] Secrets `PORRA26_API_TOKEN` y `PORRA26_BASE_URL` configurados en GitHub.
+
+**Hecho cuando:** un partido entra en ventana T-4h y aparece el aviso en Teams listando los rezagados; el gestor también puede pulsar el botón desde Resultados y disparar uno manual.
+
+---
+
 ## Orden de prioridad si hay que recortar
 
 1. Login + Competición + pronósticos + clasificación (el corazón del producto).

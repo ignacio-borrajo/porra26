@@ -149,7 +149,77 @@ Cuando verifiques un dominio propio en Resend (ver `docs/DEPLOY_RAILWAY.md` §12
 2. En el trigger del flow, cambia `From` a `bot@tu-dominio`.
 3. En la regla de Outlook (paso 1), idem.
 
-## 9. Cuando lo migremos a un canal de Teams
+## 9. Flow de recordatorios pre-cierre (independiente del flow de cierre)
+
+Aparte del PDF de cierre, hay un **segundo flow** que publica avisos en Teams 2 h y 30 min antes de que se cierren las apuestas, listando a los rezagados (ver `docs/superpowers/specs/2026-06-04-recordatorios-apuestas-design.md`). Es independiente del flow descrito arriba — mismo buzón Outlook destino, mismo chat de Teams, distinto filtro de asunto y sin adjunto.
+
+### 9.1 Disparador externo: GitHub Actions
+
+El cron vive fuera de Railway, en `.github/workflows/match-reminders.yml`:
+
+```yaml
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+```
+
+Cada disparo hace `curl POST` a `https://laporradeljefe.es/competicion/api/recordatorios/disparar/` con un `Authorization: Bearer ${{ secrets.PORRA26_API_TOKEN }}`. El backend recorre las dos ventanas (T-4h, T-2.5h) y envía un email por cada partido con rezagados.
+
+**Secrets necesarios en GitHub** (Settings → Secrets and variables → Actions):
+- `PORRA26_API_TOKEN` → mismo valor que la env var `TEAMS_API_TOKEN` de Railway.
+- `PORRA26_BASE_URL` → `https://laporradeljefe.es`.
+
+Si el cron va lento (GitHub avisa de retrasos > 1 h en picos), usa `workflow_dispatch` para forzar disparo desde la pestaña Actions.
+
+### 9.2 El flow en Power Automate
+
+Solo **dos pasos**, mucho más simple que el de cierre porque el email no lleva adjunto.
+
+1. **Trigger** *When a new email arrives (V3)*:
+
+| Campo | Valor |
+|---|---|
+| Folder | `PORRA26` (el mismo del flow de cierre). |
+| From | `onboarding@resend.dev` (o el dominio verificado si lo tienes). |
+| Subject Filter | `[Porra26 RECORDATORIO]` — distinto del prefijo de cierre. |
+| Only with Attachments | **No**. |
+| Include Attachments | **No**. |
+
+2. **Acción** *Post message in a chat or channel*:
+
+| Campo | Valor |
+|---|---|
+| Post as | Flow bot |
+| Post in | Group chat |
+| Group chat | El mismo del flow de cierre. |
+| Message (Code view, HTML) | `@{triggerOutputs()?['body/Body']}` |
+
+El email de recordatorio se envía como `multipart/alternative` con HTML estructurado: PA reenvía ese HTML tal cual y Teams lo renderiza.
+
+### 9.3 Prueba manual
+
+Desde local con un partido en ventana T-4h:
+
+```bash
+railway run python manage.py send_match_reminders --match-id <id>
+```
+
+O forzar el endpoint directo con `curl`:
+
+```bash
+curl -fsS -X POST \
+  -H "Authorization: Bearer $PORRA26_API_TOKEN" \
+  https://laporradeljefe.es/competicion/api/recordatorios/disparar/
+```
+
+### 9.4 Verificación
+
+- **GitHub Actions**: pestaña Actions del repo → "Recordatorios de apuestas" → historial de ejecuciones.
+- **AuditLog en Django admin**: filas con `action="bets_reminder_sent"` muestran qué se envió, a quién y cuándo.
+- **BetsReminderLog**: una fila por `(match, kind)`. Si falta el log de una ventana esperada, no se envió (probablemente porque no había rezagados).
+
+## 10. Cuando lo migremos a un canal de Teams
 
 Si en el futuro queremos publicar en un canal (no en un chat de grupo), los archivos pasan a vivir en SharePoint en vez de OneDrive personal:
 

@@ -85,3 +85,25 @@ railway run python manage.py send_pending_closures
 # Envía solo uno
 railway run python manage.py send_pending_closures --match-id <id>
 ```
+
+## Verificar recordatorios pre-cierre
+
+Los recordatorios (2 h y 30 min antes del cierre) los dispara **GitHub Actions**, no Railway. La cadena: GHA cron `*/15` → `POST /competicion/api/recordatorios/disparar/` con Bearer → `send_reminder_email` → Resend → Outlook → Power Automate (flow distinto) → Teams. Detalles del flow en `docs/TEAMS_FLOW.md` §9.
+
+**Si un partido se cerró sin que llegara el aviso a Teams**, sigue esta cadena:
+
+1. **GitHub → Actions → Recordatorios de apuestas**: ¿el cron ejecutó cerca del momento esperado? Si hay un hueco grande (> 1 h), GHA estuvo lento — usa el botón `Run workflow` (workflow_dispatch) para forzar. Aunque sirve poco si el cierre ya pasó: el backend filtra los avisos tardíos.
+2. **AuditLog en Django admin**: filtra por `action="bets_reminder_sent"`. Si no hay entrada para ese partido, el envío nunca se ejecutó (probablemente porque GHA no disparó a tiempo o porque no había rezagados al disparar).
+3. **`BetsReminderLog` en admin**: filas por `(match, kind)`. Si está vacío es que el cron no llegó a la ventana.
+4. **Botón manual** en `/competicion/resultados/` (sección "Próximos"): si el partido aún no ha cerrado, pulsa **✉ Recordatorio** en su fila.
+5. **CLI desde Railway**:
+
+   ```bash
+   # Dry-run para ver qué se enviaría
+   railway run python manage.py send_match_reminders --dry-run
+
+   # Forzar envío para un match concreto
+   railway run python manage.py send_match_reminders --match-id <id> --kind T_MINUS_4H
+   ```
+
+El pill 🟠 N sin apostar junto al botón muestra cuántos jugadores quedan rezagados en cada momento, calculado en tiempo real al cargar la página.

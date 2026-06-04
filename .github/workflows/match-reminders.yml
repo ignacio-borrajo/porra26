@@ -1,0 +1,21 @@
+name: Recordatorios de apuestas
+
+on:
+  schedule:
+    # Cada 15 min. GitHub Actions cron puede retrasarse en picos de carga;
+    # el backend filtra avisos que llegan tarde (kickoff <= now+2h → no-op),
+    # así que el peor caso es un aviso que no se manda, no uno tardío inútil.
+    - cron: '*/15 * * * *'
+  # Permite disparar manualmente desde la pestaña Actions si el cron va lento.
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar recordatorios pendientes
+        run: |
+          curl --fail --silent --show-error --max-time 60 \
+            -X POST \
+            -H "Authorization: Bearer ${{ secrets.PORRA26_API_TOKEN }}" \
+            "${{ secrets.PORRA26_BASE_URL }}/competicion/api/recordatorios/disparar/"

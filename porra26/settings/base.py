@@ -111,3 +111,7 @@ else:
 # Destinatario del PDF de cierre. Power Automate suscribe este buzón y
 # republica el adjunto en el chat de Teams.
 TEAMS_DESTINATION_EMAIL = os.getenv("TEAMS_DESTINATION_EMAIL", "")
+# Prefijo del asunto para los emails de recordatorio pre-cierre. Un flow
+# distinto de Power Automate filtra por este prefijo y republica el cuerpo
+# del email (HTML) directamente en el chat de Teams.
+TEAMS_REMINDER_SUBJECT_PREFIX = os.getenv("TEAMS_REMINDER_SUBJECT_PREFIX", "[Porra26 RECORDATORIO]")

@@ -1,4 +1,5 @@
 import hashlib
+import logging
 from datetime import timedelta
 
 from django.contrib import messages
@@ -10,9 +11,13 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from competition.api.auth import require_teams_api_token
-from competition.models import BET_CLOSE_HOURS, BetsClosingReport, Match
+from competition.models import BET_CLOSE_HOURS, BetsClosingReport, BetsReminderLog, Match
 from competition.services.closing_email import send_closure_email
 from competition.services.closing_report import build_closing_pdf
+from competition.services.reminder_email import send_reminder_email
+from competition.services.reminders import matches_due_for_kind
+
+logger = logging.getLogger(__name__)
 
 
 def _match_payload(m: Match) -> dict:
@@ -112,5 +117,90 @@ def cierre_enviar(request, match_id: int):
         {
             "match_id": match.id,
             "sent_at": report.sent_at.isoformat() if report.sent_at else None,
+        }
+    )
+
+
+@require_teams_api_token
+@require_POST
+def recordatorios_disparar(request):
+    """Procesa las dos ventanas de aviso y dispara los pendientes.
+
+    Endpoint pensado para ser llamado por GitHub Actions cada 15 min. También
+    lo puede ejecutar un gestor logueado para forzar la verificación.
+    """
+    summary: dict[str, dict[str, int]] = {}
+    for kind in BetsReminderLog.AUTO_KINDS:
+        checked = sent = skipped_empty = errors = 0
+        for match in matches_due_for_kind(kind):
+            checked += 1
+            try:
+                result = send_reminder_email(match, kind)
+            except Exception as exc:  # noqa: BLE001
+                errors += 1
+                logger.exception(
+                    "recordatorios_disparar: error en match=%s kind=%s: %s",
+                    match.id,
+                    kind,
+                    exc,
+                )
+                continue
+            if result is None:
+                skipped_empty += 1
+            else:
+                sent += 1
+        summary[kind] = {
+            "checked": checked,
+            "sent": sent,
+            "skipped_empty": skipped_empty,
+            "errors": errors,
+        }
+    return JsonResponse(summary)
+
+
+@require_teams_api_token
+@require_POST
+def recordatorio_enviar(request, match_id: int):
+    """Envía manualmente el recordatorio (kind=MANUAL) para un match.
+
+    Disparado desde el botón del gestor en /competicion/resultados/.
+    - 200 con ``sent=true`` si se envió.
+    - 200 con ``sent=false`` y ``reason="no_pending"`` si no quedaban rezagados.
+    - 409 si las apuestas ya están cerradas.
+    - Si el cliente espera HTML (form submit del botón), redirige a
+      ``manage_results`` con un ``messages`` flash. Si es API/Bearer, JSON.
+    """
+    match = get_object_or_404(Match, pk=match_id)
+    wants_html = "text/html" in request.META.get("HTTP_ACCEPT", "")
+    try:
+        log = send_reminder_email(match, BetsReminderLog.KIND_MANUAL)
+    except ValueError as exc:
+        if wants_html:
+            messages.error(request, f"No se pudo enviar: {exc}")
+            return redirect(reverse("competicion:manage_results"))
+        return JsonResponse({"detail": str(exc)}, status=409)
+
+    if log is None:
+        if wants_html:
+            messages.info(
+                request,
+                f"Sin rezagados para {match.home.name} vs {match.away.name}: "
+                "ya han apostado todos.",
+            )
+            return redirect(reverse("competicion:manage_results"))
+        return JsonResponse({"sent": False, "reason": "no_pending"})
+
+    if wants_html:
+        messages.success(
+            request,
+            f"Recordatorio enviado · {match.home.name} vs {match.away.name} "
+            f"({log.pending_count} rezagados)",
+        )
+        return redirect(reverse("competicion:manage_results"))
+    return JsonResponse(
+        {
+            "sent": True,
+            "pending_count": log.pending_count,
+            "sent_at": log.sent_at.isoformat(),
         }
     )
