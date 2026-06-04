@@ -1246,10 +1246,12 @@ img.avatar { object-fit: cover; }
 .podium-tied__label { font-size: 13px; font-weight: 700; line-height: 1.1; }
 
 .podium-tied__tooltip {
-  /* position:fixed permite escapar de ancestros con overflow:hidden/auto
-     (como .leaderboard-aside o .rankings-clas__board). JS coloca top/left
-     desde el botón antes de mostrar; placement="top" para invertir cuando
-     no hay sitio debajo del botón. */
+  /* El JS desconecta este nodo del .podium-tied en init y lo reinserta
+     como hijo de <body> para que ningún ancestro transformado (.pop
+     deja un transform residual al terminar la animación) convierta el
+     position:fixed en posicionamiento relativo al slot. Las coordenadas
+     top/left las pone el JS desde getBoundingClientRect del botón;
+     placement="top" cuando no hay sitio debajo. */
   position: fixed;
   top: 0;
   left: 0;
@@ -1276,17 +1278,13 @@ img.avatar { object-fit: cover; }
 .podium-tied__tooltip[data-placement="top"] {
   transform: translate(-50%, calc(-100% + 4px));
 }
-.podium-tied:hover .podium-tied__tooltip,
-.podium-tied:focus-within .podium-tied__tooltip,
-.podium-tied[data-open="true"] .podium-tied__tooltip {
+.podium-tied__tooltip[data-show] {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
   transform: translate(-50%, 0);
 }
-.podium-tied:hover .podium-tied__tooltip[data-placement="top"],
-.podium-tied:focus-within .podium-tied__tooltip[data-placement="top"],
-.podium-tied[data-open="true"] .podium-tied__tooltip[data-placement="top"] {
+.podium-tied__tooltip[data-show][data-placement="top"] {
   transform: translate(-50%, -100%);
 }
 
