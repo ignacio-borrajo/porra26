@@ -469,7 +469,11 @@ a.match-card:hover {
    horizontalmente si no cabe; el bloque de usuario se compacta. */
 .topbar { position: sticky; top: 0; }
 @media (max-width: 860px) {
-  .topbar { flex-wrap: wrap; row-gap: 10px; }
+  .topbar { flex-wrap: wrap; row-gap: 10px; padding-left: 14px !important; padding-right: 14px !important; }
+  /* Envoltorio scrolleable con máscara de gradiente en los bordes para
+     indicar que hay más navegación a izquierda/derecha. La máscara solo
+     se aplica a los lados donde realmente hay overflow gracias a las
+     variables --fade-left / --fade-right que actualiza el JS. */
   .topbar-nav {
     order: 3;
     width: 100%;
@@ -478,11 +482,51 @@ a.match-card:hover {
     flex-wrap: nowrap;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    --fade-left: 0;
+    --fade-right: 0;
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      black calc(var(--fade-left) * 24px),
+      black calc(100% - var(--fade-right) * 24px),
+      transparent 100%);
+    mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      black calc(var(--fade-left) * 24px),
+      black calc(100% - var(--fade-right) * 24px),
+      transparent 100%);
   }
   .topbar-nav::-webkit-scrollbar { display: none; }
-  .topbar-nav .nav-item { flex-shrink: 0; }
-  .topbar-actions { margin-left: auto; }
+  .topbar-nav .nav-item { flex-shrink: 0; scroll-snap-align: start; padding: 9px 12px; font-size: 13px; }
+  .topbar-actions { margin-left: auto; gap: 8px !important; }
   .topbar-user-meta { display: none; }
+}
+
+/* Compactación extra en móviles muy estrechos: el chip "Bote" pasa a
+   mostrar solo el icono + valor sin tanto padding, y los botones se
+   reducen para que avatar + tema + salir + bote no se peleen por el
+   espacio con el logo. */
+@media (max-width: 480px) {
+  .topbar .logo img { height: 36px !important; }
+  .topbar-actions .chip { padding: 4px 7px !important; font-size: 10.5px; }
+  .topbar-actions [data-theme-toggle] {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 10px !important;
+  }
+  .topbar-actions form .btn-ghost {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 10px !important;
+  }
+}
+/* En los móviles más pequeños (<360px) escondemos el chip del bote
+   para no romper el layout; los datos del bote siguen accesibles
+   desde la pantalla de inicio y desde Reglas. */
+@media (max-width: 360px) {
+  .topbar-actions .chip { display: none; }
 }
 
 /* Estadísticas: apila gráfico y comparativa en pantallas estrechas */
@@ -510,9 +554,20 @@ a.match-card:hover {
   .table-row { min-width: 720px; }
 }
 
-/* Selectores de ronda/jornada: permitir wrap si no caben */
+/* Selectores de ronda/jornada: envuelven en lugar de desbordar.
+   `.round-selector` lo asignan los nav que usamos en el dashboard y
+   gestión de resultados; los matchday selectors se identifican por
+   aria-label. En móvil reducimos algo la tipografía del chip para
+   que tres-cuatro fases entren en la misma fila. */
 .glass[aria-label="Jornadas"],
 .round-selector { flex-wrap: wrap; }
+@media (max-width: 560px) {
+  .round-selector .chip,
+  .glass[aria-label="Jornadas"] .chip {
+    font-size: 10.5px;
+    padding: 5px 9px;
+  }
+}
 
 /* Scroll interno sin barras visibles (gráfico de evolución con todos los jugadores) */
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
