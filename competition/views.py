@@ -256,13 +256,42 @@ class ManageResultsView(GestorRequiredMixin, View):
             else:
                 upcoming.append(m)
 
-        from competition.models import BetsClosingReport
+        from django.db.models import Count
+
+        from accounts.models import User
+        from competition.models import BetsClosingReport, BetsReminderLog, Prediction
 
         reports = list(
             BetsClosingReport.objects.select_related(
                 "match__home", "match__away", "match__round"
             ).order_by("-match__kickoff")
         )
+
+        # Pill "N sin apostar" y tooltip del último recordatorio — solo para
+        # upcoming (los únicos donde el cierre todavía no pasó).
+        upcoming_ids = [m.id for m in upcoming]
+        pending_counts: dict[int, int] = {}
+        last_reminders: dict[int, BetsReminderLog] = {}
+        if upcoming_ids:
+            expected_total = User.objects.filter(is_active=True, is_jugador=True).count()
+            bets_per_match = dict(
+                Prediction.objects.filter(
+                    match_id__in=upcoming_ids,
+                    player__is_active=True,
+                    player__is_jugador=True,
+                )
+                .values_list("match_id")
+                .annotate(c=Count("id"))
+                .values_list("match_id", "c")
+            )
+            pending_counts = {
+                mid: max(0, expected_total - bets_per_match.get(mid, 0)) for mid in upcoming_ids
+            }
+            for log in BetsReminderLog.objects.filter(match_id__in=upcoming_ids).order_by(
+                "match_id", "-sent_at"
+            ):
+                if log.match_id not in last_reminders:
+                    last_reminders[log.match_id] = log
 
         return render(
             request,
@@ -277,6 +306,8 @@ class ManageResultsView(GestorRequiredMixin, View):
                 "upcoming": upcoming,
                 "done": done,
                 "reports": reports,
+                "pending_counts": pending_counts,
+                "last_reminders": last_reminders,
             },
         )
 
