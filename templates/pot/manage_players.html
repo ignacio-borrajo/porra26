@@ -28,6 +28,7 @@
         <strong>{{ p.name }}</strong>
         {% if p.is_gestor %}<span class="chip" style="padding:1px 6px;font-size:9px;color:var(--c-cyan);border-color:oklch(from var(--c-cyan) l c h / 0.4)">gestor</span>{% endif %}
         {% if not p.is_jugador %}<span class="chip" style="padding:1px 6px;font-size:9px;color:var(--text-faint)">no juega</span>{% endif %}
+        {% if p.must_change_password and not p.last_login %}<span class="chip" style="padding:1px 6px;font-size:9px;color:var(--c-yellow);border-color:oklch(from var(--c-yellow) l c h / 0.4);background:oklch(from var(--c-yellow) l c h / 0.10)">Pendiente de activar</span>{% endif %}
       </div>
       <div class="mono" style="font-size:11px;color:var(--text-faint)">{{ p.email }}</div>
     </div>
@@ -44,6 +45,7 @@
     <span class="chip {% if p.is_active %}chip-open{% endif %}">{{ p.is_active|yesno:"Activo,Baja" }}</span>
     <div style="display:flex;gap:6px">
       <button class="btn btn-ghost" data-modal-url="{% url 'pot:player_edit' p.id %}" style="width:32px;height:32px;padding:0" title="Editar">{% icon "edit" width=14 %}</button>
+      <button class="btn btn-ghost" type="button" data-resend-invite-url="{% url 'pot:player_resend_invite' p.id %}" style="width:32px;height:32px;padding:0" title="Reenviar email de acceso">{% icon "mail" width=14 %}</button>
       <button class="btn btn-ghost" data-modal-url="{% url 'pot:player_set_password' p.id %}" style="width:32px;height:32px;padding:0" title="Cambiar contraseña">{% icon "lock" width=14 %}</button>
       <form method="post" action="{% url 'pot:player_toggle_active' p.id %}" style="display:inline">
         {% csrf_token %}

@@ -30,9 +30,16 @@
         <label class="check">{{ form.is_gestor }} Es gestor</label>
       </div>
       {% if not player %}
-      <p class="mono" style="margin:0;font-size:11.5px;color:var(--text-faint);padding:10px 12px;border-radius:10px;background:var(--surface-hi)">
-        Se generará una contraseña temporal que el jugador deberá cambiar al primer acceso. Sin recuperación automática: la restablece un gestor.
-      </p>
+      <label class="check" style="display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--text-dim);padding:10px 12px;border-radius:10px;background:var(--surface-hi);cursor:pointer">
+        {{ form.enviar_bienvenida }}
+        <span>
+          <strong style="color:var(--text);font-weight:600">Enviar email de bienvenida</strong>
+          <br>
+          <span class="mono" style="font-size:11.5px;color:var(--text-faint)">
+            El jugador recibirá un enlace para establecer su contraseña (caduca en 7 días). Si lo desmarcas, se generará una contraseña temporal que tendrás que compartirle a mano.
+          </span>
+        </span>
+      </label>
       {% endif %}
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px">
