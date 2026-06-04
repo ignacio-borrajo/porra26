@@ -44,9 +44,7 @@ def _group_standings(group: str) -> list[GroupRow] | None:
             elif gf == ga:
                 s["pts"] += 1
 
-    rows = [
-        GroupRow(team=s["team"], pts=s["pts"], gd=s["gd"], gf=s["gf"]) for s in stats.values()
-    ]
+    rows = [GroupRow(team=s["team"], pts=s["pts"], gd=s["gd"], gf=s["gf"]) for s in stats.values()]
     rows.sort(key=lambda r: (-r.pts, -r.gd, -r.gf, r.team.code))
     return rows
 

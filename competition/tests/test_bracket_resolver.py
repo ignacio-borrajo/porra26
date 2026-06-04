@@ -3,7 +3,6 @@ from datetime import timedelta
 import pytest
 from django.utils import timezone
 
-from competition.models import Match
 from competition.services.bracket import propagate_after_match, resolve_slot
 from competition.tests.factories import MatchFactory, RoundFactory, TeamFactory
 
@@ -215,7 +214,6 @@ def test_propagate_is_idempotent_does_not_overwrite(groups_round):
 def test_resolve_match_hooks_propagation(groups_round):
     """Confirmar un resultado debe invocar propagate y rellenar KO dependientes."""
     from accounts.models import User
-
     from competition.services.resolve import resolve_match
 
     r32 = RoundFactory(id="r32", points=5, label="R32", short="R32", order=2)

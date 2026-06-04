@@ -132,9 +132,7 @@ class PredictView(LoginRequiredMixin, View):
         if not request.user.is_jugador:
             raise PermissionDenied("Solo los jugadores pueden pronosticar.")
         if not m.has_teams:
-            messages.error(
-                request, "Este cruce aún no tiene los dos equipos definidos."
-            )
+            messages.error(request, "Este cruce aún no tiene los dos equipos definidos.")
             return redirect("competicion:dashboard")
         if not m.editable:
             messages.error(request, "Las apuestas para este partido están cerradas.")
@@ -457,7 +455,5 @@ class AssignTeamsView(GestorRequiredMixin, View):
         m.home = home
         m.away = away
         m.save(update_fields=["home", "away"])
-        messages.success(
-            request, f"Cruce actualizado · {home.name} vs {away.name}"
-        )
+        messages.success(request, f"Cruce actualizado · {home.name} vs {away.name}")
         return redirect("competicion:manage_results")

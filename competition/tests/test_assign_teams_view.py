@@ -94,7 +94,7 @@ def test_assign_teams_correction_invalidates_predictions(client, gestor, jugador
 def test_assign_teams_correction_requires_confirmation(client, gestor, jugador, r32):
     esp = TeamFactory(code="ESP")
     arg = TeamFactory(code="ARG")
-    fra = TeamFactory(code="FRA")
+    TeamFactory(code="FRA")
     ko = MatchFactory(
         round=r32,
         group="R32",
