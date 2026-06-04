@@ -2,12 +2,15 @@ from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth import login, logout, update_session_auth_hash
+from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponseBadRequest
+from django.core.exceptions import ValidationError
+from django.http import HttpResponseBadRequest, HttpResponseNotFound
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import View
+from django.views.generic import TemplateView
 
 from competition.models import BET_CLOSE_HOURS, Match
 from competition.services.standings import standings
@@ -15,6 +18,12 @@ from pot.models import Payment, Prize
 
 from .forms import ChangePasswordForm, LoginForm, ProfileForm
 from .models import AuditLog, User
+from .services.password_reset import (
+    _client_ip,
+    send_password_reset_email,
+    validate_reset_token,
+)
+from .validators import validate_email_domain
 
 
 class LoginView(View):
@@ -159,3 +168,97 @@ class MyAccountView(LoginRequiredMixin, View):
         )
         messages.success(request, "Contraseña actualizada.")
         return redirect("accounts:my_account")
+
+
+class PasswordResetRequestView(View):
+    template_name = "accounts/password_reset_request.html"
+
+    def get(self, request):
+        return render(request, self.template_name)
+
+    def post(self, request):
+        email = (request.POST.get("email") or "").strip().lower()
+        encontrado = False
+        user = None
+        domain_ok = bool(email and "@" in email)
+        if domain_ok:
+            try:
+                validate_email_domain(email)
+            except ValidationError:
+                domain_ok = False
+        if domain_ok:
+            try:
+                user = User.objects.get(email__iexact=email, is_active=True)
+                encontrado = True
+            except User.DoesNotExist:
+                pass
+        AuditLog.objects.create(
+            actor=None,
+            action="password_reset_requested",
+            target_type="user",
+            target_id=str(user.id) if user else "",
+            payload={
+                "email_intentado": email,
+                "encontrado": encontrado,
+                "ip": _client_ip(request),
+                "purpose": "reset",
+            },
+        )
+        if user:
+            send_password_reset_email(user, purpose="reset")
+        request.session["password_reset_email"] = email
+        return redirect("accounts:password_reset_sent")
+
+
+class PasswordResetSentView(TemplateView):
+    template_name = "accounts/password_reset_sent.html"
+
+    def get_context_data(self, **kw):
+        ctx = super().get_context_data(**kw)
+        ctx["email"] = self.request.session.pop("password_reset_email", "")
+        return ctx
+
+
+class PasswordResetConfirmView(View):
+    template_name = "accounts/password_reset_confirm.html"
+    invalid_template_name = "accounts/password_reset_invalid.html"
+
+    def dispatch(self, request, uidb64, purpose, token, *args, **kwargs):
+        if purpose not in ("reset", "welcome"):
+            return HttpResponseNotFound()
+        self.user = validate_reset_token(uidb64, purpose, token)
+        self.purpose = purpose
+        if self.user is None:
+            return render(request, self.invalid_template_name, status=410)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request):
+        return render(
+            request,
+            self.template_name,
+            {"purpose": self.purpose, "form": SetPasswordForm(self.user)},
+        )
+
+    def post(self, request):
+        form = SetPasswordForm(self.user, request.POST)
+        if not form.is_valid():
+            return render(
+                request,
+                self.template_name,
+                {"purpose": self.purpose, "form": form},
+            )
+        user = form.save()
+        user.must_change_password = False
+        user.save(update_fields=["must_change_password"])
+        AuditLog.objects.create(
+            actor=None,
+            action="password_reset_completed",
+            target_type="user",
+            target_id=str(user.id),
+            payload={"purpose": self.purpose, "ip": _client_ip(request)},
+        )
+        return redirect("accounts:password_reset_complete")
+
+
+class PasswordResetCompleteView(TemplateView):
+    template_name = "accounts/password_reset_complete.html"

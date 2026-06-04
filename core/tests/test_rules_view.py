@@ -124,7 +124,7 @@ def test_rules_renders_tiebreak_and_access(client):
     assert "Más puntos" in content
     assert "Más marcadores exactos" in content
     assert "Acceso a la app" in content
-    assert "Sin recuperación automática" in content
+    assert "Recuperación por email" in content
     assert "Última actualización del reglamento" in content
 
 

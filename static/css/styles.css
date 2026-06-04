@@ -1561,6 +1561,10 @@ img.avatar { object-fit: cover; }
   gap: clamp(28px, 5vw, 72px);
   align-items: center;
 }
+.login-body--narrow {
+  grid-template-columns: minmax(0, 460px);
+  justify-content: center;
+}
 .login-form-card {
   border-radius: 28px;
   padding: clamp(28px, 3vw, 44px);

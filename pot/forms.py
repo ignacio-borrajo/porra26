@@ -7,6 +7,12 @@ from accounts.validators import validate_email_domain
 
 
 class PlayerForm(forms.ModelForm):
+    enviar_bienvenida = forms.BooleanField(
+        required=False,
+        initial=True,
+        label="Enviar email de bienvenida",
+    )
+
     class Meta:
         model = User
         fields = ["name", "email", "dept", "sede", "puesto", "is_jugador", "is_gestor"]

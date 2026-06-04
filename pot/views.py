@@ -8,6 +8,7 @@ from django.views import View
 
 from accounts.mixins import GestorRequiredMixin
 from accounts.models import AuditLog, User
+from accounts.services.password_reset import send_password_reset_email
 from competition.models import Round
 from pot.forms import (
     PlayerForm,
@@ -69,6 +70,7 @@ class PlayerFormView(GestorRequiredMixin, View):
 
         is_new = obj is None
         if is_new:
+            enviar_bienvenida = form.cleaned_data.get("enviar_bienvenida", True)
             temp = generate_temp_password()
             user = form.save(commit=False)
             user.set_password(temp)
@@ -80,15 +82,22 @@ class PlayerFormView(GestorRequiredMixin, View):
                 action="player_created",
                 target_type="user",
                 target_id=str(user.id),
-                payload={},
+                payload={"welcome_email": bool(enviar_bienvenida)},
             )
-            request.session[f"temp_pw_{user.id}"] = temp
-            target = reverse("pot:player_reveal", args=[user.id])
+            if enviar_bienvenida:
+                send_password_reset_email(user, purpose="welcome", actor=request.user)
+                messages.success(
+                    request, f"Jugador creado. Email de bienvenida enviado a {user.email}."
+                )
+                target = reverse("pot:manage_players")
+            else:
+                request.session[f"temp_pw_{user.id}"] = temp
+                messages.success(request, "Jugador creado.")
+                target = reverse("pot:player_reveal", args=[user.id])
         else:
             form.save()
+            messages.success(request, "Jugador guardado.")
             target = reverse("pot:manage_players")
-
-        messages.success(request, "Jugador guardado." if not is_new else "Jugador creado.")
         if self._is_modal(request):
             response = HttpResponse(status=200)
             response["X-Modal-Redirect"] = target
@@ -111,6 +120,17 @@ class ResetPasswordView(GestorRequiredMixin, View):
             payload={},
         )
         return render(request, "pot/_password_reveal.html", {"player": u, "temp_password": temp})
+
+
+class PlayerResendInviteView(GestorRequiredMixin, View):
+    def post(self, request, pk):
+        user = get_object_or_404(User, pk=pk, is_active=True)
+        if user.must_change_password and user.last_login is None:
+            purpose = "welcome"
+        else:
+            purpose = "reset"
+        send_password_reset_email(user, purpose=purpose, actor=request.user)
+        return JsonResponse({"ok": True, "email": user.email, "purpose": purpose})
 
 
 class PasswordRevealView(GestorRequiredMixin, View):

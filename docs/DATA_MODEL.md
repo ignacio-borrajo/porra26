@@ -152,8 +152,9 @@ Solo cuentan jugadores `active = true`. El podio destaca el top 3 (puede tener m
 ## 5. Reglas de autenticación
 
 - Acceso con **correo corporativo + contraseña**.
-- **No hay recuperación automática de contraseña.** El restablecimiento lo hace un **gestor**.
-- Al **dar de alta** un jugador se genera una **contraseña temporal**; en el primer acceso (`mustChangePassword`) debe cambiarla.
+- **Recuperación por email autoservicio.** Desde el login, el jugador introduce su correo y recibe un enlace firmado con token de **24 h** (uso único: cambiar la contraseña invalida el enlace). Si el correo no existe, no se distingue del caso "existe" (anti-enumeración).
+- **Altas con email de bienvenida.** El gestor crea el jugador y, por defecto, marca "Enviar email de bienvenida": el usuario recibe un enlace con token de **7 días** para establecer su propia contraseña sin pasar por una temporal. Si desmarca el check, el flujo legacy de contraseña temporal sigue disponible.
+- **Fallback del gestor.** El botón candado en la tabla de jugadores permite fijar la contraseña a mano (caso "no le llega el email"). El botón mail reenvía el welcome/reset según el estado del jugador.
 - Dos flags independientes: `is_jugador` (Competición, Estadísticas, Rankings, Mi perfil) e `is_gestor` (todo lo anterior + Jugadores + Resultados + Premios + Auditoría). Pueden coexistir o estar ambos a `false` (usuario administrativo invisible en el juego).
 
 ---
@@ -165,7 +166,7 @@ Solo cuentan jugadores `active = true`. El podio destaca el top 3 (puede tener m
 | Guardar pronóstico | jugador | Crea/actualiza su `Prediction` si el partido está abierto. Toast de confirmación. |
 | Confirmar resultado oficial | gestor | Fija `resultHome/Away`, marca `done`, **recalcula `earned`** de todos los pronósticos y la clasificación. |
 | Editar resultado | gestor | Permite corregir un resultado ya confirmado y recalcular. |
-| Alta de jugador | gestor | Crea `Player` con contraseña temporal. |
+| Alta de jugador | gestor | Crea `Player` y opcionalmente envía email de bienvenida (token 7d). Si no marca el check, genera contraseña temporal a la vieja usanza. |
 | Editar jugador | gestor | Modifica nombre, correo, departamento, rol, pago. |
 | Marcar pago | gestor | `paid = true/false`. Afecta al total del bote. |
 | Dar de baja / reactivar | gestor | `active = false/true`. Los inactivos no cuentan en la clasificación. |
