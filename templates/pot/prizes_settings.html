@@ -150,5 +150,52 @@
       <button class="btn btn-primary" type="submit">Guardar premios y puntos</button>
     </div>
   </form>
+
+  {% if request.user.is_gestor %}
+  <section class="glass" style="padding:24px;border-radius:var(--r-lg);display:flex;flex-direction:column;gap:14px">
+    <header style="display:flex;flex-direction:column;gap:4px">
+      <span class="eyebrow">Herramientas · vista previa</span>
+      <h2 style="margin:0;font-family:Sora,sans-serif;font-weight:700;font-size:20px">Previsualizar modal de ganador</h2>
+      <p style="color:var(--text-dim);margin:0;font-size:13px">
+        Abre el modal de celebración con tu usuario como ganador. No marca nada ni avisa a nadie.
+      </p>
+    </header>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end">
+      <label style="display:flex;flex-direction:column;gap:4px">
+        <span class="eyebrow">Tipo</span>
+        <select id="preview-scope" class="input">
+          <option value="matchday">Jornada de grupos</option>
+          <option value="round">Ronda eliminatoria</option>
+          <option value="global">Campeón del Mundial</option>
+        </select>
+      </label>
+      <label style="display:flex;flex-direction:column;gap:4px">
+        <span class="eyebrow">Modo</span>
+        <select id="preview-tied" class="input">
+          <option value="0">Ganador único</option>
+          <option value="1">Empate (2 ganadores)</option>
+        </select>
+      </label>
+      <button type="button" class="btn btn-primary" id="preview-open">Previsualizar</button>
+    </div>
+  </section>
+  {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% if request.user.is_gestor %}
+{% load static %}
+<script type="module">
+  import { openModal } from "{% static 'js/modal.js' %}";
+  const btn = document.getElementById("preview-open");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      const scope = document.getElementById("preview-scope").value;
+      const tied = document.getElementById("preview-tied").value;
+      openModal(`{% url 'announcements:preview' %}?scope=${scope}&tied=${tied}`);
+    });
+  }
+</script>
+{% endif %}
 {% endblock %}

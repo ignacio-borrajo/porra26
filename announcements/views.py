@@ -4,7 +4,10 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views import View
 
+from accounts.mixins import GestorRequiredMixin
+
 from .models import WinnerAnnouncement, WinnerAnnouncementSeen
+from .preview import build_preview
 
 
 class AnnouncementModalView(LoginRequiredMixin, View):
@@ -35,3 +38,15 @@ class AnnouncementSeenView(LoginRequiredMixin, View):
         if next_ann is not None:
             resp["X-Modal-Next"] = reverse("announcements:modal", args=[next_ann.id])
         return resp
+
+
+class AnnouncementPreviewView(GestorRequiredMixin, View):
+    def get(self, request):
+        scope = request.GET.get("scope", "matchday")
+        tied = request.GET.get("tied") == "1"
+        ann, winners = build_preview(scope, tied=tied, current_user=request.user)
+        return render(
+            request,
+            "announcements/_winner_modal.html",
+            {"announcement": ann, "preview": True, "preview_winners": winners},
+        )

@@ -1,7 +1,12 @@
 <section class="glass pop winner-modal"
          role="dialog" aria-modal="true" aria-labelledby="winner-title"
-         data-announcement-id="{{ announcement.id }}"
-         data-seen-url="{% url 'announcements:seen' announcement.id %}">
+         {% if preview %}
+           data-preview="1"
+         {% else %}
+           data-announcement-id="{{ announcement.id }}"
+           data-seen-url="{% url 'announcements:seen' announcement.id %}"
+         {% endif %}>
+  {% if preview %}<span class="winner-preview-badge">Vista previa</span>{% endif %}
   <button type="button" class="modal-x" data-modal-close aria-label="Cerrar">×</button>
   <div class="winner-trophy" aria-hidden="true">🏆</div>
   <h2 id="winner-title" class="winner-title">{{ announcement.title }}</h2>
@@ -16,17 +21,30 @@
     </p>
   {% endif %}
   <div class="winner-list">
-    {% for w in announcement.winners.all %}
-      <div class="winner-card">
-        {% include "partials/_avatar.html" with u=w size=64 %}
-        <div class="winner-name">{{ w.name }}</div>
-      </div>
-    {% endfor %}
+    {% if preview %}
+      {% for w in preview_winners %}
+        <div class="winner-card">
+          {% include "partials/_avatar.html" with u=w size=64 %}
+          <div class="winner-name">{{ w.name }}</div>
+        </div>
+      {% endfor %}
+    {% else %}
+      {% for w in announcement.winners.all %}
+        <div class="winner-card">
+          {% include "partials/_avatar.html" with u=w size=64 %}
+          <div class="winner-name">{{ w.name }}</div>
+        </div>
+      {% endfor %}
+    {% endif %}
   </div>
   <p class="winner-subtitle">
     {% if announcement.tied %}Empate en la cima. ¡Bien jugado!{% else %}¡Enhorabuena!{% endif %}
   </p>
   <div class="winner-actions">
-    <button type="button" class="btn btn-primary" data-winner-confirm>¡Felicidades!</button>
+    {% if preview %}
+      <button type="button" class="btn btn-primary" data-modal-close>Cerrar vista previa</button>
+    {% else %}
+      <button type="button" class="btn btn-primary" data-winner-confirm>¡Felicidades!</button>
+    {% endif %}
   </div>
 </section>

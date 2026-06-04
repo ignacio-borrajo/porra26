@@ -297,3 +297,15 @@ def test_prizes_post_no_scoring_audit_when_no_change(client):
         },
     )
     assert not AuditLog.objects.filter(action="scoring_changed").exists()
+
+
+@pytest.mark.django_db
+def test_prizes_page_has_preview_widget_for_gestor(client):
+    client.force_login(GestorFactory(must_change_password=False))
+    r = client.get(reverse("pot:prizes"))
+    html = r.content.decode()
+    assert "Previsualizar modal de ganador" in html
+    assert 'id="preview-scope"' in html
+    assert 'id="preview-tied"' in html
+    assert 'id="preview-open"' in html
+    assert reverse("announcements:preview") in html
