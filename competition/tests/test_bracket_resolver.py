@@ -103,3 +103,41 @@ def test_resolve_unknown_slot_returns_none(db):
     assert resolve_slot("XYZ") is None
     assert resolve_slot("") is None
     assert resolve_slot("4A") is None
+
+
+@pytest.mark.django_db
+def test_resolve_wm_returns_winner_in_90():
+    r32 = RoundFactory(id="r32", points=5, label="R32", short="R32", order=2)
+    esp = TeamFactory(code="ESP")
+    arg = TeamFactory(code="ARG")
+    _played(r32, "R32", esp, arg, 2, 1, matchday=None, bracket_code="M49")
+    assert resolve_slot("WM49") == esp
+
+
+@pytest.mark.django_db
+def test_resolve_wm_returns_none_on_draw():
+    r32 = RoundFactory(id="r32", points=5, label="R32", short="R32", order=2)
+    esp = TeamFactory(code="ESP")
+    arg = TeamFactory(code="ARG")
+    _played(r32, "R32", esp, arg, 1, 1, matchday=None, bracket_code="M50")
+    assert resolve_slot("WM50") is None
+
+
+@pytest.mark.django_db
+def test_resolve_wm_returns_none_when_no_result():
+    r32 = RoundFactory(id="r32", points=5, label="R32", short="R32", order=2)
+    MatchFactory(
+        round=r32,
+        group="R32",
+        matchday=None,
+        home=TeamFactory(code="ESP"),
+        away=TeamFactory(code="ARG"),
+        bracket_code="M51",
+        kickoff=timezone.now() + timedelta(days=1),
+    )
+    assert resolve_slot("WM51") is None
+
+
+@pytest.mark.django_db
+def test_resolve_wm_unknown_code(db):
+    assert resolve_slot("WM999") is None
