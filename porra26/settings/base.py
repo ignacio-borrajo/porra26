@@ -94,6 +94,10 @@ RULES_UPDATED_AT = date(2026, 6, 1)
 
 TEAMS_API_TOKEN = os.getenv("TEAMS_API_TOKEN", "")
 
+# URL pública del portal. La usan los servicios que generan enlaces absolutos
+# en emails (recordatorios de partidos, recuperación de contraseña, etc.).
+SITE_URL = os.getenv("SITE_URL", "https://laporradeljefe.es")
+
 # Email (SMTP) — usado por el management command `send_pending_closures` y
 # por las vistas que adjuntan PDFs. Si EMAIL_HOST está vacío caemos al
 # backend de consola para no fallar en entornos sin SMTP configurado.

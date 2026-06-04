@@ -16,8 +16,7 @@ from competition.models import BET_CLOSE_HOURS, BetsReminderLog, Match
 from competition.services.reminders import get_pending_bettors
 
 DEFAULT_SUBJECT_PREFIX = "[Porra26 RECORDATORIO]"
-SITE_URL = "https://laporradeljefe.es"
-COMPETICION_URL = f"{SITE_URL}/competicion/"
+COMPETICION_URL = f"{settings.SITE_URL}/competicion/"
 MAX_NAMES_IN_BODY = 30
 
 
