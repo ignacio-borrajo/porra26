@@ -86,9 +86,7 @@ class GroupRankingsView(LoginRequiredMixin, View):
                 "id", flat=True
             )
         )
-        ctx = build_general_context(
-            request.user, request.GET.get("scope"), player_ids=player_ids
-        )
+        ctx = build_general_context(request.user, request.GET.get("scope"), player_ids=player_ids)
         ctx.update(
             {
                 "dim": dim,
