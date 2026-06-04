@@ -88,7 +88,7 @@ def test_predictions_open_md1_when_editable(setup_two_md):
 
 
 @pytest.mark.django_db
-def test_predictions_open_md2_blocked_by_gate(setup_two_md):
+def test_predictions_open_md2_without_gate(setup_two_md):
     grp, (a, b), (c, d) = setup_two_md
     with freeze_time("2026-06-10 10:00:00", tz_offset=0):
         Match.objects.create(
@@ -108,7 +108,7 @@ def test_predictions_open_md2_blocked_by_gate(setup_two_md):
             kickoff=timezone.now() + timedelta(days=8),
         )
         assert m2.editable is True
-        assert m2.predictions_open is False
+        assert m2.predictions_open is True
 
 
 @pytest.mark.django_db
@@ -125,3 +125,54 @@ def test_predictions_open_false_when_not_editable(setup_two_md):
         )
         assert m.editable is False
         assert m.predictions_open is False
+
+
+@pytest.mark.django_db
+def test_match_without_teams_is_pending_teams():
+    r32 = Round.objects.create(id="r32", label="R32", short="R32", points=5, order=2)
+    with freeze_time("2026-07-01 10:00:00", tz_offset=0):
+        m = Match.objects.create(
+            round=r32,
+            group="R32",
+            matchday=None,
+            home=None,
+            away=None,
+            home_slot="1A",
+            away_slot="2B",
+            bracket_code="M73",
+            kickoff=timezone.now() + timedelta(days=10),
+        )
+        assert m.has_teams is False
+        assert m.status == "pending_teams"
+        assert m.editable is False
+        assert m.predictions_open is False
+
+
+@pytest.mark.django_db
+def test_match_with_only_home_is_pending_teams():
+    r32 = Round.objects.create(id="r32", label="R32", short="R32", points=5, order=2)
+    home = Team.objects.create(code="HOM", name="Home", flag="🏳️")
+    with freeze_time("2026-07-01 10:00:00", tz_offset=0):
+        m = Match.objects.create(
+            round=r32,
+            group="R32",
+            matchday=None,
+            home=home,
+            away=None,
+            home_slot="",
+            away_slot="2B",
+            bracket_code="M74",
+            kickoff=timezone.now() + timedelta(days=10),
+        )
+        assert m.has_teams is False
+        assert m.status == "pending_teams"
+
+
+@pytest.mark.django_db
+def test_match_with_both_teams_uses_normal_status(setup_match):
+    grp, esp, arg = setup_match
+    with freeze_time("2026-06-11 10:00:00", tz_offset=0):
+        m = _match(grp, esp, arg, timezone.now() + timedelta(days=1))
+        assert m.has_teams is True
+        assert m.status == "open"
+        assert m.editable is True

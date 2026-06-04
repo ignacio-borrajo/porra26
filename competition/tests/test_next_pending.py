@@ -80,13 +80,15 @@ def test_excludes_live_match(grp):
 
 
 @pytest.mark.django_db
-def test_excludes_locked_matchday(grp):
+def test_next_pending_ignores_matchday_order(grp):
+    """Sin gate de jornada: el siguiente pendiente es siempre el de kickoff más
+    próximo, independientemente de la jornada."""
     u = UserFactory(must_change_password=False)
-    MatchFactory(round=grp, matchday=1, kickoff=_now() + timedelta(days=2))
-    m2 = MatchFactory(round=grp, matchday=2, kickoff=_now() + timedelta(days=3))
-    assert next_pending_match(u) != m2
-    j1 = MatchFactory(round=grp, matchday=1, kickoff=_now() + timedelta(days=1))
-    assert next_pending_match(u) == j1
+    m1_md1 = MatchFactory(round=grp, matchday=1, kickoff=_now() + timedelta(days=2))
+    MatchFactory(round=grp, matchday=2, kickoff=_now() + timedelta(days=3))
+    assert next_pending_match(u) == m1_md1
+    j1_earlier = MatchFactory(round=grp, matchday=1, kickoff=_now() + timedelta(days=1))
+    assert next_pending_match(u) == j1_earlier
 
 
 @pytest.mark.django_db

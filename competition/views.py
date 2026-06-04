@@ -13,11 +13,6 @@ from competition.services.standings import standings
 
 class CompetitionView(LoginRequiredMixin, View):
     def get(self, request):
-        from competition.services.matchday_gate import (
-            is_matchday_open,
-            previous_matchday_close_info,
-        )
-
         rounds = list(Round.objects.all())
         active_id = request.GET.get("round", rounds[0].id if rounds else "groups")
 
@@ -54,24 +49,9 @@ class CompetitionView(LoginRequiredMixin, View):
             else:
                 open_matches.append(m)
 
-        matchday_state = []
-        locked = False
-        locked_last_match = None
-        locked_last_kickoff = None
-        if active_md is not None:
-            for md in matchdays:
-                matchday_state.append(
-                    {
-                        "matchday": md,
-                        "open": is_matchday_open(active_id, md),
-                        "active": md == active_md,
-                    }
-                )
-            locked = not is_matchday_open(active_id, active_md)
-            if locked:
-                locked_last_match, locked_last_kickoff = previous_matchday_close_info(
-                    active_id, active_md
-                )
+        matchday_state = [
+            {"matchday": md, "open": True, "active": md == active_md} for md in matchdays
+        ]
 
         rows = standings()[:50]
         my_row = next((r for r in rows if r.player_id == request.user.id), None)
@@ -114,9 +94,6 @@ class CompetitionView(LoginRequiredMixin, View):
                 "matchdays": matchdays,
                 "active_matchday": active_md,
                 "matchday_state": matchday_state,
-                "locked": locked,
-                "locked_last_match": locked_last_match,
-                "locked_last_kickoff": locked_last_kickoff,
                 "open_matches": open_matches,
                 "live_matches": live_matches,
                 "done_matches": done_matches,
@@ -154,21 +131,17 @@ class PredictView(LoginRequiredMixin, View):
         m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
         if not request.user.is_jugador:
             raise PermissionDenied("Solo los jugadores pueden pronosticar.")
+        if not m.has_teams:
+            messages.error(request, "Este cruce aún no tiene los dos equipos definidos.")
+            return redirect("competicion:dashboard")
         if not m.editable:
             messages.error(request, "Las apuestas para este partido están cerradas.")
             return redirect("competicion:dashboard")
-        from competition.services.matchday_gate import is_matchday_open
         from competition.services.predictions import (
             next_pending_match,
             pending_matches_count,
         )
 
-        if not is_matchday_open(m.round_id, m.matchday):
-            messages.error(
-                request,
-                f"La Jornada {m.matchday} se desbloqueará cuando termine la Jornada {m.matchday - 1}.",
-            )
-            return redirect("competicion:dashboard")
         pred = Prediction.objects.filter(player=request.user, match=m).first()
         pending_count = pending_matches_count(request.user)
         has_next = next_pending_match(request.user, after_match=m) is not None
@@ -188,7 +161,7 @@ class PredictView(LoginRequiredMixin, View):
         if not request.user.is_jugador:
             raise PermissionDenied("Solo los jugadores pueden pronosticar.")
         if not m.predictions_open:
-            raise PermissionDenied("Apuestas cerradas o jornada bloqueada.")
+            raise PermissionDenied("Apuestas cerradas.")
         try:
             h = max(0, int(request.POST.get("home", 0)))
             a = max(0, int(request.POST.get("away", 0)))
@@ -246,15 +219,21 @@ class ManageResultsView(GestorRequiredMixin, View):
             {"matchday": md, "open": True, "active": md == active_md} for md in matchdays
         ]
 
-        pending, upcoming, done = [], [], []
+        pending, upcoming, done, pending_teams_matches = [], [], [], []
         for m in ms:
             st = m.status
             if st == "done":
                 done.append(m)
             elif st in ("live", "closed"):
                 pending.append(m)
+            elif st == "pending_teams":
+                pending_teams_matches.append(m)
             else:
                 upcoming.append(m)
+
+        from competition.models import Team
+
+        all_teams = list(Team.objects.order_by("name"))
 
         from django.db.models import Count
 
@@ -305,6 +284,8 @@ class ManageResultsView(GestorRequiredMixin, View):
                 "pending": pending,
                 "upcoming": upcoming,
                 "done": done,
+                "pending_teams_matches": pending_teams_matches,
+                "all_teams": all_teams,
                 "reports": reports,
                 "pending_counts": pending_counts,
                 "last_reminders": last_reminders,
@@ -434,3 +415,45 @@ class MatchDetailView(LoginRequiredMixin, View):
                 "round_points": round_points,
             },
         )
+
+
+class AssignTeamsView(GestorRequiredMixin, View):
+    """Asigna o corrige los dos equipos de un cruce KO. Si el partido ya tenía
+    equipos asignados y existen pronósticos, requiere `confirm_invalidate=1` y
+    borra los pronósticos para no quedar inconsistentes con los nuevos equipos."""
+
+    def post(self, request, match_id):
+        from competition.models import Team
+
+        m = get_object_or_404(Match, pk=match_id)
+        home_code = (request.POST.get("home_code") or "").strip()
+        away_code = (request.POST.get("away_code") or "").strip()
+        if not home_code or not away_code or home_code == away_code:
+            messages.error(request, "Selecciona dos equipos distintos.")
+            return redirect("competicion:manage_results")
+
+        home = Team.objects.filter(code=home_code).first()
+        away = Team.objects.filter(code=away_code).first()
+        if home is None or away is None:
+            messages.error(request, "Equipo no encontrado.")
+            return redirect("competicion:manage_results")
+
+        was_assigned = m.has_teams
+        existing_preds = Prediction.objects.filter(match=m).exists()
+
+        if was_assigned and existing_preds and request.POST.get("confirm_invalidate") != "1":
+            messages.error(
+                request,
+                "Este cruce ya tiene pronósticos. Marca la casilla de confirmación "
+                "para sobrescribir los equipos y borrar los pronósticos existentes.",
+            )
+            return redirect("competicion:manage_results")
+
+        if was_assigned and existing_preds:
+            Prediction.objects.filter(match=m).delete()
+
+        m.home = home
+        m.away = away
+        m.save(update_fields=["home", "away"])
+        messages.success(request, f"Cruce actualizado · {home.name} vs {away.name}")
+        return redirect("competicion:manage_results")

@@ -43,25 +43,25 @@ def test_prediction_unique_player_match(setup):
 
 
 @pytest.mark.django_db
-def test_predict_post_rejected_when_matchday_locked(client, setup):
+def test_predict_post_rejected_when_match_has_no_teams(client, setup):
+    """Si un cruce KO no tiene los dos equipos asignados aún, POST está prohibido."""
     u, m = setup
     u.must_change_password = False
     u.save()
     client.force_login(u)
     with freeze_time("2026-06-09 10:00:00", tz_offset=0):
-        # MD1 (m) con kickoff aún en el futuro: bloquea MD2
-        m.kickoff = timezone.now() + timedelta(days=2)
-        m.save()
-        x1 = Team.objects.create(code="X1", name="Equipo X1", flag="🏳️")
-        x2 = Team.objects.create(code="X2", name="Equipo X2", flag="🏳️")
-        m2 = Match.objects.create(
-            round=m.round,
-            group="A",
-            matchday=2,
-            home=x1,
-            away=x2,
+        r32 = m.round
+        ko = Match.objects.create(
+            round=r32,
+            group="R32",
+            matchday=None,
+            home=None,
+            away=None,
+            home_slot="1A",
+            away_slot="2B",
+            bracket_code="M73",
             kickoff=timezone.now() + timedelta(days=10),
         )
-        r = client.post(reverse("competicion:predict", args=[m2.id]), {"home": 1, "away": 0})
+        r = client.post(reverse("competicion:predict", args=[ko.id]), {"home": 1, "away": 0})
         assert r.status_code == 403
-        assert not m2.predictions.filter(player=u).exists()
+        assert not ko.predictions.filter(player=u).exists()

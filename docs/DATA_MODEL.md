@@ -122,17 +122,20 @@ sino:
 
 ## 3. Estados del partido (derivados)
 
-Calculados a partir de `kickoff`, el momento actual y el resultado. El cierre de apuestas es **2 horas antes del saque**: `closeAt = kickoff − 2h`.
+Calculados a partir de `kickoff`, el momento actual, el resultado y la asignación de equipos. Las apuestas de un partido se abren **cuando se conocen los dos equipos** (en grupos todos los partidos están disponibles desde el día 1; en KO cada cruce aparece cuando la ronda anterior lo determina) y se cierran **2 horas antes del saque**: `closeAt = kickoff − 2h`.
 
 | Estado | Condición | UI |
 |--------|-----------|-----|
-| `open` | `now < closeAt` | apuestas abiertas; "Cierra {hora}" |
+| `pending_teams` | `home` o `away` sin asignar todavía (cruce KO pendiente) | tarjeta con placeholders ("1º Grupo A"), no apostable |
+| `open` | `now < closeAt` y ambos equipos asignados | apuestas abiertas; "Cierra {hora}" |
 | `closing` | `closeAt − 2h ≤ now < closeAt` (última franja, prototipo usa <2h) | cuenta atrás visible, punto pulsante |
 | `closed` | `closeAt ≤ now < kickoff` | "Apuestas cerradas", sin resultado |
 | `live` | `kickoff ≤ now` y sin resultado oficial | marcador en directo, halo/punto rojo |
 | `done` | resultado oficial confirmado | marcador final + puntos obtenidos |
 
-> En el prototipo el estado viene fijado en los datos mock; en producción **debe derivarse** de los tiempos y del resultado. Solo se puede crear/editar un pronóstico mientras el partido esté `open` o `closing` (es decir, `now < closeAt`).
+> En el prototipo el estado viene fijado en los datos mock; en producción **debe derivarse** de los tiempos, del resultado y de si los dos equipos están asignados. Solo se puede crear/editar un pronóstico mientras el partido esté `open` o `closing` (es decir, ambos equipos conocidos y `now < closeAt`).
+
+> **Cruces KO con slots.** Los partidos eliminatorios se modelan con `home_slot`/`away_slot` (`"1A"`, `"2B"`, `"WM73"`…) y un `bracket_code` propio. Al confirmar el resultado oficial de un partido, el servicio `competition.services.bracket.propagate_after_match` rellena automáticamente los `home`/`away` de los siguientes cruces cuyos dos slots queden resolvibles. El gestor puede asignar manualmente cualquier cruce desde "Resultados → Cruce pendiente".
 
 ---
 

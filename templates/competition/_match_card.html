@@ -1,5 +1,32 @@
 {% load icons %}
+{% load competition_extras %}
 {% with st=match.status %}
+{% if st == 'pending_teams' %}
+<div class="match-card glass" style="cursor:default;opacity:.85">
+  <div class="match-card-head">
+    <span class="eyebrow">{% if match.group|length <= 1 %}Grupo {{ match.group }}{% else %}{{ match.group }}{% endif %}</span>
+    <span class="chip" style="color:var(--text-dim);opacity:.85">Por definir</span>
+  </div>
+  <div class="match-card-teams">
+    <div class="team-side">
+      <span class="team-flag">🏳️</span>
+      <strong class="team-name display">{{ match.home_slot|slot_label }}</strong>
+    </div>
+    <div class="match-score"><span class="match-vs display">VS</span></div>
+    <div class="team-side">
+      <span class="team-flag">🏳️</span>
+      <strong class="team-name display">{{ match.away_slot|slot_label }}</strong>
+    </div>
+  </div>
+  <div class="match-card-meta">
+    {% icon "cal" width=13 height=13 %}
+    <span class="mono">{{ match.kickoff|date:"D j M · H:i" }}</span>
+  </div>
+  <div class="match-card-foot">
+    <span class="match-card-foot-info">Equipos pendientes</span>
+  </div>
+</div>
+{% else %}
 {% if match.predictions_open and request.user.is_jugador %}
 <a href="{% url 'competicion:predict' match.id %}" data-modal-url="{% url 'competicion:predict' match.id %}" class="match-card glass rise{% if st == 'closing' %} match-card-closing{% endif %}">
 {% elif match.editable %}
@@ -76,11 +103,8 @@
       <span class="chip chip-accent">
         {% icon "edit" width=11 height=11 %} Pronosticar
       </span>
-    {% elif match.editable %}
-      <span class="chip" style="opacity:.7">
-        🔒 Jornada bloqueada
-      </span>
     {% endif %}
   </div>
 </a>
+{% endif %}
 {% endwith %}

@@ -37,8 +37,23 @@ class Match(models.Model):
     round = models.ForeignKey(Round, on_delete=models.PROTECT, related_name="matches")
     group = models.CharField(max_length=20)
     matchday = models.PositiveSmallIntegerField(null=True, blank=True)
-    home = models.ForeignKey(Team, on_delete=models.PROTECT, related_name="home_matches")
-    away = models.ForeignKey(Team, on_delete=models.PROTECT, related_name="away_matches")
+    home = models.ForeignKey(
+        Team,
+        on_delete=models.PROTECT,
+        related_name="home_matches",
+        null=True,
+        blank=True,
+    )
+    away = models.ForeignKey(
+        Team,
+        on_delete=models.PROTECT,
+        related_name="away_matches",
+        null=True,
+        blank=True,
+    )
+    home_slot = models.CharField(max_length=12, blank=True)
+    away_slot = models.CharField(max_length=12, blank=True)
+    bracket_code = models.CharField(max_length=12, blank=True, null=True, unique=True)
     kickoff = models.DateTimeField()
     result_home = models.PositiveSmallIntegerField(null=True, blank=True)
     result_away = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -61,10 +76,16 @@ class Match(models.Model):
         return self.result_home is not None and self.result_away is not None
 
     @property
+    def has_teams(self) -> bool:
+        return self.home_id is not None and self.away_id is not None
+
+    @property
     def status(self) -> str:
         now = timezone.now()
         if self.has_result:
             return "done"
+        if not self.has_teams:
+            return "pending_teams"
         close_at = self.kickoff - timedelta(hours=BET_CLOSE_HOURS)
         if now >= self.kickoff:
             return "live"
@@ -76,16 +97,12 @@ class Match(models.Model):
 
     @property
     def editable(self) -> bool:
-        return self.status in ("open", "closing")
+        return self.has_teams and self.status in ("open", "closing")
 
     @property
     def predictions_open(self) -> bool:
-        """True solo si el partido es editable Y su jornada está desbloqueada."""
-        if not self.editable:
-            return False
-        from competition.services.matchday_gate import is_matchday_open
-
-        return is_matchday_open(self.round_id, self.matchday)
+        """True si el partido es editable. Ya no depende del gate de jornada."""
+        return self.editable
 
     @property
     def teams_slug(self) -> str:
