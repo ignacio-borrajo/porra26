@@ -22,7 +22,7 @@ Aplicación web **interna de empresa** para una porra (quiniela) del **Mundial F
 - **Cierre de apuestas:** 2 horas antes del saque (`kickoff − 2h`). Después no se puede crear ni editar el pronóstico.
 - **Estados de partido:** `open` → `closing` (<2 h, cuenta atrás) → `closed` → `live` → `done`.
 - **Bote:** aportación por jugador (10 €), premios para el top 3. El gestor marca quién ha pagado.
-- **Auth:** correo corporativo + contraseña. **Sin auto-recuperación**: la contraseña la restablece un gestor. Altas crean contraseña temporal.
+- **Auth:** correo corporativo + contraseña. **Recuperación por email autoservicio** (token 24h). Altas pueden enviar **email de bienvenida** (token 7d) para que el jugador establezca su contraseña, o quedar con contraseña fijada por el gestor.
 
 ## Estructura de pantallas
 
