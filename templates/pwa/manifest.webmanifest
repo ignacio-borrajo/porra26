@@ -1,6 +1,6 @@
 {% load static %}{
-  "name": "PORRA 26 · Mundial 2026",
-  "short_name": "PORRA 26",
+  "name": "La Porra del Jefe · Mundial 2026",
+  "short_name": "La Porra del Jefe",
   "description": "Porra interna del Mundial FIFA 2026.",
   "lang": "es-ES",
   "dir": "ltr",

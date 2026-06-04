@@ -29,8 +29,8 @@ def test_manifest_is_valid_json(client):
 def test_manifest_has_required_fields(client):
     response = client.get("/manifest.webmanifest")
     data = json.loads(response.content)
-    assert data["name"] == "PORRA 26 · Mundial 2026"
-    assert data["short_name"] == "PORRA 26"
+    assert data["name"] == "La Porra del Jefe · Mundial 2026"
+    assert data["short_name"] == "La Porra del Jefe"
     assert data["start_url"] == "/"
     assert data["scope"] == "/"
     assert data["display"] == "standalone"

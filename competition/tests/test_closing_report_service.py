@@ -103,7 +103,7 @@ def test_pdf_contains_match_header():
     pdf = build_closing_pdf(match)
     with pdfplumber.open(io.BytesIO(pdf)) as doc:
         text = "\n".join(page.extract_text() or "" for page in doc.pages)
-    assert "PORRA 26" in text
+    assert "La Porra del Jefe" in text
     assert "Cierre de apuestas" in text
     assert "España" in text
     assert "Argentina" in text
