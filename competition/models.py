@@ -130,3 +130,30 @@ class BetsClosingReport(models.Model):
 
     def __str__(self):
         return f"ClosingReport(match={self.match_id}, sent={self.sent_at is not None})"
+
+
+class BetsReminderLog(models.Model):
+    KIND_T_MINUS_4H = "T_MINUS_4H"
+    KIND_T_MINUS_2_5H = "T_MINUS_2_5H"
+    KIND_MANUAL = "MANUAL"
+    KIND_CHOICES = [
+        (KIND_T_MINUS_4H, "2 h antes del cierre"),
+        (KIND_T_MINUS_2_5H, "30 min antes del cierre"),
+        (KIND_MANUAL, "Manual"),
+    ]
+    AUTO_KINDS = (KIND_T_MINUS_4H, KIND_T_MINUS_2_5H)
+
+    match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name="reminder_logs")
+    kind = models.CharField(max_length=20, choices=KIND_CHOICES)
+    sent_at = models.DateTimeField()
+    pending_count = models.PositiveSmallIntegerField()
+    pending_names = models.JSONField(default=list)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["match", "kind"], name="uniq_reminder_per_match_kind"),
+        ]
+        indexes = [models.Index(fields=["sent_at"])]
+
+    def __str__(self):
+        return f"ReminderLog(match={self.match_id}, kind={self.kind}, sent={self.sent_at})"
