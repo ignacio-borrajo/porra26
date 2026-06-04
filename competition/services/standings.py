@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
 
 from django.db.models import Count, F, Q, Sum
@@ -21,13 +22,24 @@ class StandingRow:
     trend: str = "flat"  # "up" | "down" | "flat"
 
 
-def standings(round_id: str | None = None, matchday: int | None = None) -> list[StandingRow]:
-    """Clasificación general o limitada a una ronda y/o jornada.
+def standings(
+    round_id: str | None = None,
+    matchday: int | None = None,
+    player_ids: Iterable[int] | None = None,
+) -> list[StandingRow]:
+    """Clasificación general, opcionalmente acotada por ronda/jornada/subconjunto de jugadores.
 
     Con `round_id`/`matchday` solo se suman los puntos de las predicciones cuyo
     partido cae dentro del scope. Para esos scopes locales no se calculan
     `streak` ni `trend` (no aportan información útil de una sola jornada/ronda).
+    Con `player_ids`, los resultados se limitan a esos jugadores y las
+    posiciones se recalculan desde 1.
     """
+    if player_ids is not None:
+        player_ids = list(player_ids)
+        if not player_ids:
+            return []
+
     scoped = round_id is not None or matchday is not None
     qs = Prediction.objects.filter(
         player__is_active=True, player__is_jugador=True, earned__isnull=False
@@ -36,6 +48,8 @@ def standings(round_id: str | None = None, matchday: int | None = None) -> list[
         qs = qs.filter(match__round_id=round_id)
     if matchday is not None:
         qs = qs.filter(match__matchday=matchday)
+    if player_ids is not None:
+        qs = qs.filter(player_id__in=player_ids)
 
     rows = list(
         qs.values("player_id", "player__name", "player__email").annotate(
@@ -46,6 +60,9 @@ def standings(round_id: str | None = None, matchday: int | None = None) -> list[
     )
 
     seen = {r["player_id"] for r in rows}
+    extras_qs = User.objects.filter(is_active=True, is_jugador=True).exclude(id__in=seen)
+    if player_ids is not None:
+        extras_qs = extras_qs.filter(id__in=player_ids)
     extras = [
         {
             "player_id": u.id,
@@ -55,7 +72,7 @@ def standings(round_id: str | None = None, matchday: int | None = None) -> list[
             "hits": 0,
             "exact_hits": 0,
         }
-        for u in User.objects.filter(is_active=True, is_jugador=True).exclude(id__in=seen)
+        for u in extras_qs
     ]
     merged = list(rows) + extras
     merged.sort(
@@ -66,8 +83,8 @@ def standings(round_id: str | None = None, matchday: int | None = None) -> list[
         streaks: dict[int, int] = {}
         trends: dict[int, str] = {}
     else:
-        player_ids = [r["player_id"] for r in merged]
-        streaks = _compute_streaks(player_ids)
+        merged_player_ids = [r["player_id"] for r in merged]
+        streaks = _compute_streaks(merged_player_ids)
         trends = _compute_trends(merged)
 
     key_counts: dict[tuple[int, int, int], int] = {}

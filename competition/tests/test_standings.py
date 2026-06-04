@@ -322,3 +322,76 @@ def test_trend_up_when_position_improved_after_last_match():
     leader_row = next(r for r in s if r.name == "Leader")
     assert chaser_row.trend == "up"
     assert leader_row.trend == "down"
+
+
+@pytest.mark.django_db
+def test_standings_player_ids_filters_to_subset():
+    groups = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    ana = UserFactory(name="Ana", email="a@e.com")
+    luis = UserFactory(name="Luis", email="l@e.com")
+    zoe = UserFactory(name="Zoe", email="z@e.com")
+    m1 = MatchFactory(round=groups, result_home=1, result_away=0)
+    PredictionFactory(player=ana, match=m1, home=1, away=0, earned=3)
+    PredictionFactory(player=luis, match=m1, home=0, away=1, earned=0)
+    PredictionFactory(player=zoe, match=m1, home=1, away=0, earned=3)
+
+    rows = standings(player_ids=[ana.id, zoe.id])
+    ids = [r.player_id for r in rows]
+    assert ana.id in ids
+    assert zoe.id in ids
+    assert luis.id not in ids
+
+
+@pytest.mark.django_db
+def test_standings_player_ids_recomputes_positions_from_one():
+    groups = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    leader = UserFactory(name="Leader", email="lead@e.com")
+    mid = UserFactory(name="Mid", email="mid@e.com")
+    bottom = UserFactory(name="Bot", email="bot@e.com")
+    m1 = MatchFactory(round=groups, result_home=1, result_away=0)
+    PredictionFactory(player=leader, match=m1, home=1, away=0, earned=3)
+    PredictionFactory(player=mid, match=m1, home=1, away=2, earned=1)
+    PredictionFactory(player=bottom, match=m1, home=0, away=1, earned=0)
+
+    rows = standings(player_ids=[mid.id, bottom.id])
+    by_name = {r.name: r for r in rows}
+    assert by_name["Mid"].position == 1
+    assert by_name["Bot"].position == 2
+
+
+@pytest.mark.django_db
+def test_standings_player_ids_empty_returns_empty():
+    RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    UserFactory(name="Ana", email="a@e.com")
+    rows = standings(player_ids=[])
+    assert rows == []
+
+
+@pytest.mark.django_db
+def test_standings_player_ids_combined_with_scope():
+    grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    ana = UserFactory(name="Ana", email="a@e.com")
+    luis = UserFactory(name="Luis", email="l@e.com")
+    m_j1 = MatchFactory(round=grp, matchday=1, result_home=1, result_away=0)
+    m_j2 = MatchFactory(round=grp, matchday=2, result_home=0, result_away=0)
+    PredictionFactory(player=ana, match=m_j1, home=1, away=0, earned=3)
+    PredictionFactory(player=ana, match=m_j2, home=0, away=0, earned=3)
+    PredictionFactory(player=luis, match=m_j1, home=1, away=0, earned=3)
+    PredictionFactory(player=luis, match=m_j2, home=0, away=0, earned=3)
+
+    rows = standings(round_id="groups", matchday=1, player_ids=[ana.id])
+    assert len(rows) == 1
+    assert rows[0].name == "Ana"
+    assert rows[0].pts == 3
+
+
+@pytest.mark.django_db
+def test_standings_player_ids_includes_zero_pts_players():
+    """Jugadores del grupo sin predicciones siguen apareciendo con 0 pts."""
+    RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    a = UserFactory(name="A", email="a@e.com")
+    b = UserFactory(name="B", email="b@e.com")
+    rows = standings(player_ids=[a.id, b.id])
+    ids = {r.player_id for r in rows}
+    assert ids == {a.id, b.id}
+    assert all(r.pts == 0 for r in rows)
