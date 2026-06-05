@@ -13,6 +13,11 @@ INPUT_ATTRS = {"class": "input"}
 class LoginForm(forms.Form):
     email = forms.EmailField(label="Correo", widget=forms.EmailInput(attrs=INPUT_ATTRS))
     password = forms.CharField(label="Contraseña", widget=forms.PasswordInput(attrs=INPUT_ATTRS))
+    remember = forms.BooleanField(
+        label="Recordarme en este dispositivo",
+        required=False,
+        initial=True,
+    )
 
     def clean_email(self):
         email = self.cleaned_data["email"].lower().strip()

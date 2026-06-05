@@ -14,12 +14,13 @@ from competition.models import Match
 from pot.models import Payment, Prize
 
 from .forms import ChangePasswordForm, LoginForm, ProfileForm, TeamProfileForm
-from .models import AuditLog, User
+from .models import AuditLog, User, UserSession
 from .services.password_reset import (
     _client_ip,
     send_password_reset_email,
     validate_reset_token,
 )
+from .services.sessions import parse_device_label, revoke_sessions
 from .validators import validate_email_domain
 
 
@@ -54,6 +55,37 @@ class LoginView(View):
             user = form.get_user(request)
             if user is not None:
                 login(request, user)
+                remembered = bool(form.cleaned_data.get("remember"))
+                if remembered:
+                    request.session.set_expiry(30 * 24 * 3600)
+                else:
+                    request.session.set_expiry(0)
+
+                is_pwa = request.POST.get("is_pwa") == "1"
+                ua_raw = request.META.get("HTTP_USER_AGENT", "")[:400]
+                ip = _client_ip(request)
+                UserSession.objects.create(
+                    user=user,
+                    session_key=request.session.session_key,
+                    device_label=parse_device_label(ua_raw),
+                    user_agent_raw=ua_raw,
+                    ip_at_login=ip,
+                    is_pwa=is_pwa,
+                    remembered=remembered,
+                    last_seen_at=timezone.now(),
+                )
+                AuditLog.objects.create(
+                    actor=user,
+                    action="login",
+                    target_type="user",
+                    target_id=str(user.id),
+                    payload={
+                        "remembered": remembered,
+                        "is_pwa": is_pwa,
+                        "ip": ip,
+                    },
+                )
+
                 if user.must_change_password:
                     return redirect("accounts:change_password")
                 return redirect("competicion:dashboard")
