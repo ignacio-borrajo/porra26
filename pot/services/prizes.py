@@ -144,9 +144,7 @@ def sede_winners() -> list[SedeWinner]:
     from pot.models import PotSettings
 
     rows = standings()
-    top3_global_ids = {
-        r.player_id for r in rows if r.position in (1, 2, 3) and r.pts > 0
-    }
+    top3_global_ids = {r.player_id for r in rows if r.position in (1, 2, 3) and r.pts > 0}
     eligible = [r for r in rows if r.pts > 0 and r.player_id not in top3_global_ids]
     users_by_id = User.objects.in_bulk([r.player_id for r in eligible])
 
@@ -155,7 +153,8 @@ def sede_winners() -> list[SedeWinner]:
     result: list[SedeWinner] = []
     for sede_key, sede_label in User.SEDE_CHOICES:
         sede_rows = [
-            r for r in eligible
+            r
+            for r in eligible
             if users_by_id.get(r.player_id) and users_by_id[r.player_id].sede == sede_key
         ]
         if not sede_rows:
@@ -165,12 +164,14 @@ def sede_winners() -> list[SedeWinner]:
         winners_rows = [r for r in sede_rows if r.position == min_pos]
         winners_users = [users_by_id[r.player_id] for r in winners_rows]
         n = len(winners_users)
-        result.append(SedeWinner(
-            sede_key=sede_key,
-            sede_label=sede_label,
-            users=winners_users,
-            points=int(winners_rows[0].pts),
-            prize_per_user=(sede_prize / n) if n else Decimal("0"),
-            status="resolved",
-        ))
+        result.append(
+            SedeWinner(
+                sede_key=sede_key,
+                sede_label=sede_label,
+                users=winners_users,
+                points=int(winners_rows[0].pts),
+                prize_per_user=(sede_prize / n) if n else Decimal("0"),
+                status="resolved",
+            )
+        )
     return result

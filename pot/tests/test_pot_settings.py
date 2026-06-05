@@ -51,14 +51,18 @@ def test_maintenance_cost_is_persisted():
 
 def test_potsettings_has_sede_winner_prize_default_zero(db):
     from decimal import Decimal
+
     from pot.models import PotSettings
+
     s = PotSettings.load()
     assert s.sede_winner_prize == Decimal("0")
 
 
 def test_potsettings_sede_winner_prize_persists(db):
     from decimal import Decimal
+
     from pot.models import PotSettings
+
     s = PotSettings.load()
     s.sede_winner_prize = Decimal("25.50")
     s.save(update_fields=["sede_winner_prize"])

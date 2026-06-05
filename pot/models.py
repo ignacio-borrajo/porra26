@@ -10,9 +10,7 @@ class PotSettings(models.Model):
         max_digits=8, decimal_places=2, default=Decimal("0")
     )
     maintenance_cost = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("0"))
-    sede_winner_prize = models.DecimalField(
-        max_digits=8, decimal_places=2, default=Decimal("0")
-    )
+    sede_winner_prize = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("0"))
 
     class Meta:
         verbose_name = "Pot settings"

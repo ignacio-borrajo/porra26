@@ -111,12 +111,14 @@ def build_preview_sede(*, current_user) -> tuple[WinnerAnnouncement, list]:
         if first is None:
             sede_winners_preview.append(SedeWinner(sede_key=sede_key, sede_label=sede_label))
             continue
-        sede_winners_preview.append(SedeWinner(
-            sede_key=sede_key,
-            sede_label=sede_label,
-            users=[first],
-            points=0,
-            prize_per_user=sede_prize,
-            status="resolved",
-        ))
+        sede_winners_preview.append(
+            SedeWinner(
+                sede_key=sede_key,
+                sede_label=sede_label,
+                users=[first],
+                points=0,
+                prize_per_user=sede_prize,
+                status="resolved",
+            )
+        )
     return ann, sede_winners_preview

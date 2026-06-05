@@ -29,7 +29,12 @@ def _by_sede(result, key):
 def test_returns_six_entries_in_sede_choices_order(groups_round, prize_25):
     result = sede_winners()
     assert [sw.sede_key for sw in result] == [
-        "ourense", "vigo", "asturias", "madrid", "barcelona", "latam",
+        "ourense",
+        "vigo",
+        "asturias",
+        "madrid",
+        "barcelona",
+        "latam",
     ]
     assert all(sw.status == "desierto" for sw in result)
 
