@@ -24,7 +24,7 @@ def _podium_visual_order(podium):
 class AnnouncementModalView(LoginRequiredMixin, View):
     def get(self, request, pk):
         ann = get_object_or_404(
-            WinnerAnnouncement.objects.prefetch_related("winners").select_related("scope_round"),
+            WinnerAnnouncement.objects.prefetch_related("winners"),
             pk=pk,
         )
         if ann.scope_kind == "sede":
