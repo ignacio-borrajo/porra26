@@ -2540,3 +2540,126 @@ html.fv .team-profile-halo {
   gap: 8px;
   padding: 12px 14px;
 }
+
+/* ============================================================
+   Histórico — matriz jugador × partido
+   ============================================================ */
+.rankings-header, .historico-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.rankings-title, .historico-title {
+  font-size: 28px;
+  margin: 6px 0 4px;
+}
+.historico-export { text-decoration: none; }
+
+.history-legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-bottom: 12px;
+}
+.history-legend .legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.legend-dot--exact   { background: oklch(from var(--c-lime)   l c h / 0.55); }
+.legend-dot--partial { background: oklch(from var(--c-yellow) l c h / 0.55); }
+.legend-dot--miss    { background: var(--border-hi); }
+
+.history-wrap {
+  overflow: auto;
+  max-height: 75vh;
+  border-radius: 22px;
+  padding: 0;
+}
+.history-matrix {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  width: max-content;
+}
+.history-matrix th,
+.history-matrix td {
+  padding: 6px 10px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  text-align: center;
+  background: var(--surface-solid);
+  color: var(--text);
+}
+.history-matrix .hm-sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 160px;
+  max-width: 200px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.history-matrix .hm-sticky-col-right {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  min-width: 64px;
+  font-weight: 700;
+}
+.history-matrix .hm-sticky-row {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  font-weight: 700;
+}
+.history-matrix .hm-sticky-row-2 {
+  position: sticky;
+  top: 33px;
+  z-index: 3;
+  font-style: italic;
+  color: var(--text-dim);
+}
+.history-matrix .hm-corner { z-index: 4; }
+.history-matrix .hm-cell--exact {
+  background: oklch(from var(--c-lime) l c h / 0.22);
+  color: var(--c-lime);
+  font-weight: 700;
+}
+.history-matrix .hm-cell--partial {
+  background: oklch(from var(--c-yellow) l c h / 0.22);
+  color: var(--c-yellow);
+  font-weight: 700;
+}
+.history-matrix .hm-cell--miss { color: var(--text-faint); }
+.history-matrix .hm-cell--empty { color: transparent; }
+.history-matrix .hm-player {
+  font-family: var(--font-sans);
+  font-weight: 600;
+}
+.history-matrix .hm-total {
+  font-family: var(--font-mono);
+}
+
+@media (max-width: 720px) {
+  .history-matrix th,
+  .history-matrix td {
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+  .history-matrix .hm-sticky-col {
+    min-width: 120px;
+    max-width: 140px;
+  }
+  .history-matrix .hm-sticky-row-2 { top: 28px; }
+}

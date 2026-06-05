@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load avatar_extras %}
+{% block main %}
+<header class="rise historico-header">
+  <div>
+    <div class="eyebrow">MUNDIAL 2026</div>
+    <h1 class="display historico-title">Histórico de pronósticos</h1>
+  </div>
+  <a class="chip chip-open historico-export" href="{% url 'stats:historico_export' %}" download>
+    Exportar a Excel
+  </a>
+</header>
+
+<div class="history-legend rise">
+  <span><i class="legend-dot legend-dot--exact"></i> Marcador exacto</span>
+  <span><i class="legend-dot legend-dot--partial"></i> Acierto 1·X·2</span>
+  <span><i class="legend-dot legend-dot--miss"></i> Fallo o sin pronóstico</span>
+</div>
+
+{% if matrix.matches and matrix.players %}
+<div class="glass rise history-wrap">
+  <table class="history-matrix">
+    <thead>
+      <tr>
+        <th class="hm-sticky-col hm-sticky-row hm-corner">Jugador</th>
+        {% for m in matrix.matches %}
+          <th class="hm-sticky-row hm-match" title="{{ m.home_name }} vs {{ m.away_name }}">
+            {{ m.home_code }} - {{ m.away_code }}
+          </th>
+        {% endfor %}
+        <th class="hm-sticky-col-right hm-sticky-row hm-corner">Total</th>
+      </tr>
+      <tr>
+        <th class="hm-sticky-col hm-sticky-row-2 hm-corner"></th>
+        {% for m in matrix.matches %}
+          <th class="hm-sticky-row-2 hm-result">{{ m.result_home }}-{{ m.result_away }}</th>
+        {% endfor %}
+        <th class="hm-sticky-col-right hm-sticky-row-2 hm-corner"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in matrix.players %}
+        <tr>
+          <th class="hm-sticky-col hm-player">{{ p.position }}. {{ p.name }}</th>
+          {% with prow=matrix.cells|get_item:p.id %}
+            {% for m in matrix.matches %}
+              {% with cell=prow|get_item:m.id %}
+                <td class="hm-cell hm-cell--{{ cell.state }}">{% if cell.state != "empty" %}{{ cell.home }}-{{ cell.away }}{% endif %}</td>
+              {% endwith %}
+            {% endfor %}
+          {% endwith %}
+          <th class="hm-sticky-col-right hm-total">{{ matrix.totals|get_item:p.id }}</th>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="glass rise" style="padding:24px;text-align:center;color:var(--text-faint)">
+  Todavía no hay partidos finalizados. El histórico aparecerá en cuanto se resuelva el primero.
+</div>
+{% endif %}
+{% endblock %}
