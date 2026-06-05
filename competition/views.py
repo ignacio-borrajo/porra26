@@ -85,8 +85,7 @@ class CompetitionView(LoginRequiredMixin, View):
         )
 
         show_team_profile_modal = bool(
-            request.user.is_jugador
-            and not (request.user.sede and request.user.dept and request.user.puesto)
+            not (request.user.sede and request.user.dept and request.user.puesto)
             and not request.session.get("team_profile_dismissed")
         )
 
