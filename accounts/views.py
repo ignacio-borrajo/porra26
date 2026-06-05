@@ -15,12 +15,12 @@ from pot.models import Payment, Prize
 
 from .forms import ChangePasswordForm, LoginForm, ProfileForm, TeamProfileForm
 from .models import AuditLog, User, UserSession
+from .services.notifications import send_password_changed_email
 from .services.password_reset import (
     _client_ip,
     send_password_reset_email,
     validate_reset_token,
 )
-from .services.notifications import send_password_changed_email
 from .services.sessions import parse_device_label, revoke_sessions
 from .validators import validate_email_domain
 
