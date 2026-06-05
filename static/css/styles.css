@@ -198,6 +198,12 @@ body {
   backdrop-filter: blur(10px);
 }
 .btn-ghost:hover { border-color: var(--accent); color: var(--text); transform: translateY(calc(-1px * var(--anim))); }
+.btn-icon {
+  background: transparent;
+  color: var(--text-faint);
+  border: none;
+}
+.btn-icon:hover { color: var(--text); transform: translateY(calc(-1px * var(--anim))); }
 
 /* ---------------- Navegación principal (topbar) ---------------- */
 .nav-item {
@@ -516,15 +522,14 @@ a.match-card:hover {
     height: 34px !important;
     border-radius: 10px !important;
   }
-  .topbar-actions form .btn-ghost {
+  .topbar-actions form .btn-icon {
     width: 34px !important;
     height: 34px !important;
     border-radius: 10px !important;
   }
 }
-/* En los móviles más pequeños (<360px) escondemos el chip del bote
-   para no romper el layout; los datos del bote siguen accesibles
-   desde la pantalla de inicio y desde Reglas. */
+/* En los móviles más pequeños (<360px) escondemos los chips
+   secundarios del topbar para no romper el layout. */
 @media (max-width: 360px) {
   .topbar-actions .chip { display: none; }
 }
