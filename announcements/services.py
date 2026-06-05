@@ -23,6 +23,9 @@ def detect_after_match(match: Match) -> list[WinnerAnnouncement]:
             ann_global = _try_create("global")
             if ann_global is not None:
                 created.append(ann_global)
+            ann_sede = _try_create("sede")
+            if ann_sede is not None:
+                created.append(ann_sede)
 
     return created
 
@@ -34,20 +37,43 @@ def _try_create(
     round_id: str | None = None,
 ) -> WinnerAnnouncement | None:
     if scope_kind == "matchday":
-        scope_key = ("matchday", matchday)
         filter_kwargs = {"scope_kind": "matchday", "scope_matchday": matchday}
     elif scope_kind == "round":
-        scope_key = ("round", round_id)
         filter_kwargs = {"scope_kind": "round", "scope_round_id": round_id}
     elif scope_kind == "global":
-        scope_key = ("global", None)
         filter_kwargs = {"scope_kind": "global"}
+    elif scope_kind == "sede":
+        filter_kwargs = {"scope_kind": "sede"}
     else:
         raise ValueError(scope_kind)
 
     if WinnerAnnouncement.objects.filter(**filter_kwargs).exists():
         return None
 
+    if scope_kind == "sede":
+        from decimal import Decimal
+
+        from pot.services.prizes import sede_winners
+
+        sede_results = sede_winners()
+        winners_users = [u for sw in sede_results if sw.status == "resolved" for u in sw.users]
+        if not winners_users:
+            return None
+        ann = WinnerAnnouncement.objects.create(
+            scope_kind="sede",
+            scope_matchday=None,
+            scope_round_id=None,
+            points=0,
+            tied=False,
+            share=Decimal("0"),
+        )
+        ann.winners.set(winners_users)
+        return ann
+
+    scope_key = (
+        scope_kind,
+        matchday if scope_kind == "matchday" else round_id if scope_kind == "round" else None,
+    )
     result = matchday_winners(scope_key)
     if result.status != "resolved":
         return None
