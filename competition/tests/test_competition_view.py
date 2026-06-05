@@ -416,3 +416,23 @@ def test_dashboard_ko_matches_have_feeds_into_code(client):
     }
     assert matches_by_code["M73"].feeds_into_code == "M89"
     assert matches_by_code["M104"].feeds_into_code is None
+
+
+@pytest.mark.django_db
+def test_dashboard_ko_template_renders_canvas(client):
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    RoundFactory(id="groups", points=3, label="Fase de grupos", short="GRP", order=1)
+    r32 = RoundFactory(id="r32", points=5, label="Dieciseisavos", short="R32", order=2)
+    RoundFactory(id="r16", points=7, label="Octavos", short="R16", order=3)
+    RoundFactory(id="qf", points=10, label="Cuartos", short="QF", order=4)
+    RoundFactory(id="sf", points=15, label="Semifinales", short="SF", order=5)
+    RoundFactory(id="final", points=25, label="Final", short="FIN", order=6)
+    MatchFactory(round=r32, bracket_code="M73", kickoff=timezone.now() + timedelta(days=10))
+
+    r = client.get(reverse("competicion:dashboard") + "?round=r32")
+    html = r.content.decode("utf-8")
+    assert "ko-canvas" in html
+    assert html.count('class="ko-col"') == 5
+    assert "ko-connectors" in html
+    assert 'data-active-round="r32"' in html
