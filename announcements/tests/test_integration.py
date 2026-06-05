@@ -1,6 +1,6 @@
 import pytest
 
-from accounts.tests.factories import UserFactory
+from accounts.tests.factories import GestorFactory, UserFactory
 from announcements.models import WinnerAnnouncement
 from competition.services.resolve import resolve_match
 from competition.tests.factories import MatchFactory, PredictionFactory, RoundFactory
@@ -23,8 +23,6 @@ def final_round(db):
 
 @pytest.fixture
 def gestor():
-    from accounts.tests.factories import GestorFactory
-
     return GestorFactory()
 
 
@@ -47,27 +45,29 @@ def test_resolve_last_match_of_matchday_creates_announcement(groups_round, gesto
 
 
 @pytest.mark.django_db
-def test_resolve_first_match_of_round_creates_no_announcement(r16_round, gestor):
+def test_resolving_ko_round_creates_no_announcement(r16_round, gestor):
     user = UserFactory()
-    MatchFactory(round=r16_round, matchday=None)  # pendiente
-    m_done = MatchFactory(round=r16_round, matchday=None)
-    PredictionFactory(player=user, match=m_done, home=1, away=0)
-
-    resolve_match(m_done, home=1, away=0, actor=gestor)
-
-    assert WinnerAnnouncement.objects.filter(scope_kind="round").count() == 0
+    m = MatchFactory(round=r16_round, matchday=None)
+    PredictionFactory(player=user, match=m, home=1, away=0)
+    resolve_match(m, home=1, away=0, actor=gestor)
+    assert WinnerAnnouncement.objects.count() == 0
 
 
 @pytest.mark.django_db
-def test_resolve_final_match_creates_only_global_announcement(final_round, gestor):
-    """La Final solo crea el anuncio global (no genera scope='round' porque
-    el ganador del Mundial cobra por el podio, no como premio de ronda)."""
-    user = UserFactory()
-    m = MatchFactory(round=final_round, matchday=None)
-    PredictionFactory(player=user, match=m, home=2, away=1)
-
-    resolve_match(m, home=2, away=1, actor=gestor)
+def test_resolve_final_creates_ko_sede_global(groups_round, final_round, gestor):
+    # Setup canónico para tener un ganador de sede fuera del podio top 3.
+    v1 = UserFactory(name="V1", sede="vigo")
+    v2 = UserFactory(name="V2", sede="vigo")
+    v3 = UserFactory(name="V3", sede="vigo")
+    ma = UserFactory(name="MA", sede="madrid")
+    g_m = MatchFactory(round=groups_round, matchday=1, result_home=1, result_away=0)
+    PredictionFactory(player=v1, match=g_m, earned=5)
+    PredictionFactory(player=v2, match=g_m, earned=4)
+    PredictionFactory(player=v3, match=g_m, earned=3)
+    PredictionFactory(player=ma, match=g_m, earned=1)
+    final_match = MatchFactory(round=final_round, matchday=None)
+    PredictionFactory(player=v1, match=final_match, home=1, away=0)
+    resolve_match(final_match, home=1, away=0, actor=gestor)
 
     kinds = sorted(WinnerAnnouncement.objects.values_list("scope_kind", flat=True))
-    assert kinds == ["global"]
-    assert WinnerAnnouncement.objects.filter(scope_kind="round").count() == 0
+    assert kinds == ["global", "ko", "sede"]
