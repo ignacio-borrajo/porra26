@@ -361,6 +361,7 @@ def test_dashboard_ko_view_flag_for_r32(client):
     for rid, label, short, pts, order in rounds_data:
         RoundFactory(id=rid, points=pts, label=label, short=short, order=order)
     from competition.models import Round
+
     r32 = Round.objects.get(id="r32")
     MatchFactory(round=r32, bracket_code="M73", kickoff=timezone.now() + timedelta(days=10))
 
@@ -410,9 +411,7 @@ def test_dashboard_ko_matches_have_feeds_into_code(client):
     r = client.get(reverse("competicion:dashboard") + "?round=r32")
     assert r.status_code == 200
     matches_by_code = {
-        m.bracket_code: m
-        for entry in r.context["ko_rounds"]
-        for m in entry["matches"]
+        m.bracket_code: m for entry in r.context["ko_rounds"] for m in entry["matches"]
     }
     assert matches_by_code["M73"].feeds_into_code == "M89"
     assert matches_by_code["M104"].feeds_into_code is None
