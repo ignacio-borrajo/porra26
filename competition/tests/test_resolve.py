@@ -136,7 +136,7 @@ def test_clear_match_result_preserves_closing_report_and_reminders():
     )
     BetsReminderLog.objects.create(
         match=m,
-        kind=BetsReminderLog.KIND_T_MINUS_4H,
+        kind=BetsReminderLog.KIND_T_MINUS_2H,
         sent_at=sent_at,
         pending_count=2,
         pending_names=["Alice", "Bob"],

@@ -1,9 +1,5 @@
-from datetime import timedelta
-
 from django.db import models
 from django.utils import timezone
-
-BET_CLOSE_HOURS = 2
 
 
 class Team(models.Model):
@@ -81,23 +77,17 @@ class Match(models.Model):
 
     @property
     def status(self) -> str:
-        now = timezone.now()
         if self.has_result:
             return "done"
         if not self.has_teams:
             return "pending_teams"
-        close_at = self.kickoff - timedelta(hours=BET_CLOSE_HOURS)
-        if now >= self.kickoff:
+        if timezone.now() >= self.kickoff:
             return "live"
-        if now >= close_at:
-            return "closed"
-        if close_at - now <= timedelta(hours=2):
-            return "closing"
         return "open"
 
     @property
     def editable(self) -> bool:
-        return self.has_teams and self.status in ("open", "closing")
+        return self.has_teams and self.status == "open"
 
     @property
     def predictions_open(self) -> bool:
@@ -150,15 +140,15 @@ class BetsClosingReport(models.Model):
 
 
 class BetsReminderLog(models.Model):
-    KIND_T_MINUS_4H = "T_MINUS_4H"
-    KIND_T_MINUS_2_5H = "T_MINUS_2_5H"
+    KIND_T_MINUS_2H = "T_MINUS_2H"
+    KIND_T_MINUS_30M = "T_MINUS_30M"
     KIND_MANUAL = "MANUAL"
     KIND_CHOICES = [
-        (KIND_T_MINUS_4H, "2 h antes del cierre"),
-        (KIND_T_MINUS_2_5H, "30 min antes del cierre"),
+        (KIND_T_MINUS_2H, "2 h antes del saque"),
+        (KIND_T_MINUS_30M, "30 min antes del saque"),
         (KIND_MANUAL, "Manual"),
     ]
-    AUTO_KINDS = (KIND_T_MINUS_4H, KIND_T_MINUS_2_5H)
+    AUTO_KINDS = (KIND_T_MINUS_2H, KIND_T_MINUS_30M)
 
     match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name="reminder_logs")
     kind = models.CharField(max_length=20, choices=KIND_CHOICES)

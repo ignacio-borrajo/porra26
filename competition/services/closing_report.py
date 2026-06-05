@@ -1,6 +1,5 @@
 import io
 from dataclasses import dataclass, field
-from datetime import timedelta
 
 from django.utils import formats, timezone
 from reportlab.lib import colors
@@ -315,10 +314,9 @@ def _match_hero(match: Match, styles) -> list:
       · Marcador a tres columnas: nombre home (mitad) · centro · nombre away
         (mitad). En el centro va el resultado oficial en grande si ya existe;
         si no, "VS".
-      · Línea de metadatos pequeña: ronda · grupo · hora de cierre.
+      · Línea de metadatos pequeña: ronda · grupo · hora de saque.
     """
     kickoff_local = timezone.localtime(match.kickoff)
-    close_local = timezone.localtime(match.kickoff - timedelta(hours=2))
 
     fecha_text = formats.date_format(kickoff_local, r"l j \d\e F \d\e Y · H:i").capitalize()
 
@@ -348,7 +346,7 @@ def _match_hero(match: Match, styles) -> list:
         )
     )
 
-    meta_text = f"{match.round.label} · Grupo {match.group} · Cierre {close_local:%H:%M}"
+    meta_text = f"{match.round.label} · Grupo {match.group} · Saque {kickoff_local:%H:%M}"
 
     return [
         Paragraph(fecha_text, styles["hero-date"]),

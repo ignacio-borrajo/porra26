@@ -6,7 +6,7 @@ from django.db.models import QuerySet
 from django.utils import timezone
 
 from accounts.models import User
-from competition.models import BET_CLOSE_HOURS, BetsReminderLog, Match, Prediction
+from competition.models import BetsReminderLog, Match, Prediction
 
 
 def get_pending_bettors(match: Match) -> list[User]:
@@ -25,8 +25,8 @@ def get_pending_bettors(match: Match) -> list[User]:
 
 
 _KIND_TO_LEAD = {
-    BetsReminderLog.KIND_T_MINUS_4H: timedelta(hours=4),
-    BetsReminderLog.KIND_T_MINUS_2_5H: timedelta(hours=2, minutes=30),
+    BetsReminderLog.KIND_T_MINUS_2H: timedelta(hours=2),
+    BetsReminderLog.KIND_T_MINUS_30M: timedelta(minutes=30),
 }
 
 
@@ -35,7 +35,7 @@ def matches_due_for_kind(kind: str) -> QuerySet[Match]:
 
     Ventana:
     - el umbral del kind ya llegó (``kickoff <= now + lead``).
-    - el cierre aún no pasó (``kickoff > now + BET_CLOSE_HOURS``).
+    - las apuestas siguen abiertas (``kickoff > now``).
     - no existe un :class:`BetsReminderLog` previo para ``(match, kind)``.
 
     Lanza ``ValueError`` para kinds desconocidos o ``MANUAL`` (que no tiene
@@ -48,7 +48,7 @@ def matches_due_for_kind(kind: str) -> QuerySet[Match]:
     return (
         Match.objects.filter(
             kickoff__lte=now + lead,
-            kickoff__gt=now + timedelta(hours=BET_CLOSE_HOURS),
+            kickoff__gt=now,
         )
         .exclude(reminder_logs__kind=kind)
         .order_by("kickoff")

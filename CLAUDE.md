@@ -19,8 +19,8 @@ Aplicación web **interna de empresa** para una porra (quiniela) del **Mundial F
 
 - **Puntuación:** marcador exacto → puntos del partido (parametrizable por ronda); acertar solo el resultado (1/X/2) → puntos parciales (parametrizable por ronda, default 1); fallar → 0. Los puntos se congelan en cada `Match` al resolverse, así los cambios solo aplican a partidos sin resolver.
 - **Puntos por ronda (defaults):** Grupos 3 · Dieciseisavos 5 · Octavos 7 · Cuartos 10 (escala creciente; semis/final por definir, mantén la progresión). 1·X·2 = 1 en todas las rondas. El gestor puede ajustarlos desde "Premios y puntos".
-- **Cierre de apuestas:** 2 horas antes del saque (`kickoff − 2h`). Después no se puede crear ni editar el pronóstico.
-- **Estados de partido:** `open` → `closing` (<2 h, cuenta atrás) → `closed` → `live` → `done`.
+- **Cierre de apuestas:** al pitido inicial (`kickoff`). Después no se puede crear ni editar el pronóstico. Para evitar rezagados se mandan dos avisos automáticos en Teams (2 h y 30 min antes del saque); son notificaciones, no cierran ventanas.
+- **Estados de partido:** `open` → `live` → `done` (más `pending_teams` para los cruces KO sin equipos asignados todavía).
 - **Bote:** aportación por jugador (10 €), premios para el top 3. El gestor marca quién ha pagado.
 - **Auth:** correo corporativo + contraseña. **Recuperación por email autoservicio** (token 24h). Altas pueden enviar **email de bienvenida** (token 7d) para que el jugador establezca su contraseña, o quedar con contraseña fijada por el gestor.
 

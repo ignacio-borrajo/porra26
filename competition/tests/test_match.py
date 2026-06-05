@@ -30,19 +30,12 @@ def test_status_open_when_far_from_kickoff(setup_match):
 
 
 @pytest.mark.django_db
-def test_status_closing_within_two_hours(setup_match):
-    grp, esp, arg = setup_match
-    with freeze_time("2026-06-12 12:00:00", tz_offset=0):
-        m = _match(grp, esp, arg, timezone.now() + timedelta(hours=3))
-        assert m.status == "closing"
-
-
-@pytest.mark.django_db
-def test_status_closed_after_close_before_kickoff(setup_match):
+def test_status_open_minutes_before_kickoff(setup_match):
     grp, esp, arg = setup_match
     with freeze_time("2026-06-12 12:00:00", tz_offset=0):
         m = _match(grp, esp, arg, timezone.now() + timedelta(minutes=30))
-        assert m.status == "closed"
+        assert m.status == "open"
+        assert m.editable is True
 
 
 @pytest.mark.django_db

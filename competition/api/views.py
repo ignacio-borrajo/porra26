@@ -1,6 +1,5 @@
 import hashlib
 import logging
-from datetime import timedelta
 
 from django.contrib import messages
 from django.db import transaction
@@ -11,7 +10,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from competition.api.auth import require_teams_api_token
-from competition.models import BET_CLOSE_HOURS, BetsClosingReport, BetsReminderLog, Match
+from competition.models import BetsClosingReport, BetsReminderLog, Match
 from competition.services.closing_email import send_closure_email
 from competition.services.closing_report import build_closing_pdf
 from competition.services.reminder_email import send_reminder_email
@@ -21,7 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 def _match_payload(m: Match) -> dict:
-    closed_at = m.kickoff - timedelta(hours=BET_CLOSE_HOURS)
     return {
         "id": m.id,
         "slug": m.teams_slug,
@@ -31,7 +29,7 @@ def _match_payload(m: Match) -> dict:
         "home": {"code": m.home_id, "name": m.home.name},
         "away": {"code": m.away_id, "name": m.away.name},
         "kickoff": m.kickoff.isoformat(),
-        "closed_at": closed_at.isoformat(),
+        "closed_at": m.kickoff.isoformat(),
     }
 
 
@@ -45,7 +43,7 @@ def cierres_pendientes(request):
     """
     now = timezone.now()
     qs = (
-        Match.objects.filter(kickoff__lte=now + timedelta(hours=BET_CLOSE_HOURS))
+        Match.objects.filter(kickoff__lte=now)
         .select_related("home", "away", "round", "closing_report")
         .order_by("kickoff")
     )
@@ -64,7 +62,7 @@ def cierre_pdf(request, match_id: int):
         pk=match_id,
     )
     now = timezone.now()
-    if not match.has_result and match.kickoff - timedelta(hours=BET_CLOSE_HOURS) > now:
+    if not match.has_result and match.kickoff > now:
         # todavía abierto y sin resultado → no hay nada que retratar
         return JsonResponse({"detail": "Partido todavía no cerrado"}, status=404)
 

@@ -62,15 +62,6 @@ def test_includes_match_when_only_other_user_predicted(grp):
 
 
 @pytest.mark.django_db
-def test_excludes_closed_match(grp):
-    u = UserFactory(must_change_password=False)
-    m = MatchFactory(round=grp, kickoff=_now() + timedelta(hours=1))
-    assert m.status == "closed"
-    assert next_pending_match(u) is None
-    assert pending_matches_count(u) == 0
-
-
-@pytest.mark.django_db
 def test_excludes_live_match(grp):
     u = UserFactory(must_change_password=False)
     m = MatchFactory(round=grp, kickoff=_now() - timedelta(minutes=30))

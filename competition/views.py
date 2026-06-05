@@ -232,7 +232,7 @@ class ManageResultsView(GestorRequiredMixin, View):
             st = m.status
             if st == "done":
                 done.append(m)
-            elif st in ("live", "closed"):
+            elif st == "live":
                 pending.append(m)
             elif st == "pending_teams":
                 pending_teams_matches.append(m)

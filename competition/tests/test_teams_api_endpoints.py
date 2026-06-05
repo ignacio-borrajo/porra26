@@ -17,15 +17,15 @@ AUTH = {"HTTP_AUTHORIZATION": f"Bearer {TOKEN}"}
 @override_settings(TEAMS_API_TOKEN=TOKEN)
 def test_pendientes_returns_only_closed_unsent(client):
     now = timezone.now()
-    # Abierto: cierra en 4h → no aparece
+    # Abierto: kickoff en el futuro → no aparece
     MatchFactory(kickoff=now + timedelta(hours=6))
-    # Cerrado y sin envío → aparece
-    m_closed = MatchFactory(kickoff=now + timedelta(hours=1))
+    # Cerrado (kickoff pasado) y sin envío → aparece
+    m_closed = MatchFactory(kickoff=now - timedelta(minutes=10))
     # Cerrado y enviado → no aparece
-    m_sent = MatchFactory(kickoff=now + timedelta(hours=1))
+    m_sent = MatchFactory(kickoff=now - timedelta(minutes=15))
     BetsClosingReport.objects.create(match=m_sent, sent_at=now)
     # Cerrado, con report pero sin sent_at → aparece
-    m_pending = MatchFactory(kickoff=now + timedelta(hours=1))
+    m_pending = MatchFactory(kickoff=now - timedelta(minutes=20))
     BetsClosingReport.objects.create(match=m_pending)
 
     res = client.get(reverse("competicion:api:cierres_pendientes"), **AUTH)

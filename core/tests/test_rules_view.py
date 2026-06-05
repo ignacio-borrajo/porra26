@@ -32,7 +32,6 @@ def test_rules_context_has_required_keys(client):
     assert "rounds" in ctx and list(ctx["rounds"])  # no vacío
     assert "pot_per_player" in ctx
     assert "pot_prizes" in ctx
-    assert ctx["bet_close_hours"] == 2
     assert "rules_updated_at" in ctx
 
 
@@ -90,13 +89,14 @@ def test_rules_renders_close_card(client):
     client.force_login(UserFactory())
     r = client.get(reverse("core:rules"))
     content = r.content.decode("utf-8")
-    assert "Las apuestas cierran" in content
-    assert "2 horas antes del saque" in content
-    # Estados del timeline
-    for label in ("Abierto", "Cerrando", "En juego", "Final"):
+    assert "Las apuestas cierran al pitido inicial" in content
+    # Estados del timeline (sin "Cerrando" — cierre = kickoff)
+    for label in ("Abierto", "En juego", "Final"):
         assert label in content
-    # Mini ejemplos de partido por estado: cuenta atrás y final (sin marcador en vivo)
-    assert "01:23:45" in content  # cuenta atrás del estado closing
+    assert "Cerrando" not in content
+    # Aviso explícito de recordatorios automáticos
+    assert "2 horas antes" in content
+    assert "30 minutos antes" in content
     assert "2 — 1" in content  # marcador final
     assert "1 — 0" not in content  # no mostramos marcador en directo
 

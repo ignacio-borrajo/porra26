@@ -728,16 +728,16 @@ select.input {
   margin: 4px 0 8px;
   padding: 28px 8px 24px;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   position: relative;
+  /* Stops al 16.67%, 50% y 83.33% para que las transiciones pasen por debajo
+     del centro de cada pill en un grid de 3 columnas. */
   background:
     linear-gradient(90deg,
-      oklch(from var(--c-lime) l c h / 0.6) 0%,
-      oklch(from var(--c-yellow) l c h / 0.6) 35%,
-      oklch(from var(--text-faint) l c h / 0.5) 55%,
-      oklch(from var(--c-red) l c h / 0.6) 75%,
-      oklch(from var(--c-cyan) l c h / 0.6) 100%) 0 50% / 100% 2px no-repeat;
+      oklch(from var(--c-lime) l c h / 0.6) 16.67%,
+      oklch(from var(--c-red) l c h / 0.6) 50%,
+      oklch(from var(--c-cyan) l c h / 0.6) 83.33%) 0 50% / 100% 2px no-repeat;
 }
 .rules-timeline li {
   display: flex;
@@ -759,9 +759,26 @@ select.input {
   color: var(--text-faint);
 }
 
+.rules-reminders {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--surface-hi);
+  border: 1px solid oklch(from var(--c-yellow) l c h / 0.35);
+}
+.rules-reminders p {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.rules-reminders strong { color: var(--text); }
+
 .rules-state-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 .rules-state-card {
@@ -978,11 +995,9 @@ select.input {
     grid-template-columns: 1fr;
     background:
       linear-gradient(180deg,
-        oklch(from var(--c-lime) l c h / 0.6) 0%,
-        oklch(from var(--c-yellow) l c h / 0.6) 35%,
-        oklch(from var(--text-faint) l c h / 0.5) 55%,
-        oklch(from var(--c-red) l c h / 0.6) 75%,
-        oklch(from var(--c-cyan) l c h / 0.6) 100%) 14px 0 / 2px 100% no-repeat;
+        oklch(from var(--c-lime) l c h / 0.6) 16.67%,
+        oklch(from var(--c-red) l c h / 0.6) 50%,
+        oklch(from var(--c-cyan) l c h / 0.6) 83.33%) 14px 0 / 2px 100% no-repeat;
     padding: 18px 8px 18px 36px;
     gap: 18px;
   }
@@ -993,6 +1008,7 @@ select.input {
     gap: 12px;
     text-align: left;
   }
+  .rules-state-grid { grid-template-columns: 1fr; }
   .rules-medals { grid-template-columns: 1fr; }
 }
 
@@ -1803,15 +1819,11 @@ img.avatar { object-fit: cover; }
    ============================================================ */
 .winner-modal {
   width: min(520px, 100%);
-  padding: 72px clamp(20px, 4vw, 48px) 28px;
+  padding: 32px clamp(20px, 4vw, 48px) 28px;
   border-radius: 24px;
   background: var(--surface-solid);
   text-align: center;
   position: relative;
-  overflow: visible;
-  box-shadow:
-    0 30px 80px -30px oklch(0 0 0 / 0.55),
-    0 0 0 1px oklch(1 0 0 / 0.06) inset;
 }
 .winner-modal .modal-x {
   position: absolute;
@@ -1829,74 +1841,23 @@ img.avatar { object-fit: cover; }
   display: grid;
   place-items: center;
   transition: border-color .15s, color .15s, transform .15s;
-  z-index: 3;
 }
 .winner-modal .modal-x:hover {
   border-color: var(--accent);
   color: var(--accent);
   transform: scale(1.05);
 }
-
-.winner-halo {
-  position: absolute;
-  top: -86px;
-  left: 50%;
-  width: 200px;
-  height: 200px;
-  margin-left: -100px;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 200deg,
-    var(--c-gold),
-    var(--c-yellow),
-    var(--c-pink),
-    var(--c-cyan),
-    var(--c-gold)
-  );
-  filter: blur(34px);
-  opacity: 0.55;
-  z-index: 0;
-  pointer-events: none;
-  animation: winner-halo-spin 9s linear infinite;
-}
-@keyframes winner-halo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
 .winner-trophy {
-  position: absolute;
-  top: -52px;
-  left: 50%;
-  font-size: clamp(76px, 11vw, 108px);
+  font-size: clamp(56px, 8vw, 88px);
   line-height: 1;
-  z-index: 2;
-  filter:
-    drop-shadow(0 14px 24px oklch(from var(--c-gold) l c h / 0.55))
-    drop-shadow(0 0 20px oklch(from var(--c-yellow) l c h / 0.45));
-  transform-origin: 50% 90%;
-  animation:
-    winner-trophy-pop 0.85s var(--ease-spring) both,
-    winner-trophy-float 4.5s ease-in-out 0.95s infinite;
-  pointer-events: none;
+  margin: 4px 0 8px;
+  filter: drop-shadow(0 8px 22px oklch(from var(--accent) l c h / 0.45));
+  animation: trophy-pop .7s var(--ease-spring) both;
 }
-@keyframes winner-trophy-pop {
-  0%   { transform: translate(-50%, 18px) scale(0.3) rotate(-22deg); opacity: 0; }
-  55%  { transform: translate(-50%, -6px) scale(1.18) rotate(8deg);  opacity: 1; }
-  100% { transform: translate(-50%, 0)    scale(1)    rotate(0);     opacity: 1; }
-}
-@keyframes winner-trophy-float {
-  0%, 100% { transform: translate(-50%, 0) rotate(0); }
-  50%      { transform: translate(-50%, -7px) rotate(-4deg); }
-}
-
-.winner-title,
-.winner-points,
-.winner-modal-podium,
-.winner-subtitle,
-.winner-actions {
-  position: relative;
-  z-index: 1;
+@keyframes trophy-pop {
+  0% { transform: scale(0.4) rotate(-12deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(4deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 .winner-title {
   font-family: 'Sora', system-ui, sans-serif;
@@ -2236,7 +2197,6 @@ img.avatar { object-fit: cover; }
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  z-index: 3;
 }
 
 /* ============================================================
@@ -2395,8 +2355,6 @@ img.avatar { object-fit: cover; }
   .team-profile-actions .btn-ghost { order: 2; }
 }
 
-html.fv .winner-trophy,
-html.fv .winner-halo,
 html.fv .team-profile-trophy,
 html.fv .team-profile-halo {
   animation: none;

@@ -26,14 +26,14 @@ def _make_match(hours_to_kickoff: float, home="ESP", away="MEX"):
 
 @pytest.mark.django_db
 def test_command_sends_both_kinds_in_window():
-    """Match A solo en T-4h; Match B en T-2.5h (ya tiene T-4h enviado)."""
+    """Match A solo en T-2h; Match B en T-30min (con T-2h ya enviado previamente)."""
     UserFactory(name="Ana")
-    _make_match(hours_to_kickoff=3.5, home="A1", away="A2")
-    m_b = _make_match(hours_to_kickoff=2.4, home="B1", away="B2")
+    _make_match(hours_to_kickoff=1.5, home="A1", away="A2")
+    m_b = _make_match(hours_to_kickoff=0.4, home="B1", away="B2")
     BetsReminderLog.objects.create(
         match=m_b,
-        kind=BetsReminderLog.KIND_T_MINUS_4H,
-        sent_at=timezone.now() - timedelta(hours=2),
+        kind=BetsReminderLog.KIND_T_MINUS_2H,
+        sent_at=timezone.now() - timedelta(hours=1, minutes=30),
         pending_count=1,
         pending_names=["Ana"],
     )
@@ -41,23 +41,21 @@ def test_command_sends_both_kinds_in_window():
     call_command("send_match_reminders", stdout=StringIO(), stderr=StringIO())
 
     assert len(mail.outbox) == 2
-    assert BetsReminderLog.objects.filter(kind=BetsReminderLog.KIND_T_MINUS_4H).count() == 2
-    assert BetsReminderLog.objects.filter(kind=BetsReminderLog.KIND_T_MINUS_2_5H).count() == 1
+    assert BetsReminderLog.objects.filter(kind=BetsReminderLog.KIND_T_MINUS_2H).count() == 2
+    assert BetsReminderLog.objects.filter(kind=BetsReminderLog.KIND_T_MINUS_30M).count() == 1
 
 
 @pytest.mark.django_db
 def test_command_continues_on_individual_error(monkeypatch):
     UserFactory(name="Ana")
-    m1 = _make_match(hours_to_kickoff=3, home="A1", away="A2")
-    _make_match(hours_to_kickoff=3.1, home="B1", away="B2")
+    m1 = _make_match(hours_to_kickoff=1, home="A1", away="A2")
+    _make_match(hours_to_kickoff=1.1, home="B1", away="B2")
 
     from competition.services import reminder_email as reminder_email_module
 
     original = reminder_email_module.send_reminder_email
-    calls = {"count": 0}
 
     def flaky(match, kind):
-        calls["count"] += 1
         if match.id == m1.id:
             raise RuntimeError("SMTP roto para este match")
         return original(match, kind)
@@ -70,7 +68,6 @@ def test_command_continues_on_individual_error(monkeypatch):
     stdout, stderr = StringIO(), StringIO()
     call_command("send_match_reminders", stdout=stdout, stderr=stderr)
 
-    # El segundo match sí debe haberse enviado
     assert len(mail.outbox) == 1
     assert "ERR" in stderr.getvalue()
 
@@ -78,7 +75,7 @@ def test_command_continues_on_individual_error(monkeypatch):
 @pytest.mark.django_db
 def test_command_dry_run_does_not_send():
     UserFactory(name="Ana")
-    _make_match(hours_to_kickoff=3)
+    _make_match(hours_to_kickoff=1)
 
     call_command("send_match_reminders", "--dry-run", stdout=StringIO(), stderr=StringIO())
 
@@ -89,8 +86,8 @@ def test_command_dry_run_does_not_send():
 @pytest.mark.django_db
 def test_command_match_id_filter():
     UserFactory(name="Ana")
-    m1 = _make_match(hours_to_kickoff=3, home="A1", away="A2")
-    _make_match(hours_to_kickoff=3, home="B1", away="B2")
+    m1 = _make_match(hours_to_kickoff=1, home="A1", away="A2")
+    _make_match(hours_to_kickoff=1, home="B1", away="B2")
 
     call_command(
         "send_match_reminders",
@@ -106,28 +103,27 @@ def test_command_match_id_filter():
 
 @pytest.mark.django_db
 def test_command_kind_filter():
-    """Con --kind T_MINUS_2_5H solo se procesa esa ventana."""
+    """Con --kind T_MINUS_30M solo se procesa esa ventana."""
     UserFactory(name="Ana")
-    _make_match(hours_to_kickoff=3.5, home="A1", away="A2")  # solo T-4h
-    _make_match(hours_to_kickoff=2.4, home="B1", away="B2")  # T-2.5h (y también T-4h)
+    _make_match(hours_to_kickoff=1.5, home="A1", away="A2")  # solo T-2h
+    _make_match(hours_to_kickoff=0.4, home="B1", away="B2")  # T-30min (y también T-2h)
 
     call_command(
         "send_match_reminders",
         "--kind",
-        BetsReminderLog.KIND_T_MINUS_2_5H,
+        BetsReminderLog.KIND_T_MINUS_30M,
         stdout=StringIO(),
         stderr=StringIO(),
     )
 
-    # Solo dispara T-2.5h para B; A queda intacto porque no entra en T-2.5h.
     assert len(mail.outbox) == 1
-    assert BetsReminderLog.objects.filter(kind=BetsReminderLog.KIND_T_MINUS_4H).count() == 0
-    assert BetsReminderLog.objects.filter(kind=BetsReminderLog.KIND_T_MINUS_2_5H).count() == 1
+    assert BetsReminderLog.objects.filter(kind=BetsReminderLog.KIND_T_MINUS_2H).count() == 0
+    assert BetsReminderLog.objects.filter(kind=BetsReminderLog.KIND_T_MINUS_30M).count() == 1
 
 
 @pytest.mark.django_db
 def test_command_skips_match_outside_window():
-    """Match con kickoff lejano (T-4h aún no llegó) no se envía."""
+    """Match con kickoff lejano (T-2h aún no llegó) no se envía."""
     UserFactory(name="Ana")
     _make_match(hours_to_kickoff=10)
 
@@ -139,7 +135,7 @@ def test_command_skips_match_outside_window():
 def test_command_idempotent_across_runs():
     """Llamar dos veces seguidas no duplica envíos."""
     UserFactory(name="Ana")
-    _make_match(hours_to_kickoff=3)
+    _make_match(hours_to_kickoff=1)
 
     call_command("send_match_reminders", stdout=StringIO(), stderr=StringIO())
     call_command("send_match_reminders", stdout=StringIO(), stderr=StringIO())

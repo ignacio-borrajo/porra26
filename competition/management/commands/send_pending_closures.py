@@ -1,10 +1,9 @@
 import logging
-from datetime import timedelta
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from competition.models import BET_CLOSE_HOURS, Match
+from competition.models import Match
 from competition.services.closing_email import send_closure_email
 
 logger = logging.getLogger(__name__)
@@ -31,9 +30,9 @@ class Command(BaseCommand):
         match_id = options["match_id"]
         now = timezone.now()
 
-        qs = Match.objects.filter(
-            kickoff__lte=now + timedelta(hours=BET_CLOSE_HOURS)
-        ).select_related("home", "away", "round", "closing_report")
+        qs = Match.objects.filter(kickoff__lte=now).select_related(
+            "home", "away", "round", "closing_report"
+        )
         if match_id is not None:
             qs = qs.filter(pk=match_id)
 
