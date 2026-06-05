@@ -99,6 +99,10 @@ body {
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+  /* dvh = altura dinámica del viewport: se ajusta cuando iOS/Android
+     ocultan/muestran la barra del navegador, así .bottom-nav fija al
+     fondo no queda desfasada respecto al borde visible. */
+  min-height: 100dvh;
   /* Sin overflow:hidden — el documento debe poder scrollear verticalmente
      en pantallas pequeñas para mostrar listas largas (partidos, jugadores,
      rankings). El fondo ambiente es position:fixed, así que no se mueve. */
@@ -2418,9 +2422,9 @@ html.fv .team-profile-halo {
 .bottom-nav {
   display: none;
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  /* inset explícito evita que un override accidental rompa el pegado al
+     fondo. Equivale a bottom:0; left:0; right:0; top:auto. */
+  inset: auto 0 0 0;
   z-index: 30;
   grid-template-columns: repeat(4, 1fr);
   gap: 0;
@@ -2429,6 +2433,12 @@ html.fv .team-profile-halo {
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   border-top: 1px solid var(--border-hi);
+  /* Forzar capa de compositing propia: en iOS Safari evita que la barra
+     se despegue del fondo durante el rebote elástico del scroll, y en
+     Android Chrome estabiliza el repintado al ocultarse la barra de URL. */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
 }
 .bottom-nav-item {
   position: relative;
@@ -2471,10 +2481,13 @@ html.fv .team-profile-halo {
 }
 
 /* Reserva de espacio inferior cuando hay bottom nav, para que el contenido
-   del <main> no quede tapado por la barra fija. Solo aplica en móvil. */
+   del <main> no quede tapado por la barra fija y quede un colchón visible
+   bajo el último elemento del scroll. La barra mide ~70px + safe area; con
+   100px + safe area dejamos ~30px de respiro entre la última card y la nav.
+   Solo aplica en móvil. */
 @media (max-width: 860px) {
   body:has(.bottom-nav) main {
-    padding-bottom: calc(84px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: calc(100px + env(safe-area-inset-bottom)) !important;
   }
 }
 
