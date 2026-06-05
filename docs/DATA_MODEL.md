@@ -76,19 +76,20 @@ Restricción: **un pronóstico por jugador y partido** (único `playerId+matchId
 | Campo | Tipo | Notas |
 |-------|------|-------|
 | `perPlayer` | Decimal | aportación por jugador (prototipo: 10 €) |
-| `matchdayWinnerPrize` | Decimal | importe único que se entrega al jugador con más puntos en cada jornada de grupos (1ª, 2ª, 3ª) y en cada ronda eliminatoria salvo la Final: dieciseisavos, octavos, cuartos y semifinales |
+| `matchdayWinnerPrize` | Decimal | importe único que cobra el ganador de cada jornada. Cuentan como jornada la 1ª, 2ª y 3ª de la fase de grupos y cada una de las rondas eliminatorias salvo la Final (dieciseisavos, octavos, cuartos y semifinales) — 7 jornadas en total |
 | `sedeWinnerPrize` | Decimal | importe único que cobra el mejor jugador de cada sede al cierre del Mundial (excluyendo a los del podio global) |
 | `maintenanceCost` | Decimal | gastos de mantenimiento del bote (informativo); se publica en la página de Reglas y queda disponible para descontar en cálculos manuales si hiciera falta |
 | `prizes` | Prize[] | filas con `scope="global"` y `position ∈ {1,2,3}` — el podio final |
 
 `total` = `perPlayer × nº de jugadores que pagan`. En el prototipo: 48 jugadores → 480 €.
 
-> El modelo `Prize` solo se usa para el podio final (top 3). Las filas con scope `matchday` o `round` quedaron retiradas en favor de `matchdayWinnerPrize` en PotSettings — un único importe para todas las jornadas/rondas.
+> El modelo `Prize` solo se usa para el podio final (top 3). Las filas con scope `matchday` o `round` quedaron retiradas en favor de `matchdayWinnerPrize` en PotSettings — un único importe para todas las jornadas.
 
-> **Premios por jornada y por ronda eliminatoria.** El importe `matchdayWinnerPrize` se entrega:
+> **Premio por ganador de jornada.** Hay un ganador por jornada. La regla unifica fase de grupos y eliminatorias: **dieciseisavos, octavos, cuartos y semifinales cuentan como una jornada cada una**. El importe `matchdayWinnerPrize` se entrega:
 > - **1 vez por cada jornada de la fase de grupos** (Jornada 1, 2 y 3) — el jugador con más puntos en esa jornada.
-> - **1 vez por cada ronda eliminatoria salvo la Final** (dieciseisavos, octavos, cuartos y semifinales) — el jugador con más puntos en esa ronda.
-> - **La Final NO genera premio de ronda**: el ganador del Mundial cobra a través del podio final (P1). El servicio `announcements.services.detect_after_match` no crea un anuncio de scope `round` para la Final; solo el anuncio `global` (podio) y, si procede, el `sede`.
+> - **1 vez por cada jornada eliminatoria salvo la Final** (dieciseisavos, octavos, cuartos y semifinales) — el jugador con más puntos en esa jornada.
+> - **La Final NO genera premio de jornada**: el ganador del Mundial cobra a través del podio final (P1). El servicio `announcements.services.detect_after_match` no crea un anuncio de scope `round` para la Final; solo el anuncio `global` (podio) y, si procede, el `sede`.
+> Internamente el modelo distingue dos scopes (`matchday` para las jornadas de grupos y `round` para las eliminatorias) porque los partidos se agrupan distinto en BD, pero para el jugador y la regla son la misma cosa: una jornada, un ganador, el mismo importe.
 
 > **Premio por ganador de sede.** Al resolverse la Final del Mundial, cada sede premia al mejor de sus jugadores **que no esté entre los tres primeros del podio global**. Si todos los jugadores con puntos de una sede ya están en el top 3 global, esa sede queda **desierta** y no se entrega su premio. En caso de empate dentro de la sede (tras las tres reglas de desempate: pts → exactos → aciertos), los empatados comparten plaza y el `sedeWinnerPrize` se reparte a partes iguales entre ellos. Los jugadores con `sede=""` (sin sede asignada) no compiten por este premio.
 
@@ -154,7 +155,7 @@ Jugadores **activos** ordenados por:
 
 Solo cuentan jugadores `active = true`. El podio destaca el top 3 (puede tener más de un jugador por plaza si hay empate); el usuario actual va resaltado en toda la tabla.
 
-**Premios económicos.** El importe de cada plaza del podio (P1·P2·P3) se reparte a partes iguales entre quienes la ocupen. El premio por ganador de jornada de grupos o de ronda eliminatoria (dieciseisavos, octavos, cuartos, semifinales — **no la Final**) se decide aplicando las mismas reglas dentro del scope; si tras las tres siguen empatados, los empatados se reparten el importe a partes iguales.
+**Premios económicos.** El importe de cada plaza del podio (P1·P2·P3) se reparte a partes iguales entre quienes la ocupen. El premio por ganador de jornada (las tres de grupos y las cuatro eliminatorias —dieciseisavos, octavos, cuartos, semifinales—; **no la Final**) se decide aplicando las mismas reglas dentro del scope; si tras las tres siguen empatados, los empatados se reparten el importe a partes iguales.
 
 ---
 
