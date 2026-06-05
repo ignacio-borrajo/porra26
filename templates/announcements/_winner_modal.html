@@ -44,6 +44,8 @@
       {% endfor %}
     </div>
   {% else %}
+    <p class="winner-points">{{ announcement.points }} puntos</p>
+
     <div class="winner-modal-podium" role="list">
       {# Orden visual: 2º · 1º · 3º (la cima en el centro) #}
       {% for rank, entry in podium_visual %}
@@ -81,6 +83,10 @@
         </div>
       {% endfor %}
     </div>
+
+    <p class="winner-subtitle">
+      {% if announcement.tied %}Empate en la cima. ¡Bien jugado!{% else %}¡Enhorabuena!{% endif %}
+    </p>
   {% endif %}
 
   <div class="winner-actions">
