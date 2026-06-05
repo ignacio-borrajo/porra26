@@ -26,6 +26,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         ("aluminio", "Aluminio"),
         ("farmacia", "Farmacia"),
         ("sistemas", "Sistemas"),
+        ("sie", "SIE"),
         ("atencion_clientes", "Atención clientes"),
         ("otros", "Otros"),
     ]
@@ -35,7 +36,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         ("asturias", "Asturias"),
         ("madrid", "Madrid"),
         ("barcelona", "Barcelona"),
-        ("sie", "SIE"),
     ]
     PUESTO_CHOICES = [
         ("desarrollo", "Desarrollo"),
