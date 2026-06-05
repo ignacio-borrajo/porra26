@@ -214,13 +214,14 @@
     <div class="rules-matchday-prize">
       <div class="rules-matchday-prize-icon">{% icon "trophy" width=22 height=22 aria_hidden="true" %}</div>
       <div class="rules-matchday-prize-body">
-        <span class="eyebrow">Premio por ganador de jornada / ronda</span>
+        <span class="eyebrow">Premio por ganador de jornada</span>
         <strong>{{ matchday_winner_prize|floatformat:"-2" }} €</strong>
         <p>
-          Se entrega un premio por cada jornada de la fase de grupos (1ª, 2ª y 3ª)
-          y uno más al ganador de cada ronda eliminatoria salvo la Final:
-          dieciseisavos, octavos, cuartos y semifinales. El ganador del Mundial
-          no cobra este premio aparte — ya se lo lleva como campeón en el podio.
+          Hay un ganador por jornada: el jugador con más puntos en ella se lleva
+          este premio. Son jornada la 1ª, 2ª y 3ª de la fase de grupos y cada una
+          de las rondas eliminatorias salvo la Final — dieciseisavos, octavos,
+          cuartos y semifinales cuentan como una jornada cada una. La Final no
+          entrega premio aparte: su ganador cobra como campeón del Mundial en el podio.
         </p>
       </div>
     </div>
@@ -270,7 +271,7 @@
     <p style="font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint);margin:0;line-height:1.55">
       Si tras aplicar las tres reglas siguen empatados, <strong>comparten plaza</strong>:
       en el podio aparecen juntos y el premio de esa plaza se reparte a partes iguales entre ellos.
-      Lo mismo aplica al premio por ganador de jornada/ronda y al premio por ganador de sede.
+      Lo mismo aplica al premio por ganador de jornada y al premio por ganador de sede.
       Solo cuentan los jugadores activos.
     </p>
   </section>
