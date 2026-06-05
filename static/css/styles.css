@@ -2663,3 +2663,97 @@ html.fv .team-profile-halo {
   }
   .history-matrix .hm-sticky-row-2 { top: 28px; }
 }
+
+/* ============================================================
+   Cuadro de eliminatorias (KO bracket)
+   ============================================================ */
+.ko-canvas {
+  position: relative;
+  display: flex;
+  gap: 56px;
+  padding: 32px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  cursor: grab;
+  min-height: 720px;
+}
+.ko-canvas.grabbing { cursor: grabbing; }
+.ko-canvas.prevent-scroll-animation { scroll-behavior: auto; }
+.ko-canvas::-webkit-scrollbar { display: none; }
+
+.ko-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 14px;
+  min-width: 280px;
+  scroll-snap-align: start;
+}
+.ko-col-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, var(--bg-0) 0%, color-mix(in oklch, var(--bg-0) 55%, transparent) 80%, transparent);
+  padding: 4px 6px 10px;
+  font: 600 12px/1 var(--font-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.ko-connectors {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.ko-connectors path { fill: none; stroke-width: 2; }
+.ko-connectors path[data-status="pending_teams"] {
+  stroke: var(--border);
+  stroke-dasharray: 4 6;
+}
+.ko-connectors path[data-status="open"],
+.ko-connectors path[data-status="live"] {
+  stroke: var(--border-hi);
+}
+.ko-connectors path[data-status="done"] {
+  stroke: var(--accent);
+  opacity: .85;
+}
+
+.ko-dots {
+  display: none;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0;
+}
+.ko-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background .2s ease, width .2s ease, height .2s ease;
+}
+.ko-dots span.active {
+  background: var(--accent);
+  width: 8px;
+  height: 8px;
+}
+
+.match-card[data-status="pending_teams"] {
+  border: 1px dashed var(--border);
+}
+
+@media (max-width: 768px) {
+  .ko-canvas {
+    gap: 0;
+    padding: 12px 0;
+    min-height: auto;
+  }
+  .ko-col { min-width: 100%; padding: 0 16px; }
+  .ko-connectors { display: none; }
+  .ko-dots { display: flex; }
+}

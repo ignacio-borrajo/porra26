@@ -10,11 +10,14 @@ from competition.models import Match, Prediction, Round
 from competition.services.resolve import clear_match_result, resolve_match
 from competition.services.standings import standings
 
+KO_ROUND_IDS = ("r32", "r16", "qf", "sf", "final")
+
 
 class CompetitionView(LoginRequiredMixin, View):
     def get(self, request):
         rounds = list(Round.objects.all())
         active_id = request.GET.get("round", rounds[0].id if rounds else "groups")
+        is_ko_view = active_id in KO_ROUND_IDS
 
         matchdays = sorted(
             Match.objects.filter(round_id=active_id, matchday__isnull=False)
@@ -77,6 +80,36 @@ class CompetitionView(LoginRequiredMixin, View):
         all_ids = {r.player_id for r in rows} | {r.player_id for r in scope_rows}
         users_by_id = User.objects.in_bulk(all_ids)
 
+        ko_rounds: list[dict] = []
+        if is_ko_view:
+            ko_qs = (
+                Match.objects.filter(round_id__in=KO_ROUND_IDS)
+                .select_related("home", "away", "round")
+                .order_by("round__order", "kickoff", "bracket_code")
+            )
+            ko_matches = list(ko_qs)
+            feeds_map: dict[str, str | None] = {}
+            for m in ko_matches:
+                for slot in (m.home_slot, m.away_slot):
+                    if slot.startswith("WM") and m.bracket_code:
+                        feeds_map[slot[2:]] = m.bracket_code
+            for m in ko_matches:
+                if m.bracket_code and m.bracket_code.startswith("M"):
+                    m.feeds_into_code = feeds_map.get(m.bracket_code[1:])
+                else:
+                    m.feeds_into_code = None
+            rounds_by_id = {r.id: r for r in rounds}
+            for rid in KO_ROUND_IDS:
+                r_obj = rounds_by_id.get(rid)
+                if r_obj is None:
+                    continue
+                ko_rounds.append(
+                    {
+                        "round": r_obj,
+                        "matches": [m for m in ko_matches if m.round_id == rid],
+                    }
+                )
+
         from announcements.models import WinnerAnnouncement
 
         first_announcement_id = (
@@ -115,6 +148,9 @@ class CompetitionView(LoginRequiredMixin, View):
                 "scope_my_is_tied": scope_my_is_tied,
                 "scope_max_pts": scope_max_pts,
                 "scope_label": scope_label,
+                "is_ko_view": is_ko_view,
+                "ko_rounds": ko_rounds,
+                "active_ko_id": active_id if is_ko_view else None,
             },
         )
 
