@@ -13,7 +13,6 @@ from django.views import View
 from django.views.generic import TemplateView
 
 from competition.models import BET_CLOSE_HOURS, Match
-from competition.services.standings import standings
 from pot.models import Payment, Prize
 
 from .forms import ChangePasswordForm, LoginForm, ProfileForm
@@ -38,18 +37,14 @@ class LoginView(View):
         next_matches = list(
             Match.objects.filter(kickoff__gt=timezone.now())
             .select_related("home", "away", "round")
-            .order_by("kickoff")[:3]
+            .order_by("kickoff")[:5]
         )
         for m in next_matches:
             m.close_at = m.kickoff - timedelta(hours=BET_CLOSE_HOURS)
-        top_rows = standings()[:5]
-        users_by_id = User.objects.in_bulk([r.player_id for r in top_rows])
         return {
             "players_count": Payment.objects.filter(paid=True).count(),
             "first_prize": int(first_prize) if first_prize is not None else 0,
             "next_matches": next_matches,
-            "top_rows": top_rows,
-            "top_users": users_by_id,
         }
 
     def get(self, request):

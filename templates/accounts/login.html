@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load icons static avatar_extras %}
+{% load icons static %}
 {% block main %}
 <section class="login-screen">
   <header class="login-header">
@@ -112,28 +112,6 @@
       </div>
       {% endif %}
 
-      {% if top_rows %}
-      <div class="glass login-info-card">
-        <div class="login-info-card__head" style="margin-bottom:10px">
-          {% icon "trophy" width=15 height=15 style="color:var(--c-gold)" %}
-          <span class="eyebrow">Top 5 · clasificación</span>
-        </div>
-        <ol class="login-top">
-          {% for r in top_rows %}
-          {% with u=top_users|get_item:r.player_id %}
-          <li class="login-top__row{% if r.position == 1 %} login-top__row--lead{% endif %}">
-            <span class="mono login-top__pos{% if r.position <= 3 %} login-top__pos--podium{% endif %}">{% if r.is_first_in_tie %}{% if r.is_tied %}={% endif %}{{ r.position }}{% endif %}</span>
-            <div class="login-top__id">
-              {% if u %}{% include "partials/_avatar.html" with u=u size=28 %}{% endif %}
-              <span class="login-top__name">{{ r.name }}</span>
-            </div>
-            <span class="display mono login-top__pts">{{ r.pts }}</span>
-          </li>
-          {% endwith %}
-          {% endfor %}
-        </ol>
-      </div>
-      {% endif %}
     </aside>
   </div>
 
