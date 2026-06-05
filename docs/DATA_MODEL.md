@@ -77,12 +77,15 @@ Restricción: **un pronóstico por jugador y partido** (único `playerId+matchId
 |-------|------|-------|
 | `perPlayer` | Decimal | aportación por jugador (prototipo: 10 €) |
 | `matchdayWinnerPrize` | Decimal | importe único que se entrega al jugador con más puntos en cada jornada de grupos y cada ronda KO |
+| `sedeWinnerPrize` | Decimal | importe único que cobra el mejor jugador de cada sede al cierre del Mundial (excluyendo a los del podio global) |
 | `maintenanceCost` | Decimal | gastos de mantenimiento del bote (informativo); se publica en la página de Reglas y queda disponible para descontar en cálculos manuales si hiciera falta |
 | `prizes` | Prize[] | filas con `scope="global"` y `position ∈ {1,2,3}` — el podio final |
 
 `total` = `perPlayer × nº de jugadores que pagan`. En el prototipo: 48 jugadores → 480 €.
 
 > El modelo `Prize` solo se usa para el podio final (top 3). Las filas con scope `matchday` o `round` quedaron retiradas en favor de `matchdayWinnerPrize` en PotSettings — un único importe para todas las jornadas/rondas.
+
+> **Premio por ganador de sede.** Al resolverse la Final del Mundial, cada sede premia al mejor de sus jugadores **que no esté entre los tres primeros del podio global**. Si todos los jugadores con puntos de una sede ya están en el top 3 global, esa sede queda **desierta** y no se entrega su premio. En caso de empate dentro de la sede (tras las tres reglas de desempate: pts → exactos → aciertos), los empatados comparten plaza y el `sedeWinnerPrize` se reparte a partes iguales entre ellos. Los jugadores con `sede=""` (sin sede asignada) no compiten por este premio.
 
 ---
 
