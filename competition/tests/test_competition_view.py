@@ -436,3 +436,47 @@ def test_dashboard_ko_template_renders_canvas(client):
     assert html.count('class="ko-col"') == 5
     assert "ko-connectors" in html
     assert 'data-active-round="r32"' in html
+
+
+@pytest.mark.django_db
+def test_match_card_has_bracket_data_attributes_in_ko(client):
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    RoundFactory(id="groups", points=3, label="Fase de grupos", short="GRP", order=1)
+    r32 = RoundFactory(id="r32", points=5, label="Dieciseisavos", short="R32", order=2)
+    r16 = RoundFactory(id="r16", points=7, label="Octavos", short="R16", order=3)
+    RoundFactory(id="qf", points=10, label="Cuartos", short="QF", order=4)
+    RoundFactory(id="sf", points=15, label="Semifinales", short="SF", order=5)
+    RoundFactory(id="final", points=25, label="Final", short="FIN", order=6)
+    MatchFactory(round=r32, bracket_code="M73", kickoff=timezone.now() + timedelta(days=10))
+    MatchFactory(
+        round=r16,
+        bracket_code="M89",
+        home=None,
+        away=None,
+        home_slot="WM73",
+        away_slot="WM74",
+        kickoff=timezone.now() + timedelta(days=15),
+    )
+
+    r = client.get(reverse("competicion:dashboard") + "?round=r32")
+    html = r.content.decode("utf-8")
+    assert 'data-bracket-code="M73"' in html
+    assert 'data-feeds-into="M89"' in html
+    assert 'data-status="open"' in html
+    assert 'data-bracket-code="M89"' in html
+    assert 'data-status="pending_teams"' in html
+
+
+@pytest.mark.django_db
+def test_round_selector_chips_have_target_round(client):
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    RoundFactory(id="groups", points=3, label="Fase de grupos", short="GRP", order=1)
+    r32 = RoundFactory(id="r32", points=5, label="Dieciseisavos", short="R32", order=2)
+    MatchFactory(round=r32, bracket_code="M73", kickoff=timezone.now() + timedelta(days=10))
+
+    r = client.get(reverse("competicion:dashboard") + "?round=r32")
+    html = r.content.decode("utf-8")
+    assert 'data-target-round="r32"' in html
+    assert 'data-target-round="groups"' in html
