@@ -225,6 +225,22 @@
     </div>
     {% endif %}
 
+    {% if sede_winner_prize and sede_winner_prize > 0 %}
+    <div class="rules-matchday-prize">
+      <div class="rules-matchday-prize-icon">{% icon "trophy" width=22 height=22 aria_hidden="true" %}</div>
+      <div class="rules-matchday-prize-body">
+        <span class="eyebrow">Premio por ganador de sede</span>
+        <strong>{{ sede_winner_prize|floatformat:"-2" }} €</strong>
+        <p>
+          Al cierre del Mundial, el mejor jugador de cada sede (Ourense, Vigo, Asturias, Madrid,
+          Barcelona y Latinoamérica) se lleva este premio. Si alguien ya está entre los tres
+          primeros del podio final, el premio de su sede pasa al siguiente mejor de esa sede
+          que no esté en el podio global.
+        </p>
+      </div>
+    </div>
+    {% endif %}
+
     {% if maintenance_cost and maintenance_cost > 0 %}
     <div class="rules-matchday-prize">
       <div class="rules-matchday-prize-icon">{% icon "euro" width=22 height=22 aria_hidden="true" %}</div>
@@ -254,7 +270,8 @@
     <p style="font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint);margin:0;line-height:1.55">
       Si tras aplicar las tres reglas siguen empatados, <strong>comparten plaza</strong>:
       en el podio aparecen juntos y el premio de esa plaza se reparte a partes iguales entre ellos.
-      Lo mismo aplica al premio por ganador de jornada/ronda. Solo cuentan los jugadores activos.
+      Lo mismo aplica al premio por ganador de jornada/ronda y al premio por ganador de sede.
+      Solo cuentan los jugadores activos.
     </p>
   </section>
 
