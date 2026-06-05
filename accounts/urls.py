@@ -8,6 +8,11 @@ urlpatterns = [
     path("cambiar-password/", views.ChangePasswordView.as_view(), name="change_password"),
     path("mi-cuenta/", views.MyAccountView.as_view(), name="my_account"),
     path(
+        "cuenta/equipo/",
+        views.TeamProfileModalView.as_view(),
+        name="team_profile_modal",
+    ),
+    path(
         "recuperar/",
         views.PasswordResetRequestView.as_view(),
         name="password_reset",

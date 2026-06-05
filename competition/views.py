@@ -84,11 +84,18 @@ class CompetitionView(LoginRequiredMixin, View):
             .first()
         )
 
+        show_team_profile_modal = bool(
+            request.user.is_jugador
+            and not (request.user.sede and request.user.dept and request.user.puesto)
+            and not request.session.get("team_profile_dismissed")
+        )
+
         return render(
             request,
             "competition/dashboard.html",
             {
                 "first_announcement_id": first_announcement_id,
+                "show_team_profile_modal": show_team_profile_modal,
                 "rounds": rounds,
                 "active_round": active_id,
                 "matchdays": matchdays,

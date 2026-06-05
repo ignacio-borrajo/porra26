@@ -1910,3 +1910,164 @@ img.avatar { object-fit: cover; }
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
+
+/* ============================================================
+   Modal de incentivo "perfil de equipo" (sede/dept/puesto)
+   ============================================================ */
+.team-profile-modal {
+  width: min(460px, 100%);
+  padding: 70px clamp(22px, 4vw, 38px) 28px;
+  border-radius: 28px;
+  background: var(--surface-solid);
+  text-align: center;
+  position: relative;
+  overflow: visible;
+  box-shadow:
+    0 30px 80px -30px oklch(0 0 0 / 0.55),
+    0 0 0 1px oklch(1 0 0 / 0.06) inset;
+}
+.team-profile-modal .modal-x {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid var(--border, oklch(1 0 0 / 0.12));
+  background: transparent;
+  color: var(--text);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: border-color .15s, color .15s, transform .15s;
+  z-index: 3;
+}
+.team-profile-modal .modal-x:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.05);
+}
+
+.team-profile-halo {
+  position: absolute;
+  top: -86px;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  margin-left: -100px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 200deg,
+    var(--c-pink),
+    var(--c-yellow),
+    var(--c-lime),
+    var(--c-cyan),
+    var(--c-pink)
+  );
+  filter: blur(34px);
+  opacity: 0.55;
+  z-index: 0;
+  pointer-events: none;
+  animation: team-profile-halo-spin 9s linear infinite;
+}
+@keyframes team-profile-halo-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.team-profile-trophy {
+  position: absolute;
+  top: -52px;
+  left: 50%;
+  font-size: clamp(76px, 11vw, 108px);
+  line-height: 1;
+  z-index: 2;
+  filter:
+    drop-shadow(0 14px 24px oklch(from var(--c-gold) l c h / 0.55))
+    drop-shadow(0 0 20px oklch(from var(--c-yellow) l c h / 0.45));
+  transform-origin: 50% 90%;
+  animation:
+    team-profile-trophy-pop 0.85s var(--ease-spring) both,
+    team-profile-trophy-float 4.5s ease-in-out 0.95s infinite;
+  pointer-events: none;
+}
+@keyframes team-profile-trophy-pop {
+  0%   { transform: translate(-50%, 18px) scale(0.3) rotate(-22deg); opacity: 0; }
+  55%  { transform: translate(-50%, -6px) scale(1.18) rotate(8deg);  opacity: 1; }
+  100% { transform: translate(-50%, 0)    scale(1)    rotate(0);     opacity: 1; }
+}
+@keyframes team-profile-trophy-float {
+  0%, 100% { transform: translate(-50%, 0) rotate(0); }
+  50%      { transform: translate(-50%, -7px) rotate(-4deg); }
+}
+
+.team-profile-title {
+  font-family: 'Sora', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(22px, 3.4vw, 28px);
+  line-height: 1.15;
+  margin: 0 0 8px;
+  background: linear-gradient(
+    100deg,
+    var(--c-pink),
+    var(--c-yellow) 35%,
+    var(--c-lime) 65%,
+    var(--c-cyan)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  position: relative;
+  z-index: 1;
+}
+.team-profile-subtitle {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin: 0 0 22px;
+  line-height: 1.5;
+  position: relative;
+  z-index: 1;
+}
+.team-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+  position: relative;
+  z-index: 1;
+}
+.team-profile-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.team-profile-form .field label {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.team-profile-form .field-error {
+  color: var(--c-red);
+  font-size: 12px;
+  margin: 0;
+}
+.team-profile-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 6px;
+}
+.team-profile-actions .btn { width: 100%; }
+@media (max-width: 420px) {
+  .team-profile-actions { grid-template-columns: 1fr; }
+  .team-profile-actions .btn-ghost { order: 2; }
+}
+
+html.fv .team-profile-trophy,
+html.fv .team-profile-halo {
+  animation: none;
+}

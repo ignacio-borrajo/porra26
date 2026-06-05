@@ -1,0 +1,28 @@
+<section class="glass pop team-profile-modal"
+         role="dialog" aria-modal="true" aria-labelledby="team-profile-title">
+  <button type="button" class="modal-x" data-modal-close aria-label="Cerrar">×</button>
+  <div class="team-profile-halo" aria-hidden="true"></div>
+  <div class="team-profile-trophy" aria-hidden="true">🏆</div>
+  <h2 id="team-profile-title" class="team-profile-title">¡Compite también en equipo!</h2>
+  <p class="team-profile-subtitle">
+    Cuéntanos dónde trabajas y entrarás automáticamente en las clasificaciones
+    por sede, departamento y puesto. Solo son 10 segundos.
+  </p>
+  <form method="post" action="{% url 'accounts:team_profile_modal' %}" class="team-profile-form" novalidate>
+    {% csrf_token %}
+    {% for f in form %}
+      <div class="field">
+        <label for="{{ f.id_for_label }}">{{ f.label }}</label>
+        {{ f }}
+        {% for e in f.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
+      </div>
+    {% endfor %}
+    {% if form.non_field_errors %}
+      <p class="field-error">{{ form.non_field_errors|join:" " }}</p>
+    {% endif %}
+    <div class="team-profile-actions">
+      <button type="button" class="btn btn-ghost" data-modal-close>Más tarde</button>
+      <button type="submit" class="btn btn-primary">Guardar y competir</button>
+    </div>
+  </form>
+</section>
