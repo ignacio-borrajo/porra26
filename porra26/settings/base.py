@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.humanize",
     "accounts",
     "competition",
     "pot",
@@ -85,6 +86,11 @@ LOGOUT_REDIRECT_URL = "/"
 
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
+# La duración real se controla por sesión con request.session.set_expiry() en
+# LoginView según el checkbox 'Recordarme'. Este valor es el tope absoluto.
+SESSION_COOKIE_AGE = 30 * 24 * 3600
+SESSION_SAVE_EVERY_REQUEST = False
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 AXES_FAILURE_LIMIT = 5
 AXES_COOLOFF_TIME = 0.25
