@@ -2734,42 +2734,21 @@ html.fv .team-profile-halo {
   opacity: .85;
 }
 
-.ko-dots {
-  display: none;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 0;
-}
-.ko-dots span {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--border);
-  transition: background .2s ease, width .2s ease, height .2s ease;
-}
-.ko-dots span.active {
-  background: var(--accent);
-  width: 8px;
-  height: 8px;
-}
-
 .match-card[data-status="pending_teams"] {
   border: 1px dashed var(--border);
 }
 
+/* En desktop el bracket manda; la lista de móvil queda oculta. */
+.ko-mobile-list { display: none; }
+
 @media (max-width: 768px) {
-  .ko-canvas {
-    gap: 0;
-    padding: 12px 0;
+  /* Móvil: ocultamos el bracket y mostramos solo la ronda activa como lista vertical
+     (similar al layout de la fase de grupos). Los chips recargan la página. */
+  .ko-canvas { display: none; }
+  .ko-mobile-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 4px 0;
   }
-  .ko-col {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    min-width: 100%;
-    padding: 0 16px;
-  }
-  .ko-col > .match-card { grid-row: auto; align-self: stretch; }
-  .ko-connectors { display: none; }
-  .ko-dots { display: flex; }
 }

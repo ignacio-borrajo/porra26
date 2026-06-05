@@ -106,7 +106,10 @@ class CompetitionView(LoginRequiredMixin, View):
                 ko_rounds.append(
                     {
                         "round": r_obj,
-                        "matches": [m for m in ko_matches if m.round_id == rid],
+                        "matches": sorted(
+                            [m for m in ko_matches if m.round_id == rid],
+                            key=lambda m: (m.feeds_into_code or "", m.bracket_code or ""),
+                        ),
                     }
                 )
 

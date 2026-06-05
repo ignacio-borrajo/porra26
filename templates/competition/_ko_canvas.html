@@ -1,10 +1,4 @@
 {% load static %}
-<div class="ko-dots" aria-hidden="true">
-  {% for entry in ko_rounds %}
-    <span data-round="{{ entry.round.id }}"{% if entry.round.id == active_ko_id %} class="active"{% endif %}></span>
-  {% endfor %}
-</div>
-
 <div class="ko-canvas" data-active-round="{{ active_ko_id }}">
   {% for entry in ko_rounds %}
     <section class="ko-col" data-round="{{ entry.round.id }}">
@@ -19,6 +13,18 @@
     </section>
   {% endfor %}
   <svg class="ko-connectors" aria-hidden="true"></svg>
+</div>
+
+<div class="ko-mobile-list">
+  {% for entry in ko_rounds %}
+    {% if entry.round.id == active_ko_id %}
+      {% for m in entry.matches %}
+        {% include "competition/_match_card.html" with match=m my_preds=my_preds %}
+      {% empty %}
+        <p class="glass" style="padding:18px;margin-top:8px">No hay cruces en esta ronda todavía.</p>
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
 </div>
 
 <script type="module" src="{% static 'js/ko-bracket.js' %}"></script>

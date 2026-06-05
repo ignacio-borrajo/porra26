@@ -2,12 +2,19 @@ const canvas = document.querySelector(".ko-canvas");
 if (canvas) init(canvas);
 
 function init(canvas) {
-  scrollToActiveColumn(canvas);
   setupChipNavigation(canvas);
-  if (matchMedia("(pointer:fine)").matches) setupDragToPan(canvas);
-  setupConnectors(canvas);
-  setupMobileDots(canvas);
-  window.addEventListener("resize", debounceRAF(() => layoutConnectors(canvas)));
+  if (isCanvasVisible(canvas)) {
+    scrollToActiveColumn(canvas);
+    setupDragToPan(canvas);
+    setupConnectors(canvas);
+  }
+  window.addEventListener("resize", debounceRAF(() => {
+    if (isCanvasVisible(canvas)) layoutConnectors(canvas);
+  }));
+}
+
+function isCanvasVisible(canvas) {
+  return getComputedStyle(canvas).display !== "none";
 }
 
 function scrollToActiveColumn(canvas) {
@@ -25,6 +32,7 @@ function setupChipNavigation(canvas) {
   const chips = document.querySelectorAll(".round-selector .chip[data-target-round]");
   chips.forEach(chip => {
     chip.addEventListener("click", e => {
+      if (!isCanvasVisible(canvas)) return;
       const target = chip.dataset.targetRound;
       if (!target) return;
       const col = canvas.querySelector(`.ko-col[data-round="${target}"]`);
@@ -39,26 +47,33 @@ function setupChipNavigation(canvas) {
 function setupDragToPan(canvas) {
   let startX = 0;
   let startScrollLeft = 0;
-  let dragging = false;
+  let active = false;
+
+  function onMove(e) {
+    if (!active) return;
+    canvas.scrollLeft = startScrollLeft + (startX - e.clientX);
+  }
+  function onEnd() {
+    if (!active) return;
+    active = false;
+    canvas.classList.remove("grabbing");
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", onEnd);
+    document.removeEventListener("pointercancel", onEnd);
+  }
 
   canvas.addEventListener("pointerdown", e => {
-    if (e.target.closest(".match-card")) return;
-    dragging = true;
+    if (e.button !== 0) return;
+    if (e.target.closest("a, button")) return;
+    active = true;
     startX = e.clientX;
     startScrollLeft = canvas.scrollLeft;
-    canvas.setPointerCapture(e.pointerId);
     canvas.classList.add("grabbing");
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onEnd);
+    document.addEventListener("pointercancel", onEnd);
+    e.preventDefault();
   });
-  canvas.addEventListener("pointermove", e => {
-    if (!dragging) return;
-    canvas.scrollLeft = startScrollLeft + (startX - e.clientX);
-  });
-  const end = () => {
-    dragging = false;
-    canvas.classList.remove("grabbing");
-  };
-  canvas.addEventListener("pointerup", end);
-  canvas.addEventListener("pointercancel", end);
 }
 
 function setupConnectors(canvas) {
@@ -114,23 +129,6 @@ function layoutConnectors(canvas) {
       svg.appendChild(path);
     }
   }
-}
-
-function setupMobileDots(canvas) {
-  const dots = document.querySelector(".ko-dots");
-  if (!dots) return;
-  const cols = canvas.querySelectorAll(".ko-col[data-round]");
-  const io = new IntersectionObserver(entries => {
-    for (const en of entries) {
-      if (en.isIntersecting && en.intersectionRatio >= 0.5) {
-        const code = en.target.dataset.round;
-        dots.querySelectorAll("span").forEach(s =>
-          s.classList.toggle("active", s.dataset.round === code)
-        );
-      }
-    }
-  }, { root: canvas, threshold: [0.5] });
-  cols.forEach(c => io.observe(c));
 }
 
 function rel(el, canvasRect, offsetX, offsetY) {
