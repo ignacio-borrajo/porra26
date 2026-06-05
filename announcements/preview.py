@@ -92,3 +92,31 @@ def _preview_prize_for_position(scope: str, position: int) -> Decimal:
     if position == 1:
         return PotSettings.load().matchday_winner_prize
     return Decimal("0")
+
+
+def build_preview_sede(*, current_user) -> tuple[WinnerAnnouncement, list]:
+    """Construye un anuncio sintético + grid de SedeWinner para previsualizar
+    la modal de sede. Para sedes con al menos un jugador real (excluyendo
+    current_user para mostrar también un estado 'resolved' realista), usa
+    al primer jugador como ganador. Sedes sin jugadores → estado 'desierto'."""
+    from pot.models import PotSettings
+    from pot.services.prizes import SedeWinner
+
+    ann = WinnerAnnouncement(scope_kind="sede", points=0)
+
+    sede_prize = PotSettings.load().sede_winner_prize
+    sede_winners_preview: list[SedeWinner] = []
+    for sede_key, sede_label in User.SEDE_CHOICES:
+        first = User.objects.filter(sede=sede_key).order_by("name").first()
+        if first is None:
+            sede_winners_preview.append(SedeWinner(sede_key=sede_key, sede_label=sede_label))
+            continue
+        sede_winners_preview.append(SedeWinner(
+            sede_key=sede_key,
+            sede_label=sede_label,
+            users=[first],
+            points=0,
+            prize_per_user=sede_prize,
+            status="resolved",
+        ))
+    return ann, sede_winners_preview

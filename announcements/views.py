@@ -67,6 +67,19 @@ class AnnouncementSeenView(LoginRequiredMixin, View):
 class AnnouncementPreviewView(GestorRequiredMixin, View):
     def get(self, request):
         scope = request.GET.get("scope", "matchday")
+        if scope == "sede":
+            from .preview import build_preview_sede
+
+            ann, sede_winners_preview = build_preview_sede(current_user=request.user)
+            return render(
+                request,
+                "announcements/_winner_modal.html",
+                {
+                    "announcement": ann,
+                    "preview": True,
+                    "sede_winners": sede_winners_preview,
+                },
+            )
         tied = request.GET.get("tied") == "1"
         ann, winners = build_preview(scope, tied=tied, current_user=request.user)
         podium = build_preview_podium(scope, tied=tied, current_user=request.user)

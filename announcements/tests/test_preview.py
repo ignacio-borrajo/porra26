@@ -130,3 +130,32 @@ class TestPreviewView:
         client.get(reverse("announcements:preview") + "?scope=global&tied=1")
         assert WinnerAnnouncement.objects.count() == before_ann
         assert WinnerAnnouncementSeen.objects.count() == before_seen
+
+
+@pytest.mark.django_db
+def test_preview_sede_for_gestor(client):
+    from decimal import Decimal
+
+    from accounts.tests.factories import GestorFactory, UserFactory
+    from pot.models import PotSettings
+
+    UserFactory(name="A", sede="madrid")
+    UserFactory(name="B", sede="vigo")
+    s = PotSettings.load()
+    s.sede_winner_prize = Decimal("30.00")
+    s.save(update_fields=["sede_winner_prize"])
+    client.force_login(GestorFactory(sede="barcelona"))
+    r = client.get("/anuncios/preview/?scope=sede")
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert "winner-modal-sede-grid" in body
+    assert "Vista previa" in body
+
+
+@pytest.mark.django_db
+def test_preview_sede_forbidden_for_jugador(client):
+    from accounts.tests.factories import UserFactory
+
+    client.force_login(UserFactory())
+    r = client.get("/anuncios/preview/?scope=sede")
+    assert r.status_code in (302, 403)  # GestorRequiredMixin redirige o prohíbe
