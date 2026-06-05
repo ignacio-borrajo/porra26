@@ -216,3 +216,28 @@ def test_rules_shows_knockout_90min_rule(client):
     assert "90 minutos" in content
     assert "prórrogas" in content
     assert "penaltis" in content
+
+
+@pytest.mark.django_db
+def test_rules_shows_sede_prize_block(client):
+    s = PotSettings.load()
+    s.sede_winner_prize = Decimal("30.50")
+    s.save(update_fields=["sede_winner_prize"])
+    client.force_login(UserFactory())
+    r = client.get("/reglas/")
+    body = r.content.decode()
+    assert "Premio por ganador de sede" in body
+    # floatformat:"-2" rinde "30.5" para 30.50 — el importe sale en el bloque.
+    assert "30.5" in body or "30,5" in body
+    assert "no esté en el podio global" in body or "no está en el podio global" in body
+
+
+@pytest.mark.django_db
+def test_rules_hides_sede_prize_block_when_zero(client):
+    s = PotSettings.load()
+    s.sede_winner_prize = 0
+    s.save(update_fields=["sede_winner_prize"])
+    client.force_login(UserFactory())
+    r = client.get("/reglas/")
+    body = r.content.decode()
+    assert "Premio por ganador de sede" not in body

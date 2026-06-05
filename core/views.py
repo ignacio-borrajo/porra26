@@ -18,5 +18,6 @@ class RulesView(LoginRequiredMixin, TemplateView):
         ctx["bet_close_hours"] = BET_CLOSE_HOURS
         ctx["rules_updated_at"] = settings.RULES_UPDATED_AT
         ctx["matchday_winner_prize"] = pot_settings.matchday_winner_prize
+        ctx["sede_winner_prize"] = pot_settings.sede_winner_prize
         ctx["maintenance_cost"] = pot_settings.maintenance_cost
         return ctx

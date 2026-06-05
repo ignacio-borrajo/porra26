@@ -9,6 +9,7 @@ class WinnerAnnouncement(models.Model):
         ("matchday", "Jornada de grupos"),
         ("round", "Ronda KO"),
         ("global", "Campeón del Mundial"),
+        ("sede", "Ganadores por sede"),
     ]
 
     scope_kind = models.CharField(max_length=10, choices=SCOPE_CHOICES)
@@ -48,6 +49,11 @@ class WinnerAnnouncement(models.Model):
                 condition=Q(scope_kind="global"),
                 name="uniq_ann_global",
             ),
+            UniqueConstraint(
+                fields=["scope_kind"],
+                condition=Q(scope_kind="sede"),
+                name="uniq_ann_sede",
+            ),
         ]
 
     def __str__(self):
@@ -68,6 +74,8 @@ class WinnerAnnouncement(models.Model):
             if self.tied:
                 return f"¡Ganadores de {label}!"
             return f"¡Ganador de {label}!"
+        if self.scope_kind == "sede":
+            return "¡Ganadores por sede!"
         return "¡Campeones del Mundial!" if self.tied else "¡Campeón del Mundial!"
 
 

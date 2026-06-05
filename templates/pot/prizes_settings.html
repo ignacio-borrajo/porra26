@@ -83,7 +83,29 @@
 
     <section class="glass prizes-matchday-card" style="padding:24px;border-radius:var(--r-lg);display:flex;flex-direction:column;gap:18px">
       <header style="display:flex;flex-direction:column;gap:4px">
-        <span class="eyebrow">03 · Gastos de mantenimiento</span>
+        <span class="eyebrow">03 · Por sede</span>
+        <h2 style="margin:0;font-family:Sora,sans-serif;font-weight:700;font-size:20px">Premio por ganador de sede</h2>
+        <p style="color:var(--text-dim);margin:0;font-size:13px">
+          Importe que cobra el mejor jugador de cada sede al cierre del Mundial,
+          excluyendo a los tres del podio global.
+        </p>
+      </header>
+
+      <div class="prizes-matchday-row">
+        <div class="prizes-matchday-icon">{% icon "trophy" width=28 height=28 %}</div>
+        <label class="prizes-matchday-label" for="sede_winner_prize">Importe por sede</label>
+        <div class="prizes-matchday-input">
+          <input class="input" type="number" min="0" step="0.01" inputmode="decimal"
+                 id="sede_winner_prize" name="sede_winner_prize"
+                 value="{{ settings.sede_winner_prize|floatformat:'-2' }}">
+          <span class="mono">€</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="glass prizes-matchday-card" style="padding:24px;border-radius:var(--r-lg);display:flex;flex-direction:column;gap:18px">
+      <header style="display:flex;flex-direction:column;gap:4px">
+        <span class="eyebrow">04 · Gastos de mantenimiento</span>
         <h2 style="margin:0;font-family:Sora,sans-serif;font-weight:700;font-size:20px">Gastos de mantenimiento del bote</h2>
         <p style="color:var(--text-dim);margin:0;font-size:13px">
           Importe que se descuenta del bote para cubrir gastos comunes (por ejemplo, comisiones o material).
@@ -105,7 +127,7 @@
 
     <section class="glass" style="padding:24px;border-radius:var(--r-lg);display:flex;flex-direction:column;gap:18px">
       <header style="display:flex;flex-direction:column;gap:4px">
-        <span class="eyebrow">04 · Puntuación por ronda</span>
+        <span class="eyebrow">05 · Puntuación por ronda</span>
         <h2 style="margin:0;font-family:Sora,sans-serif;font-weight:700;font-size:20px">Cuánto vale cada acierto</h2>
         <p style="color:var(--text-dim);margin:0;font-size:13px">
           Los cambios se aplican solo a los partidos cuyo resultado aún no se ha confirmado.
@@ -167,6 +189,7 @@
           <option value="matchday">Jornada de grupos</option>
           <option value="round">Ronda eliminatoria</option>
           <option value="global">Campeón del Mundial</option>
+          <option value="sede">Ganadores por sede</option>
         </select>
       </label>
       <label style="display:flex;flex-direction:column;gap:4px">
@@ -193,7 +216,10 @@
     btn.addEventListener("click", () => {
       const scope = document.getElementById("preview-scope").value;
       const tied = document.getElementById("preview-tied").value;
-      openModal(`{% url 'announcements:preview' %}?scope=${scope}&tied=${tied}`);
+      const url = scope === "sede"
+        ? `{% url 'announcements:preview' %}?scope=sede`
+        : `{% url 'announcements:preview' %}?scope=${scope}&tied=${tied}`;
+      openModal(url);
     });
   }
 </script>

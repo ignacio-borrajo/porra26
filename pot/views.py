@@ -294,6 +294,12 @@ class PrizesSettingsView(GestorRequiredMixin, View):
                 settings_obj.maintenance_cost = mc_value
                 settings_obj.save(update_fields=["maintenance_cost"])
 
+            sw_raw = request.POST.get("sede_winner_prize")
+            sw_value = _parse_decimal(sw_raw)
+            if sw_value is not None:
+                settings_obj.sede_winner_prize = sw_value
+                settings_obj.save(update_fields=["sede_winner_prize"])
+
             for round_ in Round.objects.all():
                 changes: dict[str, int] = {}
                 new_exact = _parse_int(request.POST.get(f"exact_{round_.id}"))
