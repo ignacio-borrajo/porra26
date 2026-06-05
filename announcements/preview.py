@@ -4,11 +4,10 @@ from django.http import Http404
 
 from accounts.models import User
 from announcements.models import WinnerAnnouncement
-from competition.models import Round
 from pot.models import PotSettings, Prize
 from pot.services.prizes import PodiumEntry
 
-_VALID_SCOPES = {"matchday", "round", "global"}
+_VALID_SCOPES = {"matchday", "ko", "global"}
 
 
 def build_preview(scope: str, *, tied: bool, current_user) -> tuple[WinnerAnnouncement, list]:
@@ -19,12 +18,7 @@ def build_preview(scope: str, *, tied: bool, current_user) -> tuple[WinnerAnnoun
 
     if scope == "matchday":
         ann.scope_matchday = 1
-    elif scope == "round":
-        ko_round = Round.objects.exclude(id="groups").order_by("order").first()
-        if ko_round is None:
-            ko_round = Round.objects.order_by("order").first()
-        if ko_round is not None:
-            ann.scope_round = ko_round
+    # scope == "ko": un único anuncio global por torneo, sin estado adicional.
 
     winners = [current_user]
     if tied:
