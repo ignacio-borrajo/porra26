@@ -1268,6 +1268,19 @@ img.avatar { object-fit: cover; }
 .podium-pedestal--2 .podium-rank-number { color: oklch(0.82 0.02 250); }
 .podium-pedestal--3 .podium-rank-number { color: oklch(0.68 0.10 50); }
 
+/* Estado "aún sin puntos": cajones placeholder atenuados */
+.podium-slot--placeholder .podium-medal { opacity: 0.35; filter: grayscale(0.7); }
+.podium-slot--placeholder .podium-pts { color: var(--text-faint); opacity: 0.6; }
+.podium-slot--placeholder .podium-pedestal { opacity: 0.7; }
+.podium-placeholder-spacer { height: 22px; }
+.leaderboard-empty {
+  margin: 14px 0 6px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 /* Slot colapsado: 3+ empatados */
 .podium-slot--collapsed { position: relative; }
 
