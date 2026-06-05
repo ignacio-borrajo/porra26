@@ -15,9 +15,9 @@ Define las entidades, relaciones y reglas que la aplicación debe implementar. L
 | `passwordHash` | string | contraseña (temporal en el alta) |
 | `mustChangePassword` | bool | true tras un alta o un reset |
 | `avatar` | string | iniciales (derivable del nombre) |
-| `dept` | enum | `nominas` \| `gestion` \| `financiera` \| `pesca` (opcional) |
-| `sede` | enum | `ourense` \| `vigo` \| `asturias` \| `madrid` \| `barcelona` \| `latam` (opcional) |
-| `puesto` | enum | `desarrollo` \| `sistemas` \| `consultoria` \| `administracion` (opcional) |
+| `dept` | enum | `gestion` \| `financiera` \| `nominas` \| `entorno` \| `galileo` \| `web_movilidad` \| `pesca` \| `aluminio` \| `farmacia` \| `sistemas` \| `atencion_clientes` \| `otros` (opcional) |
+| `sede` | enum | `ourense` \| `vigo` \| `asturias` \| `madrid` \| `barcelona` \| `sie` (opcional) |
+| `puesto` | enum | `desarrollo` \| `sistemas` \| `consultoria` \| `administracion` \| `practicas` (opcional) |
 | `is_jugador` | bool | aparece en clasificaciones y puede pronosticar |
 | `is_gestor` | bool | accede a Jugadores, Resultados, Premios y Auditoría |
 | `paid` | bool | ha pagado su parte del bote |

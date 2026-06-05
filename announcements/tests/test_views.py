@@ -54,9 +54,7 @@ class TestModalView:
         assert "Campeón del Mundial" in res.content.decode()
 
     def test_global_modal_includes_podium_prize_amounts(self, client, db):
-        final_round = RoundFactory(
-            id="final", points=20, label="Final", short="FIN", order=6
-        )
+        final_round = RoundFactory(id="final", points=20, label="Final", short="FIN", order=6)
         Prize.objects.create(scope="global", position=1, amount=Decimal("300"), label="1º")
         Prize.objects.create(scope="global", position=2, amount=Decimal("120"), label="2º")
         Prize.objects.create(scope="global", position=3, amount=Decimal("60"), label="3º")
@@ -130,9 +128,7 @@ class TestModalView:
         idx1 = html.find('data-rank="1"')
         idx3 = html.find('data-rank="3"')
         assert idx2 != -1 and idx1 != -1 and idx3 != -1
-        assert idx2 < idx1 < idx3, (
-            f"Orden visual incorrecto: 2={idx2}, 1={idx1}, 3={idx3}"
-        )
+        assert idx2 < idx1 < idx3, f"Orden visual incorrecto: 2={idx2}, 1={idx1}, 3={idx3}"
 
 
 @pytest.mark.django_db
