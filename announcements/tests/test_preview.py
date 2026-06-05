@@ -6,7 +6,6 @@ from django.urls import reverse
 from accounts.tests.factories import GestorFactory, UserFactory
 from announcements.models import WinnerAnnouncement, WinnerAnnouncementSeen
 from announcements.preview import build_preview
-from competition.tests.factories import RoundFactory
 from pot.models import PotSettings
 
 
