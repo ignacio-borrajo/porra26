@@ -62,6 +62,10 @@ class TestWinnerAnnouncementTitle:
         ann = WinnerAnnouncement.objects.create(scope_kind="global", points=99, tied=True)
         assert ann.title == "¡Campeones del Mundial!"
 
+    def test_title_sede(self):
+        ann = WinnerAnnouncement.objects.create(scope_kind="sede", points=0)
+        assert ann.title == "¡Ganadores por sede!"
+
 
 @pytest.mark.django_db
 class TestUniquenessConstraints:
@@ -80,6 +84,11 @@ class TestUniquenessConstraints:
         WinnerAnnouncement.objects.create(scope_kind="global", points=99)
         with pytest.raises(IntegrityError):
             WinnerAnnouncement.objects.create(scope_kind="global", points=100)
+
+    def test_uniqueness_constraint_sede(self):
+        WinnerAnnouncement.objects.create(scope_kind="sede", points=0)
+        with pytest.raises(IntegrityError):
+            WinnerAnnouncement.objects.create(scope_kind="sede", points=0)
 
     def test_different_matchdays_allowed(self):
         WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=1, points=8)
