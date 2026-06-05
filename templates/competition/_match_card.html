@@ -28,7 +28,7 @@
 </div>
 {% else %}
 {% if match.predictions_open and request.user.is_jugador %}
-<a href="{% url 'competicion:predict' match.id %}" data-modal-url="{% url 'competicion:predict' match.id %}" class="match-card glass rise{% if st == 'closing' %} match-card-closing{% endif %}">
+<a href="{% url 'competicion:predict' match.id %}" data-modal-url="{% url 'competicion:predict' match.id %}" class="match-card glass rise">
 {% elif match.editable %}
 <a class="match-card glass rise" style="cursor:not-allowed">
 {% else %}
@@ -38,14 +38,10 @@
     <span class="eyebrow">{% if match.group|length <= 1 %}Grupo {{ match.group }}{% else %}{{ match.group }}{% endif %}</span>
     <span class="chip
       {% if st == 'open' %}chip-open
-      {% elif st == 'closing' %}chip-open
-      {% elif st == 'closed' %}chip-closed
       {% elif st == 'live' %}chip-live
       {% elif st == 'done' %}chip-done{% endif %}">
-      {% if st == 'live' or st == 'closing' %}<span class="dot dot-pulse"></span>{% endif %}
+      {% if st == 'live' %}<span class="dot dot-pulse"></span>{% endif %}
       {% if st == 'open' %}Abierto
-      {% elif st == 'closing' %}Cierra pronto
-      {% elif st == 'closed' %}Cerrado
       {% elif st == 'live' %}En juego
       {% elif st == 'done' %}Finalizado{% endif %}
     </span>
@@ -80,7 +76,7 @@
     <span class="match-card-foot-info">
       {% if st == 'done' %}
         Tu pronóstico {% if match.my_pred %}{{ match.my_pred.home }}-{{ match.my_pred.away }}{% else %}—{% endif %}
-      {% elif st == 'open' or st == 'closing' %}
+      {% elif st == 'open' %}
         Cierra {{ match.kickoff|date:"d M H:i" }}
       {% else %}
         Apuestas cerradas

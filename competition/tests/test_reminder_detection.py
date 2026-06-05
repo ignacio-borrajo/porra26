@@ -68,65 +68,65 @@ def test_pending_bettors_ordered_by_name():
 
 
 @pytest.mark.django_db
-def test_matches_due_t_minus_4h_returns_match_inside_window():
-    """Match con kickoff en 3h (= ya pasó T-4h pero antes del cierre T-2h)."""
-    match = MatchFactory(kickoff=timezone.now() + timedelta(hours=3))
-    due = list(matches_due_for_kind(BetsReminderLog.KIND_T_MINUS_4H))
+def test_matches_due_t_minus_2h_returns_match_inside_window():
+    """Match con kickoff en 1h: T-2h ya pasó, apuestas siguen abiertas."""
+    match = MatchFactory(kickoff=timezone.now() + timedelta(hours=1))
+    due = list(matches_due_for_kind(BetsReminderLog.KIND_T_MINUS_2H))
     assert match in due
 
 
 @pytest.mark.django_db
-def test_matches_due_t_minus_4h_excludes_match_too_far_in_future():
-    """Match con kickoff en 5h (= T-4h aún no llegó)."""
-    MatchFactory(kickoff=timezone.now() + timedelta(hours=5))
-    due = list(matches_due_for_kind(BetsReminderLog.KIND_T_MINUS_4H))
+def test_matches_due_t_minus_2h_excludes_match_too_far_in_future():
+    """Match con kickoff en 3h: T-2h aún no llegó."""
+    MatchFactory(kickoff=timezone.now() + timedelta(hours=3))
+    due = list(matches_due_for_kind(BetsReminderLog.KIND_T_MINUS_2H))
     assert due == []
 
 
 @pytest.mark.django_db
-def test_matches_due_excludes_match_after_closure():
-    """Match con kickoff en 1h (= cierre T-2h ya pasó)."""
-    MatchFactory(kickoff=timezone.now() + timedelta(hours=1))
-    due_4h = list(matches_due_for_kind(BetsReminderLog.KIND_T_MINUS_4H))
-    due_2_5h = list(matches_due_for_kind(BetsReminderLog.KIND_T_MINUS_2_5H))
-    assert due_4h == []
-    assert due_2_5h == []
+def test_matches_due_excludes_match_after_kickoff():
+    """Match con kickoff ya pasado: apuestas cerradas."""
+    MatchFactory(kickoff=timezone.now() - timedelta(minutes=5))
+    due_2h = list(matches_due_for_kind(BetsReminderLog.KIND_T_MINUS_2H))
+    due_30m = list(matches_due_for_kind(BetsReminderLog.KIND_T_MINUS_30M))
+    assert due_2h == []
+    assert due_30m == []
 
 
 @pytest.mark.django_db
 def test_matches_due_excludes_match_with_existing_log_for_kind():
-    match = MatchFactory(kickoff=timezone.now() + timedelta(hours=3))
+    match = MatchFactory(kickoff=timezone.now() + timedelta(hours=1))
     BetsReminderLog.objects.create(
         match=match,
-        kind=BetsReminderLog.KIND_T_MINUS_4H,
+        kind=BetsReminderLog.KIND_T_MINUS_2H,
         sent_at=timezone.now(),
         pending_count=2,
         pending_names=["X", "Y"],
     )
-    due = list(matches_due_for_kind(BetsReminderLog.KIND_T_MINUS_4H))
+    due = list(matches_due_for_kind(BetsReminderLog.KIND_T_MINUS_2H))
     assert due == []
 
 
 @pytest.mark.django_db
 def test_matches_due_includes_match_with_log_for_other_kind():
-    """Tener el aviso T-4h enviado no impide enviar el T-2.5h."""
-    match = MatchFactory(kickoff=timezone.now() + timedelta(hours=2, minutes=15))
+    """Tener el aviso T-2h enviado no impide enviar el T-30min."""
+    match = MatchFactory(kickoff=timezone.now() + timedelta(minutes=15))
     BetsReminderLog.objects.create(
         match=match,
-        kind=BetsReminderLog.KIND_T_MINUS_4H,
+        kind=BetsReminderLog.KIND_T_MINUS_2H,
         sent_at=timezone.now() - timedelta(hours=2),
         pending_count=1,
         pending_names=["X"],
     )
-    due = list(matches_due_for_kind(BetsReminderLog.KIND_T_MINUS_2_5H))
+    due = list(matches_due_for_kind(BetsReminderLog.KIND_T_MINUS_30M))
     assert match in due
 
 
 @pytest.mark.django_db
-def test_matches_due_t_minus_2_5h_window():
-    """Match a 2h15min de kickoff: T-2.5h ya llegó y T-2h aún no."""
-    match = MatchFactory(kickoff=timezone.now() + timedelta(hours=2, minutes=15))
-    due = list(matches_due_for_kind(BetsReminderLog.KIND_T_MINUS_2_5H))
+def test_matches_due_t_minus_30m_window():
+    """Match a 15 min de kickoff: T-30min ya llegó."""
+    match = MatchFactory(kickoff=timezone.now() + timedelta(minutes=15))
+    due = list(matches_due_for_kind(BetsReminderLog.KIND_T_MINUS_30M))
     assert match in due
 
 

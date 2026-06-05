@@ -17,13 +17,13 @@ def grp():
     return RoundFactory(id="groups", points=3, label="G", short="G", order=1)
 
 
-def _closed_match(grp, *, hours_to_kickoff=1):
-    """Crea un partido en estado `closed` (kickoff dentro de la ventana de 2h)."""
+def _live_match(grp, *, minutes_since_kickoff=30):
+    """Crea un partido en estado `live` (kickoff en el pasado, sin resultado)."""
     return MatchFactory(
         round=grp,
         home=TeamFactory(),
         away=TeamFactory(),
-        kickoff=timezone.now() + timedelta(hours=hours_to_kickoff),
+        kickoff=timezone.now() - timedelta(minutes=minutes_since_kickoff),
     )
 
 
@@ -31,8 +31,8 @@ def _closed_match(grp, *, hours_to_kickoff=1):
 def test_official_get_includes_pending_count_and_has_next(client, grp):
     g = GestorFactory(must_change_password=False)
     client.force_login(g)
-    m1 = _closed_match(grp, hours_to_kickoff=1)
-    _closed_match(grp, hours_to_kickoff=1)  # m2
+    m1 = _live_match(grp)
+    _live_match(grp)  # m2
 
     r = client.get(reverse("competicion:official", args=[m1.id]))
 
@@ -47,8 +47,8 @@ def test_official_get_includes_pending_count_and_has_next(client, grp):
 def test_official_post_chain_returns_x_modal_next(client, grp):
     g = GestorFactory(must_change_password=False)
     client.force_login(g)
-    m1 = _closed_match(grp, hours_to_kickoff=1)
-    m2 = _closed_match(grp, hours_to_kickoff=1)
+    m1 = _live_match(grp)
+    m2 = _live_match(grp)
 
     r = client.post(
         reverse("competicion:official", args=[m1.id]),
@@ -65,7 +65,7 @@ def test_official_post_chain_returns_x_modal_next(client, grp):
 def test_official_post_chain_no_more_redirects(client, grp):
     g = GestorFactory(must_change_password=False)
     client.force_login(g)
-    m = _closed_match(grp, hours_to_kickoff=1)
+    m = _live_match(grp)
 
     r = client.post(
         reverse("competicion:official", args=[m.id]),
@@ -82,7 +82,7 @@ def test_official_post_chain_no_more_redirects(client, grp):
 def test_official_post_without_chain_redirects(client, grp):
     g = GestorFactory(must_change_password=False)
     client.force_login(g)
-    m = _closed_match(grp, hours_to_kickoff=1)
+    m = _live_match(grp)
 
     r = client.post(
         reverse("competicion:official", args=[m.id]),
@@ -126,7 +126,7 @@ def test_official_post_delete_clears_result(client, grp):
 def test_official_modal_shows_delete_button_only_when_resolved(client, grp):
     g = GestorFactory(must_change_password=False)
     client.force_login(g)
-    m_open = _closed_match(grp)
+    m_open = _live_match(grp)
     m_done = MatchFactory(
         round=grp,
         home=TeamFactory(),
@@ -172,7 +172,7 @@ def test_official_modal_uses_hidden_action_input(client, grp):
 def test_manage_results_finalize_link_uses_modal_url(client, grp):
     g = GestorFactory(must_change_password=False)
     client.force_login(g)
-    m = _closed_match(grp, hours_to_kickoff=1)
+    m = _live_match(grp)
 
     r = client.get(reverse("competicion:manage_results"))
 

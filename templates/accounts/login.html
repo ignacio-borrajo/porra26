@@ -100,7 +100,7 @@
             <div class="login-next-match__foot">
               {% if m.editable %}
                 <span class="chip chip-open login-next-match__chip">{% icon "clock" width=11 height=11 %} Apuestas abiertas</span>
-                <span class="mono login-next-match__close">Cierra {{ m.close_at|date:"d M · H:i" }}</span>
+                <span class="mono login-next-match__close">Cierra {{ m.kickoff|date:"d M · H:i" }}</span>
               {% else %}
                 <span class="chip chip-closed login-next-match__chip">Apuestas cerradas</span>
                 <span class="mono login-next-match__close">Cerró</span>

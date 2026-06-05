@@ -105,13 +105,13 @@ def test_detail_redirects_when_match_still_editable(client):
 
 
 @pytest.mark.django_db
-def test_detail_lists_all_predictions_when_match_closed(client):
+def test_detail_lists_all_predictions_when_match_live(client):
     me = UserFactory(must_change_password=False, name="Ana")
     bettor = UserFactory(must_change_password=False, name="Bruno")
     UserFactory(must_change_password=False, name="Carla")  # jugadora sin apuesta
     client.force_login(me)
     grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
-    m = MatchFactory(round=grp, kickoff=timezone.now() + timedelta(minutes=30))  # closed
+    m = MatchFactory(round=grp, kickoff=timezone.now() - timedelta(minutes=10))  # live
     PredictionFactory(player=me, match=m, home=2, away=1)
     PredictionFactory(player=bettor, match=m, home=0, away=0)
 

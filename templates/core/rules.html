@@ -124,22 +124,18 @@
     <header style="display:flex;flex-direction:column;gap:4px">
       <span class="eyebrow">02 · Cuándo cierran las apuestas</span>
       <h2 class="grad-text" style="margin:0;font-family:Sora,sans-serif;font-weight:700;font-size:clamp(22px,3vw,28px);line-height:1.2">
-        Las apuestas cierran {{ bet_close_hours }} horas antes del saque.
+        Las apuestas cierran al pitido inicial del partido.
       </h2>
     </header>
 
     <p style="margin:0;color:var(--text-dim)">
-      Las apuestas de un partido se abren en cuanto se conocen los dos equipos. Los partidos de la fase de grupos están todos abiertos desde el día 1; los cruces de las rondas eliminatorias aparecen como <em>Por definir</em> hasta que la ronda anterior los determine.
+      Las apuestas de un partido se abren en cuanto se conocen los dos equipos y permanecen abiertas hasta el saque. Los partidos de la fase de grupos están todos abiertos desde el día 1; los cruces de las rondas eliminatorias aparecen como <em>Por definir</em> hasta que la ronda anterior los determine.
     </p>
 
     <ol class="rules-timeline" role="list" aria-label="Estados del partido a lo largo del tiempo">
       <li data-state="open">
         <span class="chip" style="color:var(--c-lime);border-color:oklch(from var(--c-lime) l c h / 0.4)">Abierto</span>
         <span class="rules-timeline-hint">apuestas abiertas</span>
-      </li>
-      <li data-state="closing">
-        <span class="chip" style="color:var(--c-yellow);border-color:oklch(from var(--c-yellow) l c h / 0.4)">Cerrando</span>
-        <span class="rules-timeline-hint">kickoff − {{ bet_close_hours }}h</span>
       </li>
       <li data-state="live" data-anchor="kickoff">
         <span class="chip" style="color:var(--c-red);border-color:oklch(from var(--c-red) l c h / 0.4)">En juego</span>
@@ -151,16 +147,16 @@
       </li>
     </ol>
 
+    <div class="rules-reminders" role="note" aria-label="Avisos automáticos antes del saque">
+      <span class="eyebrow">Avisos automáticos</span>
+      <p>Si aún no has apostado, recibirás un recordatorio en Teams <strong>2 horas antes</strong> y otro <strong>30 minutos antes</strong> del saque.</p>
+    </div>
+
     <div class="rules-state-grid">
       <article class="rules-state-card" data-state="open">
         <header><span class="chip" style="color:var(--c-lime);border-color:oklch(from var(--c-lime) l c h / 0.4)">Abierto</span></header>
         <div class="rules-state-score"><span>🇪🇸</span><strong>VS</strong><span>🇦🇷</span></div>
-        <p>Cierra en 6 h</p>
-      </article>
-      <article class="rules-state-card" data-state="closing">
-        <header><span class="chip" style="color:var(--c-yellow);border-color:oklch(from var(--c-yellow) l c h / 0.4)">Cerrando</span></header>
-        <div class="rules-state-score"><span>🇪🇸</span><strong>VS</strong><span>🇦🇷</span></div>
-        <p style="font-family:'Geist Mono',monospace;color:var(--c-yellow)">01:23:45</p>
+        <p>Cierra al saque</p>
       </article>
       <article class="rules-state-card" data-state="live">
         <header><span class="chip" style="color:var(--c-red);border-color:oklch(from var(--c-red) l c h / 0.4)">En juego</span></header>
@@ -175,7 +171,7 @@
     </div>
 
     <p style="font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint);margin:0">
-      Una vez cerradas no podrás crear ni editar tu pronóstico — ni siquiera tras el pitido inicial.
+      A partir del pitido inicial ya no podrás crear ni editar tu pronóstico.
     </p>
   </section>
 
@@ -237,7 +233,7 @@
     {% endif %}
 
     <p style="font-family:'Geist Mono',monospace;font-size:11px;color:var(--text-faint);margin:0">
-      El administrador marca quién ha pagado — solo los jugadores con el pago confirmado entran en el bote.
+      El gestor marca quién ha pagado — solo los jugadores con el pago confirmado entran en el bote.
     </p>
   </section>
 
@@ -282,7 +278,7 @@
         {% icon "check" width=18 height=18 aria_hidden="true" %}
         <div>
           <strong>Primera vez.</strong>
-          <p>Si recibiste un email de bienvenida, pulsa el enlace para establecer tu contraseña. Si no, pídele al administrador que te lo reenvíe.</p>
+          <p>Si recibiste un email de bienvenida, pulsa el enlace para establecer tu contraseña. Si no, pídele al gestor que te lo reenvíe.</p>
         </div>
       </li>
     </ul>

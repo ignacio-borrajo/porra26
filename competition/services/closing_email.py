@@ -1,5 +1,4 @@
 import hashlib
-from datetime import timedelta
 
 from django.conf import settings
 from django.core.mail import EmailMessage
@@ -7,7 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from accounts.models import AuditLog
-from competition.models import BET_CLOSE_HOURS, BetsClosingReport, Match
+from competition.models import BetsClosingReport, Match
 from competition.services.closing_report import build_closing_pdf, compute_closing_stats
 
 SUBJECT_PREFIX = "[Porra26]"
@@ -16,14 +15,12 @@ SUBJECT_PREFIX = "[Porra26]"
 def _build_body(match: Match) -> str:
     stats = compute_closing_stats(match)
     kickoff_local = timezone.localtime(match.kickoff)
-    close_local = timezone.localtime(match.kickoff - timedelta(hours=BET_CLOSE_HOURS))
     return "\n".join(
         [
             f"Cierre de apuestas — {match.home.name} vs {match.away.name}",
             "",
             f"{match.round.label} · Grupo {match.group}",
             f"Saque: {kickoff_local:%d %b %Y, %H:%M}",
-            f"Cierre: {close_local:%d %b %Y, %H:%M}",
             "",
             f"{stats.bets_count} de {stats.total_players} jugadores han apostado.",
             "",
@@ -37,13 +34,13 @@ def send_closure_email(match: Match) -> BetsClosingReport:
 
     - Si el match aún no está cerrado y no tiene resultado, lanza ValueError.
       Un match con resultado entrado se considera cerrado a efectos del PDF
-      aunque kickoff − 2h todavía esté en el futuro (admin override que el
+      aunque ``kickoff`` todavía esté en el futuro (admin override que el
       gestor puede usar para probar el flujo o forzar el envío).
     - Si BetsClosingReport.sent_at ya está fijado, no-op (devuelve el report).
     - Si SMTP falla, propaga la excepción tras incrementar `attempts`.
     """
     now = timezone.now()
-    if not match.has_result and match.kickoff - timedelta(hours=BET_CLOSE_HOURS) > now:
+    if not match.has_result and match.kickoff > now:
         raise ValueError(f"El match {match.id} aún no está cerrado")
 
     with transaction.atomic():

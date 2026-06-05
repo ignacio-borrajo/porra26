@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from django.contrib import messages
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.forms import SetPasswordForm
@@ -12,7 +10,7 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import TemplateView
 
-from competition.models import BET_CLOSE_HOURS, Match
+from competition.models import Match
 from pot.models import Payment, Prize
 
 from .forms import ChangePasswordForm, LoginForm, ProfileForm, TeamProfileForm
@@ -39,8 +37,6 @@ class LoginView(View):
             .select_related("home", "away", "round")
             .order_by("kickoff")[:3]
         )
-        for m in next_matches:
-            m.close_at = m.kickoff - timedelta(hours=BET_CLOSE_HOURS)
         return {
             "players_count": Payment.objects.filter(paid=True).count(),
             "first_prize": int(first_prize) if first_prize is not None else 0,

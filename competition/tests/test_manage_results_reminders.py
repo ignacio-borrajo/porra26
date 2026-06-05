@@ -71,7 +71,7 @@ def test_upcoming_shows_last_reminder_tooltip(client, gestor):
     m = _upcoming_match()
     BetsReminderLog.objects.create(
         match=m,
-        kind=BetsReminderLog.KIND_T_MINUS_4H,
+        kind=BetsReminderLog.KIND_T_MINUS_2H,
         sent_at=timezone.now() - timedelta(hours=1),
         pending_count=3,
         pending_names=["X", "Y", "Z"],

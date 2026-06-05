@@ -23,18 +23,18 @@ def grp(db):
 
 
 @pytest.mark.django_db
-def test_next_pending_result_match_returns_first_closed_or_live(grp):
-    # open: kickoff muy en el futuro
-    open_m = MatchFactory(round=grp, kickoff=_now() + timedelta(hours=10))
+def test_next_pending_result_match_returns_first_live(grp):
+    # open: kickoff en el futuro (apuestas siguen abiertas)
+    open_m = MatchFactory(round=grp, kickoff=_now() + timedelta(hours=1))
     assert open_m.status == "open"
-
-    # closed: dentro de la ventana de cierre, todavía sin empezar
-    closed_m = MatchFactory(round=grp, kickoff=_now() + timedelta(hours=1))
-    assert closed_m.status == "closed"
 
     # live: kickoff en el pasado reciente, sin resultado
     live_m = MatchFactory(round=grp, kickoff=_now() - timedelta(minutes=10))
     assert live_m.status == "live"
+
+    # otro live más antiguo aún sin resultado
+    older_live = MatchFactory(round=grp, kickoff=_now() - timedelta(hours=2))
+    assert older_live.status == "live"
 
     # done: con resultado oficial
     done_m = MatchFactory(round=grp, kickoff=_now() - timedelta(hours=4))
@@ -43,17 +43,16 @@ def test_next_pending_result_match_returns_first_closed_or_live(grp):
     done_m.save()
     assert done_m.status == "done"
 
-    # Debe devolver el más antiguo por kickoff entre closed/live, que es live_m
-    # (kickoff = now - 10min) por delante del closed_m (kickoff = now + 1h).
-    assert next_pending_result_match() == live_m
+    # Devuelve el más antiguo por kickoff entre los live: older_live.
+    assert next_pending_result_match() == older_live
 
 
 @pytest.mark.django_db
 def test_next_pending_result_match_skips_after_match(grp):
-    first = MatchFactory(round=grp, kickoff=_now() + timedelta(hours=1))
-    second = MatchFactory(round=grp, kickoff=_now() + timedelta(hours=1, minutes=30))
-    assert first.status == "closed"
-    assert second.status == "closed"
+    first = MatchFactory(round=grp, kickoff=_now() - timedelta(hours=2))
+    second = MatchFactory(round=grp, kickoff=_now() - timedelta(hours=1, minutes=30))
+    assert first.status == "live"
+    assert second.status == "live"
 
     assert next_pending_result_match() == first
     assert next_pending_result_match(after_match=first) == second
@@ -61,11 +60,10 @@ def test_next_pending_result_match_skips_after_match(grp):
 
 
 @pytest.mark.django_db
-def test_pending_result_matches_count_counts_only_closed_live(grp):
-    # 2 closed
-    MatchFactory(round=grp, kickoff=_now() + timedelta(hours=1))
-    MatchFactory(round=grp, kickoff=_now() + timedelta(hours=1, minutes=30))
-    # 1 live
+def test_pending_result_matches_count_counts_only_live(grp):
+    # 3 live (kickoff pasado, sin resultado)
+    MatchFactory(round=grp, kickoff=_now() - timedelta(hours=2))
+    MatchFactory(round=grp, kickoff=_now() - timedelta(hours=1))
     MatchFactory(round=grp, kickoff=_now() - timedelta(minutes=10))
     # 1 done
     done_m = MatchFactory(round=grp, kickoff=_now() - timedelta(hours=4))

@@ -2,7 +2,7 @@
 
 Llamado por GitHub Actions a través del endpoint ``/api/recordatorios/disparar/``
 y también disponible para invocación manual en local. Sin args recorre las dos
-ventanas (T-4h y T-2.5h) y dispara los pendientes.
+ventanas (T-2h y T-30min antes de kickoff) y dispara los pendientes.
 """
 
 import logging

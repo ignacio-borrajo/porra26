@@ -21,7 +21,7 @@ def clear_outbox():
     mail.outbox = []
 
 
-def _open_match(hours_to_kickoff=3, code_home="ESP", code_away="MEX"):
+def _open_match(hours_to_kickoff=1, code_home="ESP", code_away="MEX"):
     h = TeamFactory(code=code_home, name=code_home)
     a = TeamFactory(code=code_away, name=code_away)
     return MatchFactory(home=h, away=a, kickoff=timezone.now() + timedelta(hours=hours_to_kickoff))
@@ -45,9 +45,9 @@ def test_disparar_with_bearer_returns_summary_json(client):
     res = client.post(reverse("competicion:api:recordatorios_disparar"), **AUTH)
     assert res.status_code == 200
     data = res.json()
-    assert "T_MINUS_4H" in data
-    assert "T_MINUS_2_5H" in data
-    for kind_data in (data["T_MINUS_4H"], data["T_MINUS_2_5H"]):
+    assert "T_MINUS_2H" in data
+    assert "T_MINUS_30M" in data
+    for kind_data in (data["T_MINUS_2H"], data["T_MINUS_30M"]):
         assert set(kind_data.keys()) == {"checked", "sent", "skipped_empty", "errors"}
 
 
@@ -64,25 +64,25 @@ def test_disparar_with_gestor_session_returns_summary_json(client):
 @override_settings(TEAMS_API_TOKEN=TOKEN)
 def test_disparar_sends_due_matches(client):
     UserFactory(name="Ana")
-    _open_match(hours_to_kickoff=3.5)
+    _open_match(hours_to_kickoff=1.5)
     res = client.post(reverse("competicion:api:recordatorios_disparar"), **AUTH)
     assert res.status_code == 200
     data = res.json()
-    assert data["T_MINUS_4H"]["sent"] == 1
-    assert data["T_MINUS_4H"]["errors"] == 0
+    assert data["T_MINUS_2H"]["sent"] == 1
+    assert data["T_MINUS_2H"]["errors"] == 0
     assert len(mail.outbox) == 1
 
 
 @pytest.mark.django_db
 @override_settings(TEAMS_API_TOKEN=TOKEN)
 def test_disparar_counts_skipped_when_no_pending(client):
-    m = _open_match(hours_to_kickoff=3.5)
+    m = _open_match(hours_to_kickoff=1.5)
     # Hay match en ventana pero universo vacío → skipped_empty=1
     res = client.post(reverse("competicion:api:recordatorios_disparar"), **AUTH)
     data = res.json()
-    assert data["T_MINUS_4H"]["checked"] == 1
-    assert data["T_MINUS_4H"]["sent"] == 0
-    assert data["T_MINUS_4H"]["skipped_empty"] == 1
+    assert data["T_MINUS_2H"]["checked"] == 1
+    assert data["T_MINUS_2H"]["sent"] == 0
+    assert data["T_MINUS_2H"]["skipped_empty"] == 1
     assert mail.outbox == []
     assert not BetsReminderLog.objects.filter(match=m).exists()
 
@@ -91,7 +91,7 @@ def test_disparar_counts_skipped_when_no_pending(client):
 @override_settings(TEAMS_API_TOKEN=TOKEN)
 def test_disparar_counts_errors(monkeypatch, client):
     UserFactory(name="Ana")
-    _open_match(hours_to_kickoff=3.5)
+    _open_match(hours_to_kickoff=1.5)
 
     def boom(*args, **kwargs):
         raise RuntimeError("SMTP roto")
@@ -100,7 +100,7 @@ def test_disparar_counts_errors(monkeypatch, client):
     res = client.post(reverse("competicion:api:recordatorios_disparar"), **AUTH)
     assert res.status_code == 200
     data = res.json()
-    assert data["T_MINUS_4H"]["errors"] == 1
+    assert data["T_MINUS_2H"]["errors"] == 1
 
 
 # -------------------------------------------------------------------
@@ -151,7 +151,9 @@ def test_enviar_returns_409_when_closed(client):
     g = GestorFactory()
     client.force_login(g)
     UserFactory(name="Ana")
-    m = _open_match(hours_to_kickoff=1)  # cierre pasado
+    h = TeamFactory(code="CL1", name="CL1")
+    a = TeamFactory(code="CL2", name="CL2")
+    m = MatchFactory(home=h, away=a, kickoff=timezone.now() - timedelta(minutes=5))
     res = client.post(reverse("competicion:api:recordatorio_enviar", args=[m.id]))
     assert res.status_code == 409
     assert mail.outbox == []
