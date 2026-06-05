@@ -15,17 +15,19 @@ def detect_after_match(match: Match) -> list[WinnerAnnouncement]:
         ann = _try_create("matchday", matchday=match.matchday)
         if ann is not None:
             created.append(ann)
+    elif match.round_id == "final":
+        # La Final no entrega premio por ganador de ronda: el ganador del Mundial
+        # ya cobra por el podio (P1). Solo se generan los anuncios global y sede.
+        ann_global = _try_create("global")
+        if ann_global is not None:
+            created.append(ann_global)
+        ann_sede = _try_create("sede")
+        if ann_sede is not None:
+            created.append(ann_sede)
     else:
         ann = _try_create("round", round_id=match.round_id)
         if ann is not None:
             created.append(ann)
-        if match.round_id == "final":
-            ann_global = _try_create("global")
-            if ann_global is not None:
-                created.append(ann_global)
-            ann_sede = _try_create("sede")
-            if ann_sede is not None:
-                created.append(ann_sede)
 
     return created
 

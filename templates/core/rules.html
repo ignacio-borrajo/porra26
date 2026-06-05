@@ -214,9 +214,14 @@
     <div class="rules-matchday-prize">
       <div class="rules-matchday-prize-icon">{% icon "trophy" width=22 height=22 aria_hidden="true" %}</div>
       <div class="rules-matchday-prize-body">
-        <span class="eyebrow">Premio por ganador de jornada</span>
+        <span class="eyebrow">Premio por ganador de jornada / fase</span>
         <strong>{{ matchday_winner_prize|floatformat:"-2" }} €</strong>
-        <p>El jugador con más puntos en cada jornada de grupos y en cada ronda eliminatoria se lleva este premio extra.</p>
+        <p>
+          Se entrega un premio por cada jornada de la fase de grupos (1ª, 2ª y 3ª)
+          y uno más al ganador de cada fase eliminatoria: dieciseisavos, octavos,
+          cuartos y semifinal. La Final no entrega premio aparte — su ganador
+          cobra como campeón del Mundial en el podio.
+        </p>
       </div>
     </div>
     {% endif %}

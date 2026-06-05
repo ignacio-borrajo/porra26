@@ -61,17 +61,19 @@
 
     <section class="glass prizes-matchday-card" style="padding:24px;border-radius:var(--r-lg);display:flex;flex-direction:column;gap:18px">
       <header style="display:flex;flex-direction:column;gap:4px">
-        <span class="eyebrow">02 · Por jornada</span>
-        <h2 style="margin:0;font-family:Sora,sans-serif;font-weight:700;font-size:20px">Premio por ganador de jornada</h2>
+        <span class="eyebrow">02 · Por jornada / fase</span>
+        <h2 style="margin:0;font-family:Sora,sans-serif;font-weight:700;font-size:20px">Premio por ganador de jornada o fase</h2>
         <p style="color:var(--text-dim);margin:0;font-size:13px">
-          El jugador con más puntos en cada jornada de grupos y en cada ronda eliminatoria se lleva este importe.
-          Se aplica por igual a todas.
+          Se entrega un premio por cada jornada de la fase de grupos (1ª, 2ª y 3ª)
+          y uno más al ganador de cada fase eliminatoria: dieciseisavos, octavos,
+          cuartos y semifinal. La Final no entrega premio aparte — su ganador
+          cobra a través del podio.
         </p>
       </header>
 
       <div class="prizes-matchday-row">
         <div class="prizes-matchday-icon">{% icon "trophy" width=28 height=28 %}</div>
-        <label class="prizes-matchday-label" for="matchday_winner_prize">Importe por jornada/ronda</label>
+        <label class="prizes-matchday-label" for="matchday_winner_prize">Importe por jornada/fase</label>
         <div class="prizes-matchday-input">
           <input class="input" type="number" min="0" step="0.01" inputmode="decimal"
                  id="matchday_winner_prize" name="matchday_winner_prize"

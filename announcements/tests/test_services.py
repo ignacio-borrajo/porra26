@@ -114,17 +114,19 @@ class TestRoundScope:
 
 @pytest.mark.django_db
 class TestGlobalScope:
-    def test_global_announcement_created_only_after_final(self, final_round):
+    def test_final_creates_global_but_not_round_announcement(self, final_round):
+        """La Final solo genera el anuncio global (el ganador entra al podio).
+        No se crea anuncio de scope='round' para la Final."""
         user = UserFactory()
         m = MatchFactory(round=final_round, matchday=None, result_home=2, result_away=1)
         PredictionFactory(player=user, match=m, earned=20)
         created = detect_after_match(m)
         kinds = sorted(a.scope_kind for a in created)
-        assert kinds == ["global", "round"]
+        assert kinds == ["global"]
         assert WinnerAnnouncement.objects.filter(scope_kind="global").count() == 1
         assert (
             WinnerAnnouncement.objects.filter(scope_kind="round", scope_round_id="final").count()
-            == 1
+            == 0
         )
 
     def test_no_global_announcement_when_not_final(self, r16_round):
