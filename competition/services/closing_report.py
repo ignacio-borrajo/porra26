@@ -217,33 +217,54 @@ def _classification_table(
     rows: list[StandingRow],
     *,
     delta_against: dict[int, int] | None = None,
-    max_rows: int = 20,
-) -> Table:
-    """Tabla compacta de clasificación para layout a dos columnas.
+) -> list:
+    """Sección de clasificación a ancho completo (paginable entre páginas).
 
     Cuando `delta_against` se proporciona, añade una columna 'Dif' con la
     diferencia de posición respecto a esa clasificación (positivo = mejor aquí).
+    Devuelve una lista de flowables (título + tabla) para que ReportLab pueda
+    repartir la tabla en varias páginas si hay muchos jugadores.
+    Si todavía nadie ha puntuado, sustituye la lista por un mensaje breve.
     """
+    block_title = Paragraph(
+        f"<b>{title}</b>",
+        ParagraphStyle(
+            "clf-title",
+            fontName="Helvetica-Bold",
+            fontSize=10,
+            leading=12,
+            spaceAfter=3,
+            textColor=HexColor("#333333"),
+        ),
+    )
+
+    if not rows or rows[0].pts <= 0:
+        empty = Paragraph(
+            "Aún no hay puntos en esta clasificación.",
+            ParagraphStyle(
+                "clf-empty",
+                fontName="Helvetica-Oblique",
+                fontSize=9,
+                leading=12,
+                textColor=HexColor("#777777"),
+            ),
+        )
+        return [block_title, empty]
+
     has_delta = delta_against is not None
     headers = ["Pos", "Jugador", "Pts"] + (["Dif"] if has_delta else [])
     data = [headers]
-    shown = rows[:max_rows]
-    for r in shown:
+    for r in rows:
         row = [str(r.position), r.name, str(r.pts)]
         if has_delta:
             row.append(_format_delta(r.position, delta_against.get(r.player_id)))
         data.append(row)
-    if len(rows) > max_rows:
-        extra = ["", f"… y {len(rows) - max_rows} más", ""]
-        if has_delta:
-            extra.append("")
-        data.append(extra)
 
-    # Ancho objetivo ≈ 82 mm.
+    # Ancho útil A4 con márgenes 18 mm = 174 mm.
     if has_delta:
-        col_widths = [9 * mm, 45 * mm, 14 * mm, 14 * mm]
+        col_widths = [12 * mm, 120 * mm, 22 * mm, 20 * mm]
     else:
-        col_widths = [10 * mm, 56 * mm, 16 * mm]
+        col_widths = [12 * mm, 140 * mm, 22 * mm]
 
     style_cmds = [
         ("BACKGROUND", (0, 0), (-1, 0), HexColor("#EEEEEE")),
@@ -264,62 +285,26 @@ def _classification_table(
 
     table = Table(data, colWidths=col_widths, repeatRows=1)
     table.setStyle(TableStyle(style_cmds))
-
-    block_title = Paragraph(
-        f"<b>{title}</b>",
-        ParagraphStyle(
-            "clf-title",
-            fontName="Helvetica-Bold",
-            fontSize=10,
-            leading=12,
-            spaceAfter=3,
-            textColor=HexColor("#333333"),
-        ),
-    )
-    block = Table([[block_title], [table]], colWidths=[sum(col_widths)])
-    block.setStyle(
-        TableStyle(
-            [
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                ("TOPPADDING", (0, 0), (-1, -1), 0),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-            ]
-        )
-    )
-    return block
+    return [block_title, table]
 
 
-def _classification_block(match: Match, styles) -> Table:
+def _classification_block(match: Match, styles) -> list:
     general_rows = standings()
     matchday_rows = standings(round_id=match.round_id, matchday=match.matchday)
     general_pos = {r.player_id: r.position for r in general_rows}
 
     matchday_played = any(r.pts > 0 for r in matchday_rows)
-    matchday_table = _classification_table(
-        _matchday_scope_label(match),
-        matchday_rows,
-        delta_against=general_pos if matchday_played else None,
-    )
-    general_table = _classification_table("General", general_rows)
-
-    wrap = Table(
-        [[matchday_table, "", general_table]],
-        colWidths=[82 * mm, 10 * mm, 82 * mm],
-    )
-    wrap.setStyle(
-        TableStyle(
-            [
-                ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-                ("TOPPADDING", (0, 0), (-1, -1), 0),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-            ]
+    flowables: list = []
+    flowables.extend(
+        _classification_table(
+            _matchday_scope_label(match),
+            matchday_rows,
+            delta_against=general_pos if matchday_played else None,
         )
     )
-    return wrap
+    flowables.append(Spacer(1, 6 * mm))
+    flowables.extend(_classification_table("General", general_rows))
+    return flowables
 
 
 def _match_hero(match: Match, styles) -> list:
@@ -459,7 +444,7 @@ def build_closing_pdf(match: Match) -> bytes:
     flow.append(Spacer(1, 6 * mm))
 
     flow.append(Paragraph("Clasificación", styles["h2"]))
-    flow.append(_classification_block(match, styles))
+    flow.extend(_classification_block(match, styles))
 
     doc.build(flow, onFirstPage=_draw_header_band, onLaterPages=_draw_header_band)
     return buf.getvalue()

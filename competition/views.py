@@ -53,16 +53,18 @@ class CompetitionView(LoginRequiredMixin, View):
             {"matchday": md, "open": True, "active": md == active_md} for md in matchdays
         ]
 
-        rows = standings()[:50]
+        rows = standings()
+        has_points = bool(rows) and rows[0].pts > 0
         my_row = next((r for r in rows if r.player_id == request.user.id), None)
-        my_rank = my_row.position if my_row else None
-        my_is_tied = bool(my_row and my_row.is_tied)
+        my_rank = my_row.position if my_row and has_points else None
+        my_is_tied = bool(my_row and my_row.is_tied and has_points)
         max_pts = max((r.pts for r in rows), default=0) or 1
 
-        scope_rows = standings(round_id=active_id, matchday=active_md)[:50]
+        scope_rows = standings(round_id=active_id, matchday=active_md)
+        scope_has_points = bool(scope_rows) and scope_rows[0].pts > 0
         scope_my_row = next((r for r in scope_rows if r.player_id == request.user.id), None)
-        scope_my_rank = scope_my_row.position if scope_my_row else None
-        scope_my_is_tied = bool(scope_my_row and scope_my_row.is_tied)
+        scope_my_rank = scope_my_row.position if scope_my_row and scope_has_points else None
+        scope_my_is_tied = bool(scope_my_row and scope_my_row.is_tied and scope_has_points)
         scope_max_pts = max((r.pts for r in scope_rows), default=0) or 1
         active_round_obj = next((r for r in rounds if r.id == active_id), None)
         if active_md is not None:

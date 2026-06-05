@@ -1,0 +1,10 @@
+<div class="podium-slot podium-slot--{{ rank }} podium-slot--placeholder">
+  <div class="podium-medal" aria-hidden="true">
+    {% if rank == 1 %}🥇{% elif rank == 2 %}🥈{% else %}🥉{% endif %}
+  </div>
+  <div class="podium-placeholder-spacer" aria-hidden="true"></div>
+  <div class="podium-pts mono">—</div>
+  <div class="podium-pedestal podium-pedestal--{{ rank }}">
+    <span class="podium-rank-number">{{ rank }}</span>
+  </div>
+</div>
