@@ -75,6 +75,26 @@ def test_forced_password_change_kills_other_sessions(client):
     assert not UserSession.objects.filter(session_key="other").exists()
 
 
+def test_voluntary_password_change_sends_notification_email(client, settings):
+    settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+    user = UserFactory(email="np@edisa.com", password="Secret123")
+    _login(client, user)
+    mail.outbox = []
+
+    client.post(
+        reverse("accounts:my_account"),
+        {
+            "action": "password",
+            "current": "Secret123",
+            "new1": "NewPass123",
+            "new2": "NewPass123",
+        },
+    )
+    assert len(mail.outbox) == 1
+    assert "contraseña" in mail.outbox[0].subject.lower()
+    assert mail.outbox[0].to == [user.email]
+
+
 def test_email_reset_kills_all_sessions(client, settings):
     settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
     user = UserFactory(email="er@edisa.com", password="Secret123")

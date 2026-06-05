@@ -20,6 +20,7 @@ from .services.password_reset import (
     send_password_reset_email,
     validate_reset_token,
 )
+from .services.notifications import send_password_changed_email
 from .services.sessions import parse_device_label, revoke_sessions
 from .validators import validate_email_domain
 
@@ -146,6 +147,7 @@ class ChangePasswordView(LoginRequiredMixin, View):
                     last_seen_at=timezone.now(),
                 )
 
+            send_password_changed_email(request.user)
             messages.success(request, "Contraseña actualizada.")
             return redirect("competicion:dashboard")
         return render(request, self.template_name, {"form": form})
@@ -261,6 +263,7 @@ class MyAccountView(LoginRequiredMixin, View):
             target_type="user",
             target_id=str(request.user.id),
         )
+        send_password_changed_email(request.user)
         if others:
             n = len(others)
             messages.success(
@@ -437,6 +440,7 @@ class PasswordResetConfirmView(View):
             actor=None,
             reason="password_reset_email",
         )
+        send_password_changed_email(user)
 
         AuditLog.objects.create(
             actor=None,
