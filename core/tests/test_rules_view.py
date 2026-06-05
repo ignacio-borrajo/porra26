@@ -93,12 +93,12 @@ def test_rules_renders_close_card(client):
     assert "Las apuestas cierran" in content
     assert "2 horas antes del saque" in content
     # Estados del timeline
-    for label in ("Abierto", "Cerrando", "Cerrado", "En juego", "Final"):
+    for label in ("Abierto", "Cerrando", "En juego", "Final"):
         assert label in content
-    # Mini ejemplos de partido por estado: cuenta atrás, marcador en vivo y final
+    # Mini ejemplos de partido por estado: cuenta atrás y final (sin marcador en vivo)
     assert "01:23:45" in content  # cuenta atrás del estado closing
-    assert "1 — 0" in content  # marcador en vivo
     assert "2 — 1" in content  # marcador final
+    assert "1 — 0" not in content  # no mostramos marcador en directo
 
 
 @pytest.mark.django_db
