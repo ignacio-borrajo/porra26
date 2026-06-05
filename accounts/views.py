@@ -37,7 +37,7 @@ class LoginView(View):
         next_matches = list(
             Match.objects.filter(kickoff__gt=timezone.now())
             .select_related("home", "away", "round")
-            .order_by("kickoff")[:5]
+            .order_by("kickoff")[:3]
         )
         for m in next_matches:
             m.close_at = m.kickoff - timedelta(hours=BET_CLOSE_HOURS)
