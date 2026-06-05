@@ -1,11 +1,13 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views import View
 
 from accounts.models import User
 from stats.services.group_standings import CHOICES_BY_DIMENSION, group_standings
 from stats.services.history import per_player_history
+from stats.services.history_matrix import build_matrix
+from stats.services.history_xlsx import render_xlsx
 from stats.services.kpis import donut, kpis
 from stats.services.rankings_context import build_general_context
 
@@ -70,6 +72,22 @@ class RankingsView(LoginRequiredMixin, View):
                 }
             )
         return render(request, "stats/rankings.html", ctx)
+
+
+class HistoryView(LoginRequiredMixin, View):
+    def get(self, request):
+        return render(request, "stats/historico.html", {"matrix": build_matrix()})
+
+
+class HistoryExportView(LoginRequiredMixin, View):
+    def get(self, request):
+        content = render_xlsx(build_matrix())
+        response = HttpResponse(
+            content,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = 'attachment; filename="historico-porra-26.xlsx"'
+        return response
 
 
 class GroupRankingsView(LoginRequiredMixin, View):

@@ -11,4 +11,6 @@ urlpatterns = [
         views.GroupRankingsView.as_view(),
         name="rankings_group",
     ),
+    path("historico/", views.HistoryView.as_view(), name="historico"),
+    path("historico.xlsx", views.HistoryExportView.as_view(), name="historico_export"),
 ]

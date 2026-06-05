@@ -228,3 +228,12 @@ def test_rankings_unassigned_row_is_not_a_link(client):
     body = r.content.decode()
     assert "Sin asignar" in body
     assert 'href="/stats/rankings/sede/__none__/"' not in body
+
+
+@pytest.mark.django_db
+def test_rankings_header_links_to_historico(client):
+    client.force_login(UserFactory())
+    r = client.get(reverse("stats:rankings"))
+    body = r.content.decode()
+    assert reverse("stats:historico") in body
+    assert "Histórico" in body
