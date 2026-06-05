@@ -134,6 +134,10 @@ class MyAccountView(LoginRequiredMixin, View):
             {
                 "profile_form": profile_form or ProfileForm(instance=request.user),
                 "password_form": password_form or ChangePasswordForm(request.user),
+                "user_sessions": (
+                    UserSession.objects.filter(user=request.user).order_by("-last_seen_at")
+                ),
+                "current_session_key": request.session.session_key,
             },
             status=status,
         )
@@ -147,6 +151,10 @@ class MyAccountView(LoginRequiredMixin, View):
             return self._post_profile(request)
         if action == "password":
             return self._post_password(request)
+        if action == "revoke_session":
+            return self._post_revoke_session(request)
+        if action == "revoke_others":
+            return self._post_revoke_others(request)
         return HttpResponseBadRequest("acción no válida")
 
     def _post_profile(self, request):
@@ -181,17 +189,95 @@ class MyAccountView(LoginRequiredMixin, View):
         form = ChangePasswordForm(request.user, request.POST)
         if not form.is_valid():
             return self._render(request, password_form=form)
+
+        # Snapshot de la sesión actual: tras set_password el signal borra
+        # todas las UserSession del usuario; la recreamos al final.
+        current_us = UserSession.objects.filter(
+            session_key=request.session.session_key
+        ).first()
+
+        # Revocar OTRAS sesiones explícitamente, con AuditLog del count real.
+        others = list(
+            UserSession.objects.filter(user=request.user)
+            .exclude(session_key=request.session.session_key)
+            .values_list("session_key", flat=True)
+        )
+        revoke_sessions(
+            user=request.user,
+            session_keys=others,
+            actor=request.user,
+            reason="password_change",
+        )
+
         request.user.set_password(form.cleaned_data["new1"])
         request.user.must_change_password = False
         request.user.save(update_fields=["password", "must_change_password"])
         update_session_auth_hash(request, request.user)
+
+        # Restaurar UserSession actual (el signal la había borrado).
+        if current_us:
+            UserSession.objects.create(
+                user=request.user,
+                session_key=request.session.session_key,
+                device_label=current_us.device_label,
+                user_agent_raw=current_us.user_agent_raw,
+                ip_at_login=current_us.ip_at_login,
+                is_pwa=current_us.is_pwa,
+                remembered=current_us.remembered,
+                last_seen_at=timezone.now(),
+            )
+
         AuditLog.objects.create(
             actor=request.user,
             action="password.change",
             target_type="user",
             target_id=str(request.user.id),
         )
-        messages.success(request, "Contraseña actualizada.")
+        if others:
+            n = len(others)
+            messages.success(
+                request,
+                f"Contraseña actualizada. Se han cerrado {n} otra{'s' if n != 1 else ''} sesion{'es' if n != 1 else ''}.",
+            )
+        else:
+            messages.success(request, "Contraseña actualizada.")
+        return redirect("accounts:my_account")
+
+    def _post_revoke_session(self, request):
+        target = (request.POST.get("session_key") or "").strip()
+        if not target or target == request.session.session_key:
+            return HttpResponseBadRequest("sesión no válida")
+        keys = list(
+            UserSession.objects.filter(user=request.user, session_key=target)
+            .values_list("session_key", flat=True)
+        )
+        if keys:
+            revoke_sessions(
+                user=request.user,
+                session_keys=keys,
+                actor=request.user,
+                reason="user_revoke",
+            )
+            messages.success(request, "Sesión cerrada.")
+        return redirect("accounts:my_account")
+
+    def _post_revoke_others(self, request):
+        others = list(
+            UserSession.objects.filter(user=request.user)
+            .exclude(session_key=request.session.session_key)
+            .values_list("session_key", flat=True)
+        )
+        if others:
+            n = revoke_sessions(
+                user=request.user,
+                session_keys=others,
+                actor=request.user,
+                reason="user_revoke_others",
+            )
+            messages.success(
+                request,
+                f"Se han cerrado {n} sesion{'es' if n != 1 else ''}.",
+            )
         return redirect("accounts:my_account")
 
 
