@@ -20,6 +20,30 @@ def test_manage_players_renders_for_gestor(client):
 
 
 @pytest.mark.django_db
+def test_manage_players_sort_by_name(client):
+    client.force_login(GestorFactory(must_change_password=False, name="ZZGestor"))
+    UserFactory(name="AnaTest")
+    UserFactory(name="LuisTest")
+    UserFactory(name="MarioTest")
+
+    r_asc = client.get(reverse("pot:manage_players"), {"sort": "name", "dir": "asc"})
+    assert r_asc.status_code == 200
+    body_asc = r_asc.content.decode()
+    assert body_asc.index("AnaTest") < body_asc.index("LuisTest") < body_asc.index("MarioTest")
+
+    r_desc = client.get(reverse("pot:manage_players"), {"sort": "name", "dir": "desc"})
+    body_desc = r_desc.content.decode()
+    assert body_desc.index("MarioTest") < body_desc.index("LuisTest") < body_desc.index("AnaTest")
+
+
+@pytest.mark.django_db
+def test_manage_players_sort_ignores_invalid_params(client):
+    client.force_login(GestorFactory(must_change_password=False))
+    r = client.get(reverse("pot:manage_players"), {"sort": "bogus", "dir": "sideways"})
+    assert r.status_code == 200
+
+
+@pytest.mark.django_db
 def test_toggle_payment(client):
     g = GestorFactory(must_change_password=False)
     client.force_login(g)

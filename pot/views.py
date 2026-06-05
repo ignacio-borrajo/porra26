@@ -1,5 +1,9 @@
+from urllib.parse import urlencode
+
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
+from django.db.models import Q, Sum
+from django.db.models.functions import Coalesce
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -19,21 +23,77 @@ from pot.forms import (
 from pot.models import Payment, PotSettings, Prize
 from pot.services.import_players import import_players_from_xlsx
 
+PLAYER_SORT_FIELDS = {
+    "name": ("name", "email"),
+    "org": ("puesto", "dept", "sede", "name"),
+    "points": ("total_points", "name"),
+    "paid": ("payment__paid", "name"),
+    "active": ("is_active", "name"),
+}
+PLAYER_SORT_DEFAULT_DIR = {
+    "name": "asc",
+    "org": "asc",
+    "points": "desc",
+    "paid": "desc",
+    "active": "desc",
+}
+
 
 class ManagePlayersView(GestorRequiredMixin, View):
     def get(self, request):
         q = request.GET.get("q", "").strip()
-        players = User.objects.all().order_by("name")
-        if q:
-            from django.db.models import Q
+        sort = request.GET.get("sort", "name")
+        if sort not in PLAYER_SORT_FIELDS:
+            sort = "name"
+        direction = request.GET.get("dir", PLAYER_SORT_DEFAULT_DIR[sort])
+        if direction not in ("asc", "desc"):
+            direction = PLAYER_SORT_DEFAULT_DIR[sort]
 
+        fields = PLAYER_SORT_FIELDS[sort]
+        prefix = "-" if direction == "desc" else ""
+        order_by = (f"{prefix}{fields[0]}",) + fields[1:]
+
+        players = User.objects.annotate(
+            total_points=Coalesce(Sum("predictions__earned"), 0),
+        ).order_by(*order_by)
+        if q:
             players = players.filter(Q(name__icontains=q) | Q(email__icontains=q))
+
+        columns = []
+        for key, label in (
+            ("name", "Jugador"),
+            ("org", "Organización"),
+            ("points", "Puntos"),
+            ("paid", "Pago"),
+            ("active", "Estado"),
+        ):
+            is_active = key == sort
+            if is_active:
+                next_dir = "desc" if direction == "asc" else "asc"
+            else:
+                next_dir = PLAYER_SORT_DEFAULT_DIR[key]
+            params = {"sort": key, "dir": next_dir}
+            if q:
+                params["q"] = q
+            columns.append(
+                {
+                    "key": key,
+                    "label": label,
+                    "url": "?" + urlencode(params),
+                    "is_active": is_active,
+                    "current_dir": direction if is_active else None,
+                }
+            )
+
         return render(
             request,
             "pot/manage_players.html",
             {
                 "players": players,
                 "q": q,
+                "sort": sort,
+                "dir": direction,
+                "columns": columns,
                 "active_count": User.objects.filter(is_active=True).count(),
                 "paid_count": Payment.objects.filter(paid=True).count(),
                 "total_count": User.objects.count(),
