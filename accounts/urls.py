@@ -1,8 +1,9 @@
-from django.urls import path
+from django.urls import include, path
 
 from . import views
 
 urlpatterns = [
+    path("api/", include("accounts.api.urls", namespace="api")),
     path("", views.LoginView.as_view(), name="login"),
     path("logout/", views.LogoutView.as_view(), name="logout"),
     path("cambiar-password/", views.ChangePasswordView.as_view(), name="change_password"),

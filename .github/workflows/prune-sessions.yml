@@ -1,0 +1,21 @@
+name: Limpieza diaria de UserSession
+
+on:
+  schedule:
+    # 03:15 UTC = 05:15 Europe/Madrid en verano, 04:15 en invierno. Es franja
+    # de baja actividad para una app interna. Si GitHub Actions se retrasa
+    # unos minutos no pasa nada: el management command es idempotente.
+    - cron: '15 3 * * *'
+  # Dispara manualmente desde la pestaña Actions si quieres forzar la limpieza.
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar prune_user_sessions
+        run: |
+          curl --fail --silent --show-error --max-time 60 \
+            -X POST \
+            -H "Authorization: Bearer ${{ secrets.PORRA26_API_TOKEN }}" \
+            "${{ secrets.PORRA26_BASE_URL }}/api/sesiones/prune/"
