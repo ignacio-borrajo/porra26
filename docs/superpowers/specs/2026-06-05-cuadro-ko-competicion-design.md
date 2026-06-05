@@ -65,13 +65,9 @@ Canvas horizontal con scrollbars ocultos (`scrollbar-width: none` + `::-webkit-s
 
 ### Cards de slot pendiente (`pending_teams`)
 
-Cuando un cruce de KO aún no tiene equipos asignados (porque la ronda anterior no se ha resuelto), la card se renderiza con:
+**Ya implementado en `_match_card.html`.** La rama `if st == 'pending_teams'` actual usa el filtro de plantilla `slot_label` (definido en `competition/templatetags/competition_extras.py`) que ya cubre los patrones `"1A"`/`"2B"` → `"1º Grupo A"`, `"WM37"` → `"Ganador M37"`, `"3WG_S1"` → `"Mejor tercero (S1)"`, vacío/desconocido → `"Por definir"`. Se renderiza con bandera 🏳️, opacidad `.85`, sin enlace.
 
-- Header: `<ronda> · M<bracket_code>` (ej. `Octavos · M37`).
-- En lugar de los escudos: textos `home_slot_label` / `away_slot_label` (ej. "Ganador 1A", "2.º del Grupo B", "Ganador M37").
-- Opacidad `.65`, sin enlace al modal de pronóstico, bordes `border: 1px dashed var(--line-muted)`.
-- Fecha y hora del partido (si `kickoff` está definido) en el footer.
-- Hover/click: no abre nada (cursor `default`).
+Lo único que se añade es el atributo `data-status="pending_teams"` en la raíz para que el borde dashed se aplique vía CSS (`article.match-card[data-status="pending_teams"]`).
 
 ### Navegación
 
@@ -106,22 +102,11 @@ Cuando un cruce de KO aún no tiene equipos asignados (porque la ronda anterior 
 
 ## Arquitectura
 
-### Cambios en `competition/models.py` y `competition/services/bracket.py`
+### Sin cambios en modelos ni servicios
 
-En `bracket.py` añadir función pública `slot_label(code: str) -> str` que reusa `GROUP_RE` y `WINNER_RE`.
+El filtro de plantilla `slot_label` (en `competition/templatetags/competition_extras.py`) ya existe y cubre todos los patrones que necesitamos. No se añaden properties nuevas a `Match` ni helpers nuevos a `competition/services/bracket.py`.
 
-En `Match` añadir 2 properties:
-
-1. `home_slot_label` / `away_slot_label` — devuelven string legible para los slots vacíos. Los patrones reales (ver `competition/services/bracket.py`) son:
-   - `"1A"` → `"Ganador del Grupo A"`
-   - `"2B"` → `"2.º del Grupo B"`
-   - `"3C"` → `"3.º del Grupo C"` (si la competición usara 3.º de grupo en R32 ampliado)
-   - `"WM37"` → `"Ganador M37"` (ganador del partido con `bracket_code="M37"`)
-   - slot vacío → `""`
-   - Cualquier otro patrón → el mismo string como fallback.
-   La lógica de parseo se añade junto a `resolve_slot()` en `competition/services/bracket.py` como `slot_label(code: str) -> str`, reusando las mismas regex (`GROUP_RE`, `WINNER_RE`).
-
-2. `feeds_into` — devuelve `bracket_code` (str) del cruce de la ronda siguiente que recibe al ganador, o `None` si es la Final. Se calcula consultando otros `Match` cuyos `home_slot`/`away_slot` igualen `f"WM{bracket_code_numero}"` (donde `bracket_code_numero` es lo que sigue a la `M`). Para evitar N+1 queries, en el view se prefetchea el mapa entero `{WM37: bracket_code_destino, …}` una vez y se anota en cada match antes de pasar al template.
+`feeds_into_code` se calcula puntualmente en el view como anotación en cada match (NO es property del modelo): el view recolecta todos los KO matches, construye `{numero_bracket: bracket_code_destino}` recorriendo `home_slot`/`away_slot` que empiecen por `WM`, y anota `match.feeds_into_code` en memoria. Sin queries extra ni N+1.
 
 ### Cambios en `competition/views.py`
 
@@ -202,20 +187,13 @@ Una sola rama condicional:
 
 ### Cambios en `templates/competition/_match_card.html`
 
-- Añadir `data-bracket-code="{{ match.bracket_code }}"`, `data-feeds-into="{{ match.feeds_into_code|default:'' }}"` y `data-status="{{ match.status }}"` en el `<article>` raíz.
-- Añadir bloque condicional:
-  ```django
-  {% if match.status == "pending_teams" %}
-    <div class="match-card-slot">
-      <span class="slot-label">{{ match.home_slot_label }}</span>
-      <span class="slot-vs">vs</span>
-      <span class="slot-label">{{ match.away_slot_label }}</span>
-    </div>
-  {% else %}
-    {# render actual con escudos y marcador #}
-  {% endif %}
-  ```
-- En modo `ko_mode=True`, ajustar padding/escala interna si es necesario para que la card quepa estética en columna de 280px.
+Únicamente añadir 3 data-attributes a las raíces `<div class="match-card …">` y `<a class="match-card …">` (ambas ramas, `pending_teams` y el resto):
+
+- `data-bracket-code="{{ match.bracket_code|default:'' }}"`
+- `data-feeds-into="{{ match.feeds_into_code|default:'' }}"`
+- `data-status="{{ st }}"`
+
+El JS los lee para dibujar los conectores. No cambia el contenido visible de las cards.
 
 ### Cambios en `templates/partials/_round_selector.html`
 
@@ -424,24 +402,7 @@ function debounceRAF(fn) {
 }
 .ko-dots span.active { background: var(--accent); width: 8px; height: 8px; }
 
-.match-card-slot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 18px;
-  opacity: .65;
-}
-.match-card-slot .slot-label {
-  font: 500 14px/1.2 var(--font-display);
-}
-.match-card-slot .slot-vs {
-  font: 600 11px/1 var(--font-mono);
-  color: var(--text-muted);
-  letter-spacing: .12em;
-}
-
-article.match-card[data-status="pending_teams"] {
+.match-card[data-status="pending_teams"] {
   border-style: dashed;
   border-color: var(--line-muted);
 }
@@ -460,29 +421,17 @@ article.match-card[data-status="pending_teams"] {
 
 ### Backend (`competition/tests/`)
 
-1. `test_slot_label.py` — función `slot_label(code)` en `competition/services/bracket.py`:
-   - `"1A"` → `"Ganador del Grupo A"`
-   - `"2B"` → `"2.º del Grupo B"`
-   - `"3C"` → `"3.º del Grupo C"`
-   - `"WM37"` → `"Ganador M37"`
-   - `""` → `""`
-   - `"foobar"` → `"foobar"` (fallback).
-
-2. `test_match_slot_labels.py` — properties `home_slot_label` / `away_slot_label` de `Match`:
-   - Match con `home_slot="1A"`, `away_slot="2B"` → labels `"Ganador del Grupo A"` / `"2.º del Grupo B"`.
-   - Match con `home_slot=""` → label `""`.
-
-3. `test_competition_view.py` (ampliar):
+1. `test_competition_view.py` (ampliar):
    - Con ronda activa `groups` jornada 1 → contexto trae `is_ko_view=False` y `open_matches/...` igual que hoy.
    - Con ronda activa `r32` → contexto trae `is_ko_view=True`, `ko_rounds` con 5 entradas (r32/r16/qf/sf/final), `active_ko_id="r32"`.
    - Con ronda activa `final` → `active_ko_id="final"`.
-   - Cada match en `ko_rounds` tiene `feeds_into_code` anotado: un partido de R32 con `bracket_code="M01"` cuyo ganador alimenta el `home_slot="WM01"` de un partido R16 con `bracket_code="M33"` → `feeds_into_code == "M33"`. Final → `None`.
+   - Cada match en `ko_rounds` tiene `feeds_into_code` anotado: un partido de R32 con `bracket_code="M73"` cuyo ganador alimenta el `home_slot="WM73"` de un partido R16 con `bracket_code="M89"` → `feeds_into_code == "M89"`. Final → `None`.
 
 ### Frontend / template
 
-4. `test_dashboard_ko_template.py` (snapshot ligero):
+2. `test_dashboard_ko_template.py` (snapshot ligero):
    - Renderizar dashboard con `is_ko_view=True` → output contiene `.ko-canvas`, 5 `.ko-col`, y un `<svg class="ko-connectors">`.
-   - Cards de cruces sin equipos → contienen `.match-card-slot` con los labels esperados.
+   - Cards de cruces sin equipos en KO → contienen el texto resuelto por `slot_label` (ej. "1º Grupo A", "Ganador M73") y atributos `data-status="pending_teams"`, `data-bracket-code="M<N>"`.
 
 No se añaden tests E2E del JS — el comportamiento del bracket se valida manualmente en el plan de verificación.
 
