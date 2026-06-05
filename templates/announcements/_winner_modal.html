@@ -11,32 +11,32 @@
   <div class="winner-trophy" aria-hidden="true">🏆</div>
   <h2 id="winner-title" class="winner-title">{{ announcement.title }}</h2>
   <p class="winner-points">{{ announcement.points }} puntos</p>
-  {% if announcement.share %}
-    <p class="winner-share">
-      {% if announcement.tied %}
-        Cada uno se lleva <strong>{{ announcement.share|floatformat:2 }} €</strong>
-      {% else %}
-        Se lleva <strong>{{ announcement.share|floatformat:2 }} €</strong>
-      {% endif %}
-    </p>
-  {% endif %}
-  <div class="winner-list">
-    {% if preview %}
-      {% for w in preview_winners %}
-        <div class="winner-card">
-          {% include "partials/_avatar.html" with u=w size=64 %}
-          <div class="winner-name">{{ w.name }}</div>
+
+  <ol class="winner-podium" role="list">
+    {% for entry in podium %}
+      <li class="winner-podium-row" data-position="{{ entry.position }}">
+        <div class="winner-podium-medal" aria-hidden="true">
+          {% if entry.position == 1 %}🥇{% elif entry.position == 2 %}🥈{% else %}🥉{% endif %}
         </div>
-      {% endfor %}
-    {% else %}
-      {% for w in announcement.winners.all %}
-        <div class="winner-card">
-          {% include "partials/_avatar.html" with u=w size=64 %}
-          <div class="winner-name">{{ w.name }}</div>
-        </div>
-      {% endfor %}
-    {% endif %}
-  </div>
+        <ul class="winner-podium-people" role="list">
+          {% for u in entry.users %}
+            <li class="winner-podium-person">
+              {% include "partials/_avatar.html" with u=u size=48 %}
+              <span class="winner-podium-name">{{ u.name }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+        {% if entry.prize_per_user > 0 %}
+          <div class="winner-prize-card" aria-label="Premio: {{ entry.prize_per_user|floatformat:2 }} €">
+            <span class="winner-prize-icon" aria-hidden="true">€</span>
+            <span class="winner-prize-amount mono">{{ entry.prize_per_user|floatformat:2 }}</span>
+            {% if entry.tied %}<span class="winner-prize-note">a cada uno</span>{% endif %}
+          </div>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+
   <p class="winner-subtitle">
     {% if announcement.tied %}Empate en la cima. ¡Bien jugado!{% else %}¡Enhorabuena!{% endif %}
   </p>
