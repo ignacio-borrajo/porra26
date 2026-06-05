@@ -334,3 +334,39 @@ def test_dashboard_first_announcement_id_is_oldest_pending(client):
     WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=2, points=10)
     r = client.get(reverse("competicion:dashboard"))
     assert r.context["first_announcement_id"] == older.id
+
+
+@pytest.mark.django_db
+def test_dashboard_ko_view_flag_for_groups(client):
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    RoundFactory(id="groups", points=3, label="Fase de grupos", short="GRP", order=1)
+    r = client.get(reverse("competicion:dashboard") + "?round=groups")
+    assert r.status_code == 200
+    assert r.context["is_ko_view"] is False
+
+
+@pytest.mark.django_db
+def test_dashboard_ko_view_flag_for_r32(client):
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    RoundFactory(id="groups", points=3, label="Fase de grupos", short="GRP", order=1)
+    rounds_data = [
+        ("r32", "Dieciseisavos", "R32", 5, 2),
+        ("r16", "Octavos", "R16", 7, 3),
+        ("qf", "Cuartos", "QF", 10, 4),
+        ("sf", "Semifinales", "SF", 15, 5),
+        ("final", "Final", "FIN", 25, 6),
+    ]
+    for rid, label, short, pts, order in rounds_data:
+        RoundFactory(id=rid, points=pts, label=label, short=short, order=order)
+    from competition.models import Round
+    r32 = Round.objects.get(id="r32")
+    MatchFactory(round=r32, bracket_code="M73", kickoff=timezone.now() + timedelta(days=10))
+
+    r = client.get(reverse("competicion:dashboard") + "?round=r32")
+    assert r.status_code == 200
+    assert r.context["is_ko_view"] is True
+    assert r.context["active_ko_id"] == "r32"
+    assert len(r.context["ko_rounds"]) == 5
+    assert [k["round"].id for k in r.context["ko_rounds"]] == ["r32", "r16", "qf", "sf", "final"]
