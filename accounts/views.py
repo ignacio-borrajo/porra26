@@ -114,10 +114,38 @@ class ChangePasswordView(LoginRequiredMixin, View):
     def post(self, request):
         form = ChangePasswordForm(request.user, request.POST)
         if form.is_valid():
+            current_us = UserSession.objects.filter(
+                session_key=request.session.session_key
+            ).first()
+            others = list(
+                UserSession.objects.filter(user=request.user)
+                .exclude(session_key=request.session.session_key)
+                .values_list("session_key", flat=True)
+            )
+            revoke_sessions(
+                user=request.user,
+                session_keys=others,
+                actor=request.user,
+                reason="password_change_forced",
+            )
+
             request.user.set_password(form.cleaned_data["new1"])
             request.user.must_change_password = False
             request.user.save(update_fields=["password", "must_change_password"])
             update_session_auth_hash(request, request.user)
+
+            if current_us:
+                UserSession.objects.create(
+                    user=request.user,
+                    session_key=request.session.session_key,
+                    device_label=current_us.device_label,
+                    user_agent_raw=current_us.user_agent_raw,
+                    ip_at_login=current_us.ip_at_login,
+                    is_pwa=current_us.is_pwa,
+                    remembered=current_us.remembered,
+                    last_seen_at=timezone.now(),
+                )
+
             messages.success(request, "Contraseña actualizada.")
             return redirect("competicion:dashboard")
         return render(request, self.template_name, {"form": form})
@@ -397,6 +425,19 @@ class PasswordResetConfirmView(View):
         user = form.save()
         user.must_change_password = False
         user.save(update_fields=["must_change_password"])
+
+        # Tras un reset por email asumimos posible compromiso: cerrar TODAS
+        # las sesiones del usuario (incluidas las que un atacante pueda tener).
+        all_keys = list(
+            UserSession.objects.filter(user=user).values_list("session_key", flat=True)
+        )
+        revoke_sessions(
+            user=user,
+            session_keys=all_keys,
+            actor=None,
+            reason="password_reset_email",
+        )
+
         AuditLog.objects.create(
             actor=None,
             action="password_reset_completed",
