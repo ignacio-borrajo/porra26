@@ -365,3 +365,18 @@ def test_topbar_avatar_links_to_my_account(client):
     assert r.status_code == 200
     body = r.content.decode()
     assert 'href="/mi-cuenta/"' in body
+
+
+@pytest.mark.django_db
+def test_my_account_has_logout_button(client):
+    # En móvil el jugador pierde el botón de salir del topbar; debe poder
+    # cerrar sesión desde "Mi cuenta".
+    user = UserFactory()
+    client.force_login(user)
+    r = client.get(reverse("accounts:my_account"))
+    assert r.status_code == 200
+    body = r.content.decode()
+    logout_url = reverse("accounts:logout")
+    # El form de logout aparece dentro de la card de Preferencias.
+    assert f'action="{logout_url}"' in body
+    assert ">Salir<" in body
