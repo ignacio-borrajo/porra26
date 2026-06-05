@@ -26,26 +26,32 @@ def standings(
     round_id: str | None = None,
     matchday: int | None = None,
     player_ids: Iterable[int] | None = None,
+    *,
+    round_ids: Iterable[str] | None = None,
 ) -> list[StandingRow]:
     """Clasificación general, opcionalmente acotada por ronda/jornada/subconjunto de jugadores.
 
-    Con `round_id`/`matchday` solo se suman los puntos de las predicciones cuyo
-    partido cae dentro del scope. Para esos scopes locales no se calculan
-    `streak` ni `trend` (no aportan información útil de una sola jornada/ronda).
-    Con `player_ids`, los resultados se limitan a esos jugadores y las
-    posiciones se recalculan desde 1.
+    Con `round_id` o `round_ids` (mutuamente excluyentes) o `matchday` solo se
+    suman los puntos de las predicciones cuyo partido cae dentro del scope.
+    Para esos scopes locales no se calculan `streak` ni `trend` (no aportan
+    información útil de un scope acotado). Con `player_ids`, los resultados se
+    limitan a esos jugadores y las posiciones se recalculan desde 1.
     """
+    if round_id is not None and round_ids is not None:
+        raise ValueError("standings(): round_id y round_ids son mutuamente excluyentes")
     if player_ids is not None:
         player_ids = list(player_ids)
         if not player_ids:
             return []
 
-    scoped = round_id is not None or matchday is not None
+    scoped = round_id is not None or round_ids is not None or matchday is not None
     qs = Prediction.objects.filter(
         player__is_active=True, player__is_jugador=True, earned__isnull=False
     )
     if round_id is not None:
         qs = qs.filter(match__round_id=round_id)
+    if round_ids is not None:
+        qs = qs.filter(match__round_id__in=list(round_ids))
     if matchday is not None:
         qs = qs.filter(match__matchday=matchday)
     if player_ids is not None:

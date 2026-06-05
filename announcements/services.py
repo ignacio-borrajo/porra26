@@ -6,9 +6,18 @@ from .models import WinnerAnnouncement
 
 def detect_after_match(match: Match) -> list[WinnerAnnouncement]:
     """Llamado tras resolve_match(). Crea (idempotentemente) los anuncios de
-    ganador que corresponda al scope al que pertenece el partido recién
-    resuelto, si y solo si ese scope acaba de cerrarse. Devuelve la lista
-    de anuncios creados en esta llamada (0..N)."""
+    ganador del scope al que pertenece el partido recién resuelto, si ese scope
+    acaba de cerrarse. Devuelve los anuncios creados en esta llamada (0..N).
+
+    Reglas:
+    - Cualquier partido de la fase de grupos: 1 anuncio matchday(N) si la
+      jornada N acaba de cerrar.
+    - r32/r16/qf/sf: ningún anuncio (esperan a que la Final cierre la jornada
+      eliminatoria entera).
+    - final: 3 anuncios simultáneos (ko → sede → global) en ese orden, para
+      que el feed de modales muestre la jornada KO primero, luego sede y por
+      último el campeón del Mundial (climax).
+    """
     created: list[WinnerAnnouncement] = []
 
     if match.round_id == "groups" and match.matchday is not None:
@@ -16,18 +25,10 @@ def detect_after_match(match: Match) -> list[WinnerAnnouncement]:
         if ann is not None:
             created.append(ann)
     elif match.round_id == "final":
-        # La Final no entrega premio por ganador de ronda: el ganador del Mundial
-        # ya cobra por el podio (P1). Solo se generan los anuncios global y sede.
-        ann_global = _try_create("global")
-        if ann_global is not None:
-            created.append(ann_global)
-        ann_sede = _try_create("sede")
-        if ann_sede is not None:
-            created.append(ann_sede)
-    else:
-        ann = _try_create("round", round_id=match.round_id)
-        if ann is not None:
-            created.append(ann)
+        for kind in ("ko", "sede", "global"):
+            ann = _try_create(kind)
+            if ann is not None:
+                created.append(ann)
 
     return created
 
@@ -36,16 +37,11 @@ def _try_create(
     scope_kind: str,
     *,
     matchday: int | None = None,
-    round_id: str | None = None,
 ) -> WinnerAnnouncement | None:
     if scope_kind == "matchday":
         filter_kwargs = {"scope_kind": "matchday", "scope_matchday": matchday}
-    elif scope_kind == "round":
-        filter_kwargs = {"scope_kind": "round", "scope_round_id": round_id}
-    elif scope_kind == "global":
-        filter_kwargs = {"scope_kind": "global"}
-    elif scope_kind == "sede":
-        filter_kwargs = {"scope_kind": "sede"}
+    elif scope_kind in ("ko", "global", "sede"):
+        filter_kwargs = {"scope_kind": scope_kind}
     else:
         raise ValueError(scope_kind)
 
@@ -66,7 +62,6 @@ def _try_create(
         ann = WinnerAnnouncement.objects.create(
             scope_kind="sede",
             scope_matchday=None,
-            scope_round_id=None,
             points=0,
             tied=False,
             share=Decimal("0"),
@@ -76,7 +71,7 @@ def _try_create(
 
     scope_key = (
         scope_kind,
-        matchday if scope_kind == "matchday" else round_id if scope_kind == "round" else None,
+        matchday if scope_kind == "matchday" else None,
     )
     result = matchday_winners(scope_key)
     if result.status != "resolved":
@@ -85,7 +80,6 @@ def _try_create(
     ann = WinnerAnnouncement.objects.create(
         scope_kind=scope_kind,
         scope_matchday=matchday,
-        scope_round_id=round_id,
         points=result.points,
         tied=result.tied,
         share=result.share,

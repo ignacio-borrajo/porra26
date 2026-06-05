@@ -56,8 +56,8 @@ def announcement_podium(announcement) -> list["PodiumEntry"]:
 
     if announcement.scope_kind == "matchday":
         rows = standings(round_id="groups", matchday=announcement.scope_matchday)
-    elif announcement.scope_kind == "round":
-        rows = standings(round_id=announcement.scope_round_id)
+    elif announcement.scope_kind == "ko":
+        rows = standings(round_ids=_KO_ROUND_IDS)
     else:
         rows = standings()
 
@@ -85,12 +85,15 @@ def announcement_podium(announcement) -> list["PodiumEntry"]:
     return entries
 
 
+_KO_ROUND_IDS = ["r32", "r16", "qf", "sf", "final"]
+
+
 def _matches_for_scope(scope_key):
     kind, value = scope_key
     if kind == "matchday":
         return Match.objects.filter(round_id="groups", matchday=value)
-    if kind == "round":
-        return Match.objects.filter(round_id=value)
+    if kind == "ko":
+        return Match.objects.exclude(round_id="groups")
     if kind == "global":
         return Match.objects.all()
     raise ValueError(f"unknown scope: {kind}")
@@ -100,8 +103,8 @@ def _standings_for_scope(scope_key):
     kind, value = scope_key
     if kind == "matchday":
         return standings(round_id="groups", matchday=value)
-    if kind == "round":
-        return standings(round_id=value)
+    if kind == "ko":
+        return standings(round_ids=_KO_ROUND_IDS)
     return standings()
 
 

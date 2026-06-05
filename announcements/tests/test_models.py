@@ -3,11 +3,6 @@ from django.db import IntegrityError
 
 from accounts.tests.factories import UserFactory
 from announcements.models import WinnerAnnouncement, WinnerAnnouncementSeen
-from competition.tests.factories import RoundFactory
-
-
-def _round(rid="r16", label="Octavos", short="R16", order=3):
-    return RoundFactory(id=rid, label=label, short=short, order=order)
 
 
 @pytest.mark.django_db
@@ -16,14 +11,17 @@ class TestWinnerAnnouncementStr:
         ann = WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=2, points=9)
         assert "2" in str(ann)
 
-    def test_str_for_round(self):
-        r = _round()
-        ann = WinnerAnnouncement.objects.create(scope_kind="round", scope_round=r, points=15)
-        assert "r16" in str(ann)
+    def test_str_for_ko(self):
+        ann = WinnerAnnouncement.objects.create(scope_kind="ko", points=42)
+        assert "eliminatoria" in str(ann)
 
     def test_str_for_global(self):
         ann = WinnerAnnouncement.objects.create(scope_kind="global", points=50)
         assert "Mundial" in str(ann)
+
+    def test_str_for_sede(self):
+        ann = WinnerAnnouncement.objects.create(scope_kind="sede", points=0)
+        assert "sede" in str(ann).lower()
 
 
 @pytest.mark.django_db
@@ -40,19 +38,13 @@ class TestWinnerAnnouncementTitle:
         )
         assert ann.title == "¡Ganadores de la Jornada 3!"
 
-    def test_title_singular_round(self):
-        r = _round(rid="qf", label="Cuartos", short="QF", order=4)
-        ann = WinnerAnnouncement.objects.create(
-            scope_kind="round", scope_round=r, points=20, tied=False
-        )
-        assert ann.title == "¡Ganador de Cuartos!"
+    def test_title_singular_ko(self):
+        ann = WinnerAnnouncement.objects.create(scope_kind="ko", points=42, tied=False)
+        assert ann.title == "¡Ganador de las eliminatorias!"
 
-    def test_title_plural_round(self):
-        r = _round(rid="sf", label="Semifinales", short="SF", order=5)
-        ann = WinnerAnnouncement.objects.create(
-            scope_kind="round", scope_round=r, points=20, tied=True
-        )
-        assert ann.title == "¡Ganadores de Semifinales!"
+    def test_title_plural_ko(self):
+        ann = WinnerAnnouncement.objects.create(scope_kind="ko", points=42, tied=True)
+        assert ann.title == "¡Ganadores de las eliminatorias!"
 
     def test_title_singular_global(self):
         ann = WinnerAnnouncement.objects.create(scope_kind="global", points=99, tied=False)
@@ -74,11 +66,10 @@ class TestUniquenessConstraints:
         with pytest.raises(IntegrityError):
             WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=1, points=10)
 
-    def test_uniqueness_constraint_round(self):
-        r = _round()
-        WinnerAnnouncement.objects.create(scope_kind="round", scope_round=r, points=15)
+    def test_uniqueness_constraint_ko(self):
+        WinnerAnnouncement.objects.create(scope_kind="ko", points=42)
         with pytest.raises(IntegrityError):
-            WinnerAnnouncement.objects.create(scope_kind="round", scope_round=r, points=20)
+            WinnerAnnouncement.objects.create(scope_kind="ko", points=50)
 
     def test_uniqueness_constraint_global(self):
         WinnerAnnouncement.objects.create(scope_kind="global", points=99)
@@ -94,13 +85,6 @@ class TestUniquenessConstraints:
         WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=1, points=8)
         WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=2, points=10)
         assert WinnerAnnouncement.objects.filter(scope_kind="matchday").count() == 2
-
-    def test_different_rounds_allowed(self):
-        r1 = _round(rid="r32", label="Dieciseisavos", short="R32", order=2)
-        r2 = _round(rid="r16", label="Octavos", short="R16", order=3)
-        WinnerAnnouncement.objects.create(scope_kind="round", scope_round=r1, points=10)
-        WinnerAnnouncement.objects.create(scope_kind="round", scope_round=r2, points=15)
-        assert WinnerAnnouncement.objects.filter(scope_kind="round").count() == 2
 
 
 @pytest.mark.django_db

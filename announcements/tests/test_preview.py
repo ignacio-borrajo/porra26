@@ -6,7 +6,6 @@ from django.urls import reverse
 from accounts.tests.factories import GestorFactory, UserFactory
 from announcements.models import WinnerAnnouncement, WinnerAnnouncementSeen
 from announcements.preview import build_preview
-from competition.tests.factories import RoundFactory
 from pot.models import PotSettings
 
 
@@ -49,14 +48,13 @@ class TestBuildPreview:
         assert winners == [gestor]
         assert ann.tied is False
 
-    def test_round_uses_first_ko_round(self):
-        RoundFactory(id="groups", label="Fase de grupos", short="GRP", order=1)
-        r16 = RoundFactory(id="r16", label="Octavos", short="R16", points=7, order=3)
+    def test_ko_builds_announcement_without_extra_state(self):
         gestor = GestorFactory()
-        ann, _ = build_preview("round", tied=False, current_user=gestor)
-        assert ann.scope_kind == "round"
-        assert ann.scope_round_id == r16.id
-        assert ann.title == "¡Ganador de Octavos!"
+        ann, winners = build_preview("ko", tied=False, current_user=gestor)
+        assert ann.scope_kind == "ko"
+        assert ann.scope_matchday is None
+        assert ann.title == "¡Ganador de las eliminatorias!"
+        assert winners == [gestor]
 
     def test_global(self):
         gestor = GestorFactory()
@@ -105,12 +103,10 @@ class TestPreviewView:
         assert "Ana Demo" in html
         assert "Empate en la cima" in html
 
-    def test_round_title(self, client):
-        RoundFactory(id="groups", label="Fase de grupos", short="GRP", order=1)
-        RoundFactory(id="r16", label="Octavos", short="R16", points=7, order=3)
+    def test_ko_title(self, client):
         client.force_login(GestorFactory())
-        res = client.get(reverse("announcements:preview") + "?scope=round&tied=0")
-        assert "¡Ganador de Octavos!" in res.content.decode()
+        res = client.get(reverse("announcements:preview") + "?scope=ko&tied=0")
+        assert "¡Ganador de las eliminatorias!" in res.content.decode()
 
     def test_global_title(self, client):
         client.force_login(GestorFactory())

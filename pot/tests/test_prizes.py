@@ -218,7 +218,7 @@ class TestAnnouncementPodium:
         assert entries[2].prize_per_user == Decimal("0")
 
     @pytest.mark.django_db
-    def test_round_ko_only_position_1_has_prize(self, db):
+    def test_ko_only_position_1_has_prize(self, db):
         r16 = RoundFactory(id="r16", points=7, label="Octavos", short="R16", order=3)
         s = PotSettings.load()
         s.matchday_winner_prize = Decimal("20")
@@ -231,8 +231,7 @@ class TestAnnouncementPodium:
         from announcements.models import WinnerAnnouncement
 
         ann = WinnerAnnouncement.objects.create(
-            scope_kind="round",
-            scope_round=r16,
+            scope_kind="ko",
             points=7,
             tied=False,
             share=Decimal("20"),
@@ -290,3 +289,76 @@ class TestAnnouncementPodium:
         ann.winners.set([a])
         entries = announcement_podium(ann)
         assert [e.position for e in entries] == [1]
+
+
+@pytest.mark.django_db
+def test_matchday_winners_ko_pending_until_all_ko_resolved():
+    from accounts.tests.factories import UserFactory
+    from competition.tests.factories import MatchFactory, PredictionFactory, RoundFactory
+    from pot.services.prizes import matchday_winners
+
+    RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    r32 = RoundFactory(id="r32", points=5, label="R32", short="R32", order=2)
+    r16 = RoundFactory(id="r16", points=7, label="R16", short="R16", order=3)
+    qf = RoundFactory(id="qf", points=10, label="QF", short="QF", order=4)
+    sf = RoundFactory(id="sf", points=15, label="SF", short="SF", order=5)
+    fn = RoundFactory(id="final", points=20, label="Final", short="FIN", order=6)
+    user = UserFactory()
+    for r in (r32, r16, qf, sf):
+        m = MatchFactory(round=r, matchday=None, result_home=1, result_away=0)
+        PredictionFactory(player=user, match=m, earned=r.points)
+    MatchFactory(round=fn, matchday=None, result_home=None)
+
+    result = matchday_winners(("ko", None))
+    assert result.status == "pending"
+
+
+@pytest.mark.django_db
+def test_matchday_winners_ko_aggregates_all_ko_including_final():
+    from accounts.tests.factories import UserFactory
+    from competition.tests.factories import MatchFactory, PredictionFactory, RoundFactory
+    from pot.models import PotSettings
+    from pot.services.prizes import matchday_winners
+
+    pot = PotSettings.load()
+    pot.matchday_winner_prize = Decimal("30.00")
+    pot.save(update_fields=["matchday_winner_prize"])
+
+    RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    r32 = RoundFactory(id="r32", points=5, label="R32", short="R32", order=2)
+    r16 = RoundFactory(id="r16", points=7, label="R16", short="R16", order=3)
+    qf = RoundFactory(id="qf", points=10, label="QF", short="QF", order=4)
+    sf = RoundFactory(id="sf", points=15, label="SF", short="SF", order=5)
+    fn = RoundFactory(id="final", points=20, label="Final", short="FIN", order=6)
+
+    winner = UserFactory(name="W")
+    loser = UserFactory(name="L")
+    for r, pts in ((r32, 5), (r16, 7), (qf, 10), (sf, 15), (fn, 20)):
+        m = MatchFactory(round=r, matchday=None, result_home=1, result_away=0)
+        PredictionFactory(player=winner, match=m, earned=pts)
+        PredictionFactory(player=loser, match=m, earned=0)
+
+    result = matchday_winners(("ko", None))
+    assert result.status == "resolved"
+    assert result.points == 57  # 5+7+10+15+20
+    assert [u.name for u in result.winners] == ["W"]
+    assert result.share == Decimal("30.00")
+
+
+@pytest.mark.django_db
+def test_matchday_winners_ko_excludes_groups_points():
+    from accounts.tests.factories import UserFactory
+    from competition.tests.factories import MatchFactory, PredictionFactory, RoundFactory
+    from pot.services.prizes import matchday_winners
+
+    grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    fn = RoundFactory(id="final", points=20, label="Final", short="FIN", order=6)
+    user = UserFactory()
+    m_grp = MatchFactory(round=grp, matchday=1, result_home=1, result_away=0)
+    m_fn = MatchFactory(round=fn, matchday=None, result_home=2, result_away=1)
+    PredictionFactory(player=user, match=m_grp, earned=3)
+    PredictionFactory(player=user, match=m_fn, earned=20)
+
+    result = matchday_winners(("ko", None))
+    assert result.status == "resolved"
+    assert result.points == 20

@@ -395,3 +395,26 @@ def test_standings_player_ids_includes_zero_pts_players():
     ids = {r.player_id for r in rows}
     assert ids == {a.id, b.id}
     assert all(r.pts == 0 for r in rows)
+
+
+@pytest.mark.django_db
+def test_standings_round_ids_aggregates_multiple_rounds():
+    grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    r32 = RoundFactory(id="r32", points=5, label="R32", short="R32", order=2)
+    r16 = RoundFactory(id="r16", points=7, label="R16", short="R16", order=3)
+    user = UserFactory(name="Ana")
+    m_grp = MatchFactory(round=grp, matchday=1, result_home=1, result_away=0)
+    m_r32 = MatchFactory(round=r32, matchday=None, result_home=2, result_away=0)
+    m_r16 = MatchFactory(round=r16, matchday=None, result_home=1, result_away=1)
+    PredictionFactory(player=user, match=m_grp, earned=3)
+    PredictionFactory(player=user, match=m_r32, earned=5)
+    PredictionFactory(player=user, match=m_r16, earned=7)
+
+    rows = {r.name: r.pts for r in standings(round_ids=["r32", "r16"])}
+    assert rows["Ana"] == 12  # 5+7, sin contar grupos
+
+
+@pytest.mark.django_db
+def test_standings_round_id_and_round_ids_are_mutually_exclusive():
+    with pytest.raises(ValueError):
+        standings(round_id="groups", round_ids=["r32", "r16"])
