@@ -1,8 +1,12 @@
+from decimal import Decimal
+
 import pytest
 from django.urls import reverse
 
 from accounts.tests.factories import UserFactory
 from announcements.models import WinnerAnnouncement, WinnerAnnouncementSeen
+from competition.tests.factories import MatchFactory, PredictionFactory, RoundFactory
+from pot.models import PotSettings, Prize
 
 
 @pytest.fixture
@@ -48,6 +52,59 @@ class TestModalView:
         res = client.get(reverse("announcements:modal", args=[ann.id]))
         assert res.status_code == 200
         assert "Campeón del Mundial" in res.content.decode()
+
+    def test_global_modal_includes_podium_prize_amounts(self, client, db):
+        final_round = RoundFactory(
+            id="final", points=20, label="Final", short="FIN", order=6
+        )
+        Prize.objects.create(scope="global", position=1, amount=Decimal("300"), label="1º")
+        Prize.objects.create(scope="global", position=2, amount=Decimal("120"), label="2º")
+        Prize.objects.create(scope="global", position=3, amount=Decimal("60"), label="3º")
+        first = UserFactory(name="Primero Apellido")
+        second = UserFactory(name="Segundo Apellido")
+        third = UserFactory(name="Tercero Apellido")
+        m = MatchFactory(round=final_round, matchday=None, result_home=2, result_away=1)
+        PredictionFactory(player=first, match=m, home=2, away=1, earned=20)
+        PredictionFactory(player=second, match=m, home=2, away=0, earned=5)
+        PredictionFactory(player=third, match=m, home=1, away=1, earned=1)
+        ann = WinnerAnnouncement.objects.create(
+            scope_kind="global", points=20, tied=False, share=Decimal("300")
+        )
+        ann.winners.set([first])
+        client.force_login(UserFactory())
+        res = client.get(reverse("announcements:modal", args=[ann.id]))
+        assert res.status_code == 200
+        html = res.content.decode()
+        # Los tres jugadores aparecen
+        assert "Primero Apellido" in html
+        assert "Segundo Apellido" in html
+        assert "Tercero Apellido" in html
+        # Las cuantías aparecen prominentemente
+        assert "300,00" in html or "300.00" in html
+        assert "120,00" in html or "120.00" in html
+        assert "60,00" in html or "60.00" in html
+
+    def test_matchday_modal_renders_only_first_place_prize(self, client, db):
+        groups = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+        s = PotSettings.load()
+        s.matchday_winner_prize = Decimal("12.50")
+        s.save()
+        a = UserFactory(name="Alfa")
+        b = UserFactory(name="Beta")
+        m = MatchFactory(round=groups, matchday=1, result_home=1, result_away=0)
+        PredictionFactory(player=a, match=m, home=1, away=0, earned=3)
+        PredictionFactory(player=b, match=m, home=2, away=1, earned=1)
+        ann = WinnerAnnouncement.objects.create(
+            scope_kind="matchday", scope_matchday=1, points=3, share=Decimal("12.50")
+        )
+        ann.winners.set([a])
+        client.force_login(UserFactory())
+        res = client.get(reverse("announcements:modal", args=[ann.id]))
+        html = res.content.decode()
+        # La cuantía del puesto 1 está presente
+        assert "12,50" in html or "12.50" in html
+        # El segundo puesto se muestra sin cuantía € visible
+        assert "Beta" in html
 
 
 @pytest.mark.django_db

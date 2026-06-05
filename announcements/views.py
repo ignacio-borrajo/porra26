@@ -5,9 +5,10 @@ from django.urls import reverse
 from django.views import View
 
 from accounts.mixins import GestorRequiredMixin
+from pot.services.prizes import announcement_podium
 
 from .models import WinnerAnnouncement, WinnerAnnouncementSeen
-from .preview import build_preview
+from .preview import build_preview, build_preview_podium
 
 
 class AnnouncementModalView(LoginRequiredMixin, View):
@@ -19,7 +20,7 @@ class AnnouncementModalView(LoginRequiredMixin, View):
         return render(
             request,
             "announcements/_winner_modal.html",
-            {"announcement": ann},
+            {"announcement": ann, "podium": announcement_podium(ann)},
         )
 
 
@@ -45,8 +46,14 @@ class AnnouncementPreviewView(GestorRequiredMixin, View):
         scope = request.GET.get("scope", "matchday")
         tied = request.GET.get("tied") == "1"
         ann, winners = build_preview(scope, tied=tied, current_user=request.user)
+        podium = build_preview_podium(scope, tied=tied, current_user=request.user)
         return render(
             request,
             "announcements/_winner_modal.html",
-            {"announcement": ann, "preview": True, "preview_winners": winners},
+            {
+                "announcement": ann,
+                "preview": True,
+                "preview_winners": winners,
+                "podium": podium,
+            },
         )
