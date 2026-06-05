@@ -309,3 +309,25 @@ def test_prizes_page_has_preview_widget_for_gestor(client):
     assert 'id="preview-tied"' in html
     assert 'id="preview-open"' in html
     assert reverse("announcements:preview") in html
+
+
+@pytest.mark.django_db
+def test_post_updates_sede_winner_prize(client, settings):
+    client.force_login(GestorFactory(must_change_password=False))
+    r = client.post(
+        reverse("pot:prizes"),
+        data={"sede_winner_prize": "40.00"},
+    )
+    assert r.status_code in (200, 302)
+    assert PotSettings.load().sede_winner_prize == Decimal("40.00")
+
+
+@pytest.mark.django_db
+def test_post_rejects_negative_sede_winner_prize(client, settings):
+    s = PotSettings.load()
+    s.sede_winner_prize = Decimal("10.00")
+    s.save(update_fields=["sede_winner_prize"])
+    client.force_login(GestorFactory(must_change_password=False))
+    client.post(reverse("pot:prizes"), data={"sede_winner_prize": "-1"})
+    # No cambia: queda en 10.00 (mismo trato que matchday_winner_prize)
+    assert PotSettings.load().sede_winner_prize == Decimal("10.00")
