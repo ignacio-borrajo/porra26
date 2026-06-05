@@ -55,6 +55,8 @@ def _try_create(
 
         from pot.services.prizes import sede_winners
 
+        if Match.objects.filter(round_id="final", result_home__isnull=True).exists():
+            return None
         sede_results = sede_winners()
         winners_users = [u for sw in sede_results if sw.status == "resolved" for u in sw.users]
         if not winners_users:

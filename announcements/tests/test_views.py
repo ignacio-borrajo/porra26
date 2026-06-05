@@ -210,14 +210,14 @@ def test_modal_renders_sede_grid(client, settings):
     assert r.status_code == 200
     body = r.content.decode()
     assert "winner-modal-sede-grid" in body
-    # Las 6 sedes están presentes
-    for key in ["ourense", "vigo", "asturias", "madrid", "barcelona", "latam"]:
+    # Las 5 sedes están presentes
+    for key in ["ourense", "vigo", "asturias", "madrid", "barcelona"]:
         assert f'data-sede="{key}"' in body
     # Madrid resuelta con MA y 25.00 €
     assert "MA" in body
     assert "25,00" in body or "25.00" in body
-    # Sedes desiertas: ourense, vigo, asturias, barcelona, latam → todas con "Desierto" salvo madrid
-    assert body.count("Desierto") == 5
+    # Sedes desiertas: ourense, vigo, asturias, barcelona → todas con "Desierto" salvo madrid
+    assert body.count("Desierto") == 4
 
 
 @pytest.mark.django_db
@@ -229,5 +229,5 @@ def test_modal_sede_card_desierto_state(client):
     ann = WinnerAnnouncement.objects.create(scope_kind="sede", points=0)
     r = client.get(f"/anuncios/{ann.id}/")
     body = r.content.decode()
-    assert body.count("Desierto") == 6
+    assert body.count("Desierto") == 5
     assert "is-empty" in body

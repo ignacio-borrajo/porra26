@@ -26,7 +26,7 @@ def _by_sede(result, key):
 
 
 @pytest.mark.django_db
-def test_returns_six_entries_in_sede_choices_order(groups_round, prize_25):
+def test_returns_one_entry_per_sede_in_sede_choices_order(groups_round, prize_25):
     result = sede_winners()
     assert [sw.sede_key for sw in result] == [
         "ourense",
@@ -34,7 +34,6 @@ def test_returns_six_entries_in_sede_choices_order(groups_round, prize_25):
         "asturias",
         "madrid",
         "barcelona",
-        "latam",
     ]
     assert all(sw.status == "desierto" for sw in result)
 

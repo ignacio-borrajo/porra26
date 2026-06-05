@@ -16,10 +16,19 @@ def avatar_upload_to(instance, filename):
 
 class User(AbstractBaseUser, PermissionsMixin):
     DEPT_CHOICES = [
-        ("nominas", "Nóminas"),
         ("gestion", "Gestión"),
         ("financiera", "Financiera"),
+        ("nominas", "Nóminas"),
+        ("entorno", "Entorno"),
+        ("galileo", "Servicios Galileo"),
+        ("web_movilidad", "Web y Movilidad"),
         ("pesca", "Pesca"),
+        ("aluminio", "Aluminio"),
+        ("farmacia", "Farmacia"),
+        ("sistemas", "Sistemas"),
+        ("sie", "SIE"),
+        ("atencion_clientes", "Atención clientes"),
+        ("otros", "Otros"),
     ]
     SEDE_CHOICES = [
         ("ourense", "Ourense"),
@@ -27,13 +36,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         ("asturias", "Asturias"),
         ("madrid", "Madrid"),
         ("barcelona", "Barcelona"),
-        ("latam", "Latinoamérica"),
     ]
     PUESTO_CHOICES = [
         ("desarrollo", "Desarrollo"),
         ("sistemas", "Sistemas"),
         ("consultoria", "Consultoría"),
         ("administracion", "Administración"),
+        ("practicas", "Prácticas"),
     ]
 
     email = models.EmailField(unique=True)
