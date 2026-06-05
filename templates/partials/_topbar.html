@@ -31,25 +31,18 @@
   </nav>
   {% endwith %}
   <div class="topbar-actions" style="margin-left:auto;display:flex;align-items:center;gap:12px">
-    <span class="chip" style="color:var(--c-gold);border-color:oklch(from var(--c-gold) l c h / 0.35);padding:5px 11px">
-      {% icon "euro" width=12 height=12 %} Bote {{ pot_total|default:0 }} €
-    </span>
-    <button class="btn btn-ghost" data-theme-toggle style="width:40px;height:40px;padding:0;border-radius:12px" title="Cambiar tema">
+    <button class="btn btn-icon" data-theme-toggle style="width:40px;height:40px;padding:0;border-radius:12px" title="Cambiar tema">
       {% icon "sun" width=18 height=18 %}
     </button>
     <a href="{% url 'accounts:my_account' %}" style="display:flex;align-items:center;gap:9px;padding-left:6px;text-decoration:none;color:inherit;border-radius:11px;padding:4px 6px{% if request.resolver_match.namespace == 'accounts' and request.resolver_match.url_name == 'my_account' %};background:var(--surface-hi){% endif %}" title="Mi cuenta">
       {% include "partials/_avatar.html" with u=user size=32 %}
       <div class="topbar-user-meta" style="line-height:1.2">
         <div style="font-size:13px;font-weight:700">{{ user.name }}</div>
-        <div style="display:flex;gap:4px;margin-top:2px">
-          {% if user.is_jugador %}<span class="chip" style="padding:0 6px;font-size:9px;color:var(--c-lime);border-color:oklch(from var(--c-lime) l c h / 0.4)">Jugador</span>{% endif %}
-          {% if user.is_gestor %}<span class="chip" style="padding:0 6px;font-size:9px;color:var(--c-cyan);border-color:oklch(from var(--c-cyan) l c h / 0.4)">Administrador</span>{% endif %}
-        </div>
       </div>
     </a>
     <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">
       {% csrf_token %}
-      <button class="btn btn-ghost" type="submit" style="width:38px;height:38px;padding:0;border-radius:11px" title="Salir">
+      <button class="btn btn-icon" type="submit" style="width:38px;height:38px;padding:0;border-radius:11px" title="Salir">
         {% icon "logout" width=16 height=16 %}
       </button>
     </form>
