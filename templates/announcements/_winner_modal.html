@@ -12,30 +12,43 @@
   <h2 id="winner-title" class="winner-title">{{ announcement.title }}</h2>
   <p class="winner-points">{{ announcement.points }} puntos</p>
 
-  <ol class="winner-podium" role="list">
-    {% for entry in podium %}
-      <li class="winner-podium-row" data-position="{{ entry.position }}">
-        <div class="winner-podium-medal" aria-hidden="true">
-          {% if entry.position == 1 %}🥇{% elif entry.position == 2 %}🥈{% else %}🥉{% endif %}
-        </div>
-        <ul class="winner-podium-people" role="list">
-          {% for u in entry.users %}
-            <li class="winner-podium-person">
-              {% include "partials/_avatar.html" with u=u size=48 %}
-              <span class="winner-podium-name">{{ u.name }}</span>
-            </li>
-          {% endfor %}
-        </ul>
-        {% if entry.prize_per_user > 0 %}
-          <div class="winner-prize-card" aria-label="Premio: {{ entry.prize_per_user|floatformat:2 }} €">
-            <span class="winner-prize-icon" aria-hidden="true">€</span>
-            <span class="winner-prize-amount mono">{{ entry.prize_per_user|floatformat:2 }}</span>
-            {% if entry.tied %}<span class="winner-prize-note">a cada uno</span>{% endif %}
+  <div class="winner-modal-podium" role="list">
+    {# Orden visual: 2º · 1º · 3º (la cima en el centro) #}
+    {% for rank, entry in podium_visual %}
+      <div class="winner-modal-podium-slot winner-modal-podium-slot--{{ rank }}{% if not entry %} is-empty{% endif %}"
+           data-rank="{{ rank }}" role="listitem">
+        {% if entry %}
+          <div class="winner-modal-podium-medal" aria-hidden="true">
+            {% if rank == 1 %}🥇{% elif rank == 2 %}🥈{% else %}🥉{% endif %}
           </div>
+          <div class="winner-modal-podium-avatars{% if entry.users|length > 1 %} is-tied{% endif %}">
+            {% for u in entry.users|slice:":2" %}
+              {% include "partials/_avatar.html" with u=u size=52 %}
+            {% endfor %}
+            {% if entry.users|length > 2 %}
+              <span class="winner-modal-podium-more" aria-label="{{ entry.users|length|add:'-2' }} más">+{{ entry.users|length|add:"-2" }}</span>
+            {% endif %}
+          </div>
+          <div class="winner-modal-podium-name" title="{% for u in entry.users %}{{ u.name }}{% if not forloop.last %}, {% endif %}{% endfor %}">
+            {% if entry.users|length > 1 %}
+              {{ entry.users|length }} jugadores
+            {% else %}
+              {{ entry.users.0.name }}
+            {% endif %}
+          </div>
+          {% if entry.prize_per_user > 0 %}
+            <div class="winner-modal-podium-prize" aria-label="Premio: {{ entry.prize_per_user|floatformat:2 }} €">
+              <span class="winner-prize-amount mono">{{ entry.prize_per_user|floatformat:2 }}</span>
+              {% if entry.tied %}<span class="winner-prize-note">a cada uno</span>{% endif %}
+            </div>
+          {% endif %}
         {% endif %}
-      </li>
+        <div class="winner-modal-podium-pedestal">
+          <span class="winner-modal-podium-rank">{{ rank }}</span>
+        </div>
+      </div>
     {% endfor %}
-  </ol>
+  </div>
 
   <p class="winner-subtitle">
     {% if announcement.tied %}Empate en la cima. ¡Bien jugado!{% else %}¡Enhorabuena!{% endif %}
