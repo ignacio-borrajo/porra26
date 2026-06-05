@@ -370,3 +370,49 @@ def test_dashboard_ko_view_flag_for_r32(client):
     assert r.context["active_ko_id"] == "r32"
     assert len(r.context["ko_rounds"]) == 5
     assert [k["round"].id for k in r.context["ko_rounds"]] == ["r32", "r16", "qf", "sf", "final"]
+
+
+@pytest.mark.django_db
+def test_dashboard_ko_matches_have_feeds_into_code(client):
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    RoundFactory(id="groups", points=3, label="Fase de grupos", short="GRP", order=1)
+    r32 = RoundFactory(id="r32", points=5, label="Dieciseisavos", short="R32", order=2)
+    r16 = RoundFactory(id="r16", points=7, label="Octavos", short="R16", order=3)
+    RoundFactory(id="qf", points=10, label="Cuartos", short="QF", order=4)
+    RoundFactory(id="sf", points=15, label="Semifinales", short="SF", order=5)
+    final = RoundFactory(id="final", points=25, label="Final", short="FIN", order=6)
+
+    MatchFactory(
+        round=r32,
+        bracket_code="M73",
+        kickoff=timezone.now() + timedelta(days=10),
+    )
+    MatchFactory(
+        round=r16,
+        bracket_code="M89",
+        home=None,
+        away=None,
+        home_slot="WM73",
+        away_slot="WM74",
+        kickoff=timezone.now() + timedelta(days=15),
+    )
+    MatchFactory(
+        round=final,
+        bracket_code="M104",
+        home=None,
+        away=None,
+        home_slot="WM101",
+        away_slot="WM102",
+        kickoff=timezone.now() + timedelta(days=30),
+    )
+
+    r = client.get(reverse("competicion:dashboard") + "?round=r32")
+    assert r.status_code == 200
+    matches_by_code = {
+        m.bracket_code: m
+        for entry in r.context["ko_rounds"]
+        for m in entry["matches"]
+    }
+    assert matches_by_code["M73"].feeds_into_code == "M89"
+    assert matches_by_code["M104"].feeds_into_code is None

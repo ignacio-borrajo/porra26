@@ -89,6 +89,16 @@ class CompetitionView(LoginRequiredMixin, View):
                 .order_by("round__order", "kickoff", "bracket_code")
             )
             ko_matches = list(ko_qs)
+            feeds_map: dict[str, str | None] = {}
+            for m in ko_matches:
+                for slot in (m.home_slot, m.away_slot):
+                    if slot.startswith("WM") and m.bracket_code:
+                        feeds_map[slot[2:]] = m.bracket_code
+            for m in ko_matches:
+                if m.bracket_code and m.bracket_code.startswith("M"):
+                    m.feeds_into_code = feeds_map.get(m.bracket_code[1:])
+                else:
+                    m.feeds_into_code = None
             rounds_by_id = {r.id: r for r in rounds}
             for rid in KO_ROUND_IDS:
                 r_obj = rounds_by_id.get(rid)
