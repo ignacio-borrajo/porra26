@@ -101,3 +101,21 @@ class AuditLog(models.Model):
 def _delete_avatar_file(sender, instance, **kwargs):
     if instance.avatar:
         instance.avatar.delete(save=False)
+
+
+class UserSession(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sessions")
+    session_key = models.CharField(max_length=40, unique=True, db_index=True)
+    device_label = models.CharField(max_length=80)
+    user_agent_raw = models.CharField(max_length=400, blank=True)
+    ip_at_login = models.GenericIPAddressField(null=True, blank=True)
+    is_pwa = models.BooleanField(default=False)
+    remembered = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_seen_at = models.DateTimeField(db_index=True)
+
+    class Meta:
+        ordering = ["-last_seen_at"]
+
+    def __str__(self):
+        return f"{self.user_id}:{self.session_key[:8]} {self.device_label}"

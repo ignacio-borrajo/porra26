@@ -46,6 +46,11 @@
           <p style="margin:0;color:var(--c-red);font-size:13px">{{ e }}</p>
         {% endfor %}{% endfor %}
 
+        <label class="login-remember" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-dim);user-select:none;cursor:pointer;padding:4px 0">
+          <input type="checkbox" name="remember" value="1" {% if form.remember.value|default:True %}checked{% endif %} style="width:16px;height:16px;cursor:pointer">
+          <span>Recordarme en este dispositivo</span>
+        </label>
+
         <button class="btn btn-primary" type="submit" style="padding:14px;font-size:15.5px">
           Entrar al torneo {% icon "ball" width=17 height=17 %}
         </button>
@@ -55,6 +60,21 @@
             ¿Olvidaste tu contraseña?
           </a>
         </p>
+
+        <script>
+          (function() {
+            var isStandalone = window.matchMedia('(display-mode: standalone)').matches
+              || window.navigator.standalone === true;
+            if (isStandalone) {
+              var form = document.currentScript.closest('form');
+              var hidden = document.createElement('input');
+              hidden.type = 'hidden';
+              hidden.name = 'is_pwa';
+              hidden.value = '1';
+              form.appendChild(hidden);
+            }
+          })();
+        </script>
       </form>
     </div>
 

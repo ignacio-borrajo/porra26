@@ -14,12 +14,14 @@ from competition.models import Match
 from pot.models import Payment, Prize
 
 from .forms import ChangePasswordForm, LoginForm, ProfileForm, TeamProfileForm
-from .models import AuditLog, User
+from .models import AuditLog, User, UserSession
+from .services.notifications import send_password_changed_email
 from .services.password_reset import (
     _client_ip,
     send_password_reset_email,
     validate_reset_token,
 )
+from .services.sessions import parse_device_label, revoke_sessions
 from .validators import validate_email_domain
 
 
@@ -54,6 +56,37 @@ class LoginView(View):
             user = form.get_user(request)
             if user is not None:
                 login(request, user)
+                remembered = bool(form.cleaned_data.get("remember"))
+                if remembered:
+                    request.session.set_expiry(30 * 24 * 3600)
+                else:
+                    request.session.set_expiry(0)
+
+                is_pwa = request.POST.get("is_pwa") == "1"
+                ua_raw = request.META.get("HTTP_USER_AGENT", "")[:400]
+                ip = _client_ip(request)
+                UserSession.objects.create(
+                    user=user,
+                    session_key=request.session.session_key,
+                    device_label=parse_device_label(ua_raw),
+                    user_agent_raw=ua_raw,
+                    ip_at_login=ip,
+                    is_pwa=is_pwa,
+                    remembered=remembered,
+                    last_seen_at=timezone.now(),
+                )
+                AuditLog.objects.create(
+                    actor=user,
+                    action="login",
+                    target_type="user",
+                    target_id=str(user.id),
+                    payload={
+                        "remembered": remembered,
+                        "is_pwa": is_pwa,
+                        "ip": ip,
+                    },
+                )
+
                 if user.must_change_password:
                     return redirect("accounts:change_password")
                 return redirect("competicion:dashboard")
@@ -63,6 +96,8 @@ class LoginView(View):
 
 class LogoutView(View):
     def post(self, request):
+        if request.user.is_authenticated and request.session.session_key:
+            UserSession.objects.filter(session_key=request.session.session_key).delete()
         logout(request)
         return redirect("accounts:login")
 
@@ -80,10 +115,37 @@ class ChangePasswordView(LoginRequiredMixin, View):
     def post(self, request):
         form = ChangePasswordForm(request.user, request.POST)
         if form.is_valid():
+            current_us = UserSession.objects.filter(session_key=request.session.session_key).first()
+            others = list(
+                UserSession.objects.filter(user=request.user)
+                .exclude(session_key=request.session.session_key)
+                .values_list("session_key", flat=True)
+            )
+            revoke_sessions(
+                user=request.user,
+                session_keys=others,
+                actor=request.user,
+                reason="password_change_forced",
+            )
+
             request.user.set_password(form.cleaned_data["new1"])
             request.user.must_change_password = False
             request.user.save(update_fields=["password", "must_change_password"])
             update_session_auth_hash(request, request.user)
+
+            if current_us:
+                UserSession.objects.create(
+                    user=request.user,
+                    session_key=request.session.session_key,
+                    device_label=current_us.device_label,
+                    user_agent_raw=current_us.user_agent_raw,
+                    ip_at_login=current_us.ip_at_login,
+                    is_pwa=current_us.is_pwa,
+                    remembered=current_us.remembered,
+                    last_seen_at=timezone.now(),
+                )
+
+            send_password_changed_email(request.user)
             messages.success(request, "Contraseña actualizada.")
             return redirect("competicion:dashboard")
         return render(request, self.template_name, {"form": form})
@@ -100,6 +162,10 @@ class MyAccountView(LoginRequiredMixin, View):
             {
                 "profile_form": profile_form or ProfileForm(instance=request.user),
                 "password_form": password_form or ChangePasswordForm(request.user),
+                "user_sessions": (
+                    UserSession.objects.filter(user=request.user).order_by("-last_seen_at")
+                ),
+                "current_session_key": request.session.session_key,
             },
             status=status,
         )
@@ -113,6 +179,10 @@ class MyAccountView(LoginRequiredMixin, View):
             return self._post_profile(request)
         if action == "password":
             return self._post_password(request)
+        if action == "revoke_session":
+            return self._post_revoke_session(request)
+        if action == "revoke_others":
+            return self._post_revoke_others(request)
         return HttpResponseBadRequest("acción no válida")
 
     def _post_profile(self, request):
@@ -147,17 +217,95 @@ class MyAccountView(LoginRequiredMixin, View):
         form = ChangePasswordForm(request.user, request.POST)
         if not form.is_valid():
             return self._render(request, password_form=form)
+
+        # Snapshot de la sesión actual: tras set_password el signal borra
+        # todas las UserSession del usuario; la recreamos al final.
+        current_us = UserSession.objects.filter(session_key=request.session.session_key).first()
+
+        # Revocar OTRAS sesiones explícitamente, con AuditLog del count real.
+        others = list(
+            UserSession.objects.filter(user=request.user)
+            .exclude(session_key=request.session.session_key)
+            .values_list("session_key", flat=True)
+        )
+        revoke_sessions(
+            user=request.user,
+            session_keys=others,
+            actor=request.user,
+            reason="password_change",
+        )
+
         request.user.set_password(form.cleaned_data["new1"])
         request.user.must_change_password = False
         request.user.save(update_fields=["password", "must_change_password"])
         update_session_auth_hash(request, request.user)
+
+        # Restaurar UserSession actual (el signal la había borrado).
+        if current_us:
+            UserSession.objects.create(
+                user=request.user,
+                session_key=request.session.session_key,
+                device_label=current_us.device_label,
+                user_agent_raw=current_us.user_agent_raw,
+                ip_at_login=current_us.ip_at_login,
+                is_pwa=current_us.is_pwa,
+                remembered=current_us.remembered,
+                last_seen_at=timezone.now(),
+            )
+
         AuditLog.objects.create(
             actor=request.user,
             action="password.change",
             target_type="user",
             target_id=str(request.user.id),
         )
-        messages.success(request, "Contraseña actualizada.")
+        send_password_changed_email(request.user)
+        if others:
+            n = len(others)
+            messages.success(
+                request,
+                f"Contraseña actualizada. Se han cerrado {n} otra{'s' if n != 1 else ''} sesion{'es' if n != 1 else ''}.",
+            )
+        else:
+            messages.success(request, "Contraseña actualizada.")
+        return redirect("accounts:my_account")
+
+    def _post_revoke_session(self, request):
+        target = (request.POST.get("session_key") or "").strip()
+        if not target or target == request.session.session_key:
+            return HttpResponseBadRequest("sesión no válida")
+        keys = list(
+            UserSession.objects.filter(user=request.user, session_key=target).values_list(
+                "session_key", flat=True
+            )
+        )
+        if keys:
+            revoke_sessions(
+                user=request.user,
+                session_keys=keys,
+                actor=request.user,
+                reason="user_revoke",
+            )
+            messages.success(request, "Sesión cerrada.")
+        return redirect("accounts:my_account")
+
+    def _post_revoke_others(self, request):
+        others = list(
+            UserSession.objects.filter(user=request.user)
+            .exclude(session_key=request.session.session_key)
+            .values_list("session_key", flat=True)
+        )
+        if others:
+            n = revoke_sessions(
+                user=request.user,
+                session_keys=others,
+                actor=request.user,
+                reason="user_revoke_others",
+            )
+            messages.success(
+                request,
+                f"Se han cerrado {n} sesion{'es' if n != 1 else ''}.",
+            )
         return redirect("accounts:my_account")
 
 
@@ -277,6 +425,18 @@ class PasswordResetConfirmView(View):
         user = form.save()
         user.must_change_password = False
         user.save(update_fields=["must_change_password"])
+
+        # Tras un reset por email asumimos posible compromiso: cerrar TODAS
+        # las sesiones del usuario (incluidas las que un atacante pueda tener).
+        all_keys = list(UserSession.objects.filter(user=user).values_list("session_key", flat=True))
+        revoke_sessions(
+            user=user,
+            session_keys=all_keys,
+            actor=None,
+            reason="password_reset_email",
+        )
+        send_password_changed_email(user)
+
         AuditLog.objects.create(
             actor=None,
             action="password_reset_completed",

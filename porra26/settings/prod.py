@@ -53,7 +53,9 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 X_FRAME_OPTIONS = "DENY"
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# La expiración la gestiona LoginView por sesión (set_expiry(0) si el usuario
+# no marca 'Recordarme', 30 días si lo marca). No forzamos cierre al navegador
+# a nivel global porque ese flag invalida el 'remember me'.
 
 # Railway expone el servicio detrás de un proxy: el origen del POST llega
 # como https://<dominio> y Django lo compara con la cabecera Origin para CSRF.
