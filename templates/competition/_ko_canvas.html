@@ -3,13 +3,21 @@
   {% for entry in ko_rounds %}
     <section class="ko-col" data-round="{{ entry.round.id }}">
       <header class="ko-col-head">{{ entry.round.label }}</header>
-      {% for m in entry.matches %}
-        {% include "competition/_match_card.html" with match=m my_preds=my_preds %}
-      {% empty %}
-        <div class="match-card glass" style="opacity:.4;padding:18px;text-align:center">
-          <span class="mono">Sin cruces aún</span>
-        </div>
-      {% endfor %}
+      <div class="ko-col-body">
+        {% for pair in entry.pairs %}
+          <div class="ko-pair">
+            {% for m in pair %}
+              {% include "competition/_match_card.html" with match=m my_preds=my_preds %}
+            {% endfor %}
+          </div>
+        {% empty %}
+          <div class="ko-pair">
+            <div class="match-card glass" style="opacity:.4;padding:18px;text-align:center">
+              <span class="mono">Sin cruces aún</span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
     </section>
   {% endfor %}
   <svg class="ko-connectors" aria-hidden="true"></svg>

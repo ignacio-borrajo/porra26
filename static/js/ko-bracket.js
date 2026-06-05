@@ -46,12 +46,15 @@ function setupChipNavigation(canvas) {
 
 function setupDragToPan(canvas) {
   let startX = 0;
+  let startY = 0;
   let startScrollLeft = 0;
+  let startPageY = 0;
   let active = false;
 
   function onMove(e) {
     if (!active) return;
     canvas.scrollLeft = startScrollLeft + (startX - e.clientX);
+    window.scrollTo(window.scrollX, startPageY + (startY - e.clientY));
   }
   function onEnd() {
     if (!active) return;
@@ -67,7 +70,9 @@ function setupDragToPan(canvas) {
     if (e.target.closest("a, button")) return;
     active = true;
     startX = e.clientX;
+    startY = e.clientY;
     startScrollLeft = canvas.scrollLeft;
+    startPageY = window.scrollY;
     canvas.classList.add("grabbing");
     document.addEventListener("pointermove", onMove);
     document.addEventListener("pointerup", onEnd);
@@ -114,20 +119,37 @@ function layoutConnectors(canvas) {
   for (const [destCode, siblings] of groups) {
     const dest = byCode.get(destCode);
     if (!dest || siblings.length === 0) continue;
-    const sorted = siblings
+    const sortedSibs = siblings
       .map(c => ({ card: c, rect: rel(c, canvasRect, offsetX, offsetY) }))
       .sort((a, b) => a.rect.top - b.rect.top);
     const destRect = rel(dest, canvasRect, offsetX, offsetY);
     const destY = destRect.top + destRect.height / 2;
-    const midX = (Math.max(...sorted.map(s => s.rect.right)) + destRect.left) / 2;
+    const midX = (Math.max(...sortedSibs.map(s => s.rect.right)) + destRect.left) / 2;
     const status = dest.dataset.status || "open";
-    for (const s of sorted) {
-      const y = s.rect.top + s.rect.height / 2;
-      const path = document.createElementNS(ns, "path");
-      path.setAttribute("d", `M ${s.rect.right} ${y} H ${midX} V ${destY} H ${destRect.left}`);
-      path.setAttribute("data-status", status);
-      svg.appendChild(path);
+    const path = document.createElementNS(ns, "path");
+    if (sortedSibs.length >= 2) {
+      const top = sortedSibs[0].rect;
+      const bot = sortedSibs[sortedSibs.length - 1].rect;
+      const topY = top.top + top.height / 2;
+      const botY = bot.top + bot.height / 2;
+      // 4 segmentos sin solape: stub-top, stub-bot, vertical-junta, exit-a-destino.
+      path.setAttribute(
+        "d",
+        `M ${top.right} ${topY} L ${midX} ${topY} ` +
+          `M ${bot.right} ${botY} L ${midX} ${botY} ` +
+          `M ${midX} ${topY} L ${midX} ${botY} ` +
+          `M ${midX} ${destY} L ${destRect.left} ${destY}`,
+      );
+    } else {
+      const s = sortedSibs[0].rect;
+      const y = s.top + s.height / 2;
+      path.setAttribute(
+        "d",
+        `M ${s.right} ${y} L ${midX} ${y} L ${midX} ${destY} L ${destRect.left} ${destY}`,
+      );
     }
+    path.setAttribute("data-status", status);
+    svg.appendChild(path);
   }
 }
 
