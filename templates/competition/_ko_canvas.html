@@ -3,21 +3,33 @@
   {% for entry in ko_rounds %}
     <section class="ko-col" data-round="{{ entry.round.id }}">
       <header class="ko-col-head">{{ entry.round.label }}</header>
-      <div class="ko-col-body">
-        {% for pair in entry.pairs %}
-          <div class="ko-pair">
-            {% for m in pair %}
-              {% include "competition/_match_card.html" with match=m my_preds=my_preds %}
-            {% endfor %}
-          </div>
-        {% empty %}
-          <div class="ko-pair">
-            <div class="match-card glass" style="opacity:.4;padding:18px;text-align:center">
-              <span class="mono">Sin cruces aún</span>
+      {% if entry.round.id == "r32" %}
+        {# R32: flex + parejas con altura mínima para que se vean los 8 grupos de 2 cards #}
+        <div class="ko-col-body">
+          {% for pair in entry.pairs %}
+            <div class="ko-pair">
+              {% for m in pair %}
+                {% include "competition/_match_card.html" with match=m my_preds=my_preds %}
+              {% endfor %}
             </div>
+          {% empty %}
+            <div class="ko-pair">
+              <div class="match-card glass" style="opacity:.4;padding:18px;text-align:center">
+                <span class="mono">Sin cruces aún</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        {# R16/QF/SF/Final: grid de 16 filas iguales, las cards se colocan con row-span #}
+        {% for m in entry.matches %}
+          {% include "competition/_match_card.html" with match=m my_preds=my_preds %}
+        {% empty %}
+          <div class="match-card glass" style="opacity:.4;padding:18px;text-align:center">
+            <span class="mono">Sin cruces aún</span>
           </div>
         {% endfor %}
-      </div>
+      {% endif %}
     </section>
   {% endfor %}
   <svg class="ko-connectors" aria-hidden="true"></svg>
