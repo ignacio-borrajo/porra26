@@ -59,7 +59,9 @@ def test_resolve_first_match_of_round_creates_no_announcement(r16_round, gestor)
 
 
 @pytest.mark.django_db
-def test_resolve_final_match_creates_both_round_and_global_announcements(final_round, gestor):
+def test_resolve_final_match_creates_only_global_announcement(final_round, gestor):
+    """La Final solo crea el anuncio global (no genera scope='round' porque
+    el ganador del Mundial cobra por el podio, no como premio de ronda)."""
     user = UserFactory()
     m = MatchFactory(round=final_round, matchday=None)
     PredictionFactory(player=user, match=m, home=2, away=1)
@@ -67,4 +69,5 @@ def test_resolve_final_match_creates_both_round_and_global_announcements(final_r
     resolve_match(m, home=2, away=1, actor=gestor)
 
     kinds = sorted(WinnerAnnouncement.objects.values_list("scope_kind", flat=True))
-    assert kinds == ["global", "round"]
+    assert kinds == ["global"]
+    assert WinnerAnnouncement.objects.filter(scope_kind="round").count() == 0
