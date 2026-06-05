@@ -22,6 +22,16 @@ class PodiumEntry:
     tied: bool = False
 
 
+@dataclass
+class SedeWinner:
+    sede_key: str
+    sede_label: str
+    users: list = field(default_factory=list)
+    points: int = 0
+    prize_per_user: Decimal = Decimal("0")
+    status: str = "desierto"  # "resolved" | "desierto"
+
+
 def _prizes_by_position_for(scope_kind: str) -> dict[int, Decimal]:
     from pot.models import PotSettings, Prize
 
@@ -124,3 +134,43 @@ def matchday_winners(scope_key) -> WinnerResult:
         tied=len(winners) > 1,
         share=share,
     )
+
+
+def sede_winners() -> list[SedeWinner]:
+    """Ganadores por sede al cierre del torneo, excluyendo a los jugadores
+    que ya están en el top 3 global. Devuelve un SedeWinner por cada sede
+    de User.SEDE_CHOICES en su orden."""
+    from accounts.models import User
+    from pot.models import PotSettings
+
+    rows = standings()
+    top3_global_ids = {
+        r.player_id for r in rows if r.position in (1, 2, 3) and r.pts > 0
+    }
+    eligible = [r for r in rows if r.pts > 0 and r.player_id not in top3_global_ids]
+    users_by_id = User.objects.in_bulk([r.player_id for r in eligible])
+
+    sede_prize = PotSettings.load().sede_winner_prize
+
+    result: list[SedeWinner] = []
+    for sede_key, sede_label in User.SEDE_CHOICES:
+        sede_rows = [
+            r for r in eligible
+            if users_by_id.get(r.player_id) and users_by_id[r.player_id].sede == sede_key
+        ]
+        if not sede_rows:
+            result.append(SedeWinner(sede_key=sede_key, sede_label=sede_label))
+            continue
+        min_pos = min(r.position for r in sede_rows)
+        winners_rows = [r for r in sede_rows if r.position == min_pos]
+        winners_users = [users_by_id[r.player_id] for r in winners_rows]
+        n = len(winners_users)
+        result.append(SedeWinner(
+            sede_key=sede_key,
+            sede_label=sede_label,
+            users=winners_users,
+            points=int(winners_rows[0].pts),
+            prize_per_user=(sede_prize / n) if n else Decimal("0"),
+            status="resolved",
+        ))
+    return result
