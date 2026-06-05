@@ -78,6 +78,16 @@
       </div>
       <button class="btn btn-ghost" data-theme-toggle style="width:44px;height:44px;padding:0;border-radius:12px" title="Cambiar tema">☀︎</button>
     </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:18px;padding-top:18px;border-top:1px solid var(--border)">
+      <div>
+        <div style="font-weight:600">Sesión</div>
+        <div style="font-size:12px;color:var(--text-faint)">Cierra la sesión en este dispositivo.</div>
+      </div>
+      <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-ghost" style="padding:10px 16px;border-radius:12px" title="Salir">Salir</button>
+      </form>
+    </div>
   </div>
 
 </section>

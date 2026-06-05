@@ -470,44 +470,18 @@ a.match-card:hover {
   }
 }
 
-/* Topbar: en pantallas pequeñas permitimos que envuelva en varias filas.
-   La barra de navegación pasa a una segunda línea y puede scrollear
-   horizontalmente si no cabe; el bloque de usuario se compacta. */
+/* Topbar: en pantallas pequeñas ocultamos la nav de escritorio y los
+   botones secundarios. La navegación pasa a una bottom-nav fija (jugador)
+   o a un drawer detrás de un botón hamburguesa (gestor). */
 .topbar { position: sticky; top: 0; }
 @media (max-width: 860px) {
-  .topbar { flex-wrap: wrap; row-gap: 10px; padding-left: 14px !important; padding-right: 14px !important; }
-  /* Envoltorio scrolleable con máscara de gradiente en los bordes para
-     indicar que hay más navegación a izquierda/derecha. La máscara solo
-     se aplica a los lados donde realmente hay overflow gracias a las
-     variables --fade-left / --fade-right que actualiza el JS. */
-  .topbar-nav {
-    order: 3;
-    width: 100%;
-    margin-left: 0 !important;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    scroll-snap-type: x proximity;
-    --fade-left: 0;
-    --fade-right: 0;
-    -webkit-mask-image: linear-gradient(
-      90deg,
-      transparent 0,
-      black calc(var(--fade-left) * 24px),
-      black calc(100% - var(--fade-right) * 24px),
-      transparent 100%);
-    mask-image: linear-gradient(
-      90deg,
-      transparent 0,
-      black calc(var(--fade-left) * 24px),
-      black calc(100% - var(--fade-right) * 24px),
-      transparent 100%);
-  }
-  .topbar-nav::-webkit-scrollbar { display: none; }
-  .topbar-nav .nav-item { flex-shrink: 0; scroll-snap-align: start; padding: 9px 12px; font-size: 13px; }
+  .topbar { padding-left: 14px !important; padding-right: 14px !important; }
+  .topbar-nav-desktop { display: none !important; }
+  .topbar-action-desktop { display: none !important; }
   .topbar-actions { margin-left: auto; gap: 8px !important; }
   .topbar-user-meta { display: none; }
+  .mobile-menu-toggle { display: inline-flex !important; }
+  .bottom-nav { display: grid !important; }
 }
 
 /* Compactación extra en móviles muy estrechos: el chip "Bote" pasa a
@@ -2421,4 +2395,148 @@ img.avatar { object-fit: cover; }
 html.fv .team-profile-trophy,
 html.fv .team-profile-halo {
   animation: none;
+}
+
+/* ============================================================
+   Navegación móvil — bottom nav (jugador) y drawer (gestor)
+   ============================================================ */
+
+/* Botón hamburguesa: oculto por defecto, se muestra en ≤860px desde el
+   media query del topbar. Hereda estilos de .btn-icon. */
+.mobile-menu-toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Bottom nav (jugador): fija al fondo, 4 columnas iguales. Oculta por
+   defecto; el media query mobile la activa. */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+  background: var(--surface);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border-hi);
+}
+.bottom-nav-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px 6px;
+  text-decoration: none;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+  border-radius: 12px;
+  transition: color 0.2s var(--ease-out);
+}
+.bottom-nav-item svg { color: currentColor; }
+.bottom-nav-item span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
+}
+.bottom-nav-item.is-active {
+  color: var(--accent);
+}
+.bottom-nav-item.is-active::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+
+/* Reserva de espacio inferior cuando hay bottom nav, para que el contenido
+   del <main> no quede tapado por la barra fija. Solo aplica en móvil. */
+@media (max-width: 860px) {
+  body:has(.bottom-nav) main {
+    padding-bottom: calc(84px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Drawer (gestor): panel slide-down justo debajo del topbar. Oculto por
+   defecto vía atributo [hidden]; el JS lo abre añadiendo data-open. */
+.mobile-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: oklch(0 0 0 / 0.45);
+  z-index: 19;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease-out);
+}
+.mobile-drawer-backdrop[hidden] { display: none; }
+.mobile-drawer-backdrop[data-open] { opacity: 1; }
+
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  max-height: calc(100dvh - 0px);
+  overflow-y: auto;
+  z-index: 21;
+  padding: 16px;
+  padding-top: calc(74px + env(safe-area-inset-top));
+  background: var(--surface);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border-hi);
+  transform: translateY(-12px);
+  opacity: 0;
+  transition: transform 0.25s var(--ease-out), opacity 0.2s var(--ease-out);
+}
+.mobile-drawer[hidden] { display: none; }
+.mobile-drawer[data-open] {
+  transform: translateY(0);
+  opacity: 1;
+}
+.mobile-drawer-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mobile-drawer-nav .nav-item {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 14px 16px;
+  font-size: 15px;
+  gap: 14px;
+}
+.mobile-drawer-actions {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.mobile-drawer-actions .btn {
+  width: 100%;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 14px;
 }
