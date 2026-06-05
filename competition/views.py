@@ -13,6 +13,21 @@ from competition.services.standings import standings
 KO_ROUND_IDS = ("r32", "r16", "qf", "sf", "final")
 
 
+def _group_into_pairs(matches: list) -> list[list]:
+    """Agrupa matches consecutivos con el mismo feeds_into_code (asume pre-sorted).
+    Devuelve [[m1, m2], [m3, m4], ...] para dibujar parejas de hermanos juntas."""
+    pairs: list[list] = []
+    last_key: object = object()
+    for m in matches:
+        key = m.feeds_into_code or "__no_feed__"
+        if key == last_key:
+            pairs[-1].append(m)
+        else:
+            pairs.append([m])
+            last_key = key
+    return pairs
+
+
 class CompetitionView(LoginRequiredMixin, View):
     def get(self, request):
         rounds = list(Round.objects.all())
@@ -103,13 +118,15 @@ class CompetitionView(LoginRequiredMixin, View):
                 r_obj = rounds_by_id.get(rid)
                 if r_obj is None:
                     continue
+                rmatches = sorted(
+                    [m for m in ko_matches if m.round_id == rid],
+                    key=lambda m: (m.feeds_into_code or "", m.bracket_code or ""),
+                )
                 ko_rounds.append(
                     {
                         "round": r_obj,
-                        "matches": sorted(
-                            [m for m in ko_matches if m.round_id == rid],
-                            key=lambda m: (m.feeds_into_code or "", m.bracket_code or ""),
-                        ),
+                        "matches": rmatches,
+                        "pairs": _group_into_pairs(rmatches),
                     }
                 )
 

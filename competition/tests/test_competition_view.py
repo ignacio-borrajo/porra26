@@ -521,3 +521,5 @@ def test_dashboard_ko_r32_siblings_are_adjacent(client):
     r32_entry = next(e for e in r.context["ko_rounds"] if e["round"].id == "r32")
     codes = [m.bracket_code for m in r32_entry["matches"]]
     assert codes == ["M73", "M75", "M74", "M76"]
+    pair_codes = [[m.bracket_code for m in pair] for pair in r32_entry["pairs"]]
+    assert pair_codes == [["M73", "M75"], ["M74", "M76"]]
