@@ -10,7 +10,6 @@ from competition.models import Match, Prediction, Round
 from competition.services.resolve import clear_match_result, resolve_match
 from competition.services.standings import standings
 
-
 KO_ROUND_IDS = ("r32", "r16", "qf", "sf", "final")
 
 
