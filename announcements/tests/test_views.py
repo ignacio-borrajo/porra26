@@ -106,6 +106,34 @@ class TestModalView:
         # El segundo puesto se muestra sin cuantía € visible
         assert "Beta" in html
 
+    def test_global_modal_renders_slots_in_visual_order_2_1_3(self, client, db):
+        """En el HTML, el slot de 2º debe ir antes del 1º y el 1º antes del 3º."""
+        final_round = RoundFactory(id="final", points=20, label="Final", short="FIN", order=6)
+        Prize.objects.create(scope="global", position=1, amount=Decimal("300"), label="1º")
+        Prize.objects.create(scope="global", position=2, amount=Decimal("120"), label="2º")
+        Prize.objects.create(scope="global", position=3, amount=Decimal("60"), label="3º")
+        first = UserFactory(name="Aaaa")
+        second = UserFactory(name="Bbbb")
+        third = UserFactory(name="Cccc")
+        m = MatchFactory(round=final_round, matchday=None, result_home=2, result_away=1)
+        PredictionFactory(player=first, match=m, home=2, away=1, earned=20)
+        PredictionFactory(player=second, match=m, home=2, away=0, earned=5)
+        PredictionFactory(player=third, match=m, home=1, away=1, earned=1)
+        ann = WinnerAnnouncement.objects.create(
+            scope_kind="global", points=20, tied=False, share=Decimal("300")
+        )
+        ann.winners.set([first])
+        client.force_login(UserFactory())
+        res = client.get(reverse("announcements:modal", args=[ann.id]))
+        html = res.content.decode()
+        idx2 = html.find('data-rank="2"')
+        idx1 = html.find('data-rank="1"')
+        idx3 = html.find('data-rank="3"')
+        assert idx2 != -1 and idx1 != -1 and idx3 != -1
+        assert idx2 < idx1 < idx3, (
+            f"Orden visual incorrecto: 2={idx2}, 1={idx1}, 3={idx3}"
+        )
+
 
 @pytest.mark.django_db
 class TestSeenView:

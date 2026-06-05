@@ -1861,148 +1861,179 @@ img.avatar { object-fit: cover; }
   opacity: 0.78;
   margin: 0 0 6px;
 }
-.winner-podium {
-  list-style: none;
-  margin: 14px 0 18px;
-  padding: 0;
+/* Podio del modal de ganador: orden visual 2º · 1º · 3º */
+.winner-modal-podium {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  align-items: end;
+  gap: 8px;
+  margin: 18px 0 14px;
+  padding: 0 4px;
+}
+.winner-modal-podium-slot {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-.winner-podium-row {
-  display: grid;
-  grid-template-columns: 44px 1fr auto;
   align-items: center;
-  gap: 14px;
-  padding: 10px 14px;
-  border-radius: 16px;
-  background: oklch(1 0 0 / 0.04);
-  border: 1px solid oklch(1 0 0 / 0.08);
-  text-align: left;
+  gap: 6px;
+  min-width: 0;
 }
-.winner-podium-row[data-position="1"] {
-  background: linear-gradient(
-    135deg,
-    oklch(from var(--c-gold) l c h / 0.18),
-    oklch(from var(--c-gold) l c h / 0.04)
-  );
-  border-color: oklch(from var(--c-gold) l c h / 0.45);
-  box-shadow: 0 8px 30px -16px var(--c-gold);
+.winner-modal-podium-slot.is-empty .winner-modal-podium-pedestal {
+  opacity: 0.35;
 }
-.winner-podium-row[data-position="2"] {
-  background: linear-gradient(
-    135deg,
-    oklch(0.82 0.02 250 / 0.18),
-    oklch(0.82 0.02 250 / 0.04)
-  );
-  border-color: oklch(0.82 0.02 250 / 0.35);
-}
-.winner-podium-row[data-position="3"] {
-  background: linear-gradient(
-    135deg,
-    oklch(0.68 0.10 50 / 0.18),
-    oklch(0.68 0.10 50 / 0.04)
-  );
-  border-color: oklch(0.68 0.10 50 / 0.35);
-}
-.winner-podium-medal {
-  font-size: 30px;
+.winner-modal-podium-medal {
+  font-size: 26px;
   line-height: 1;
-  text-align: center;
 }
-.winner-podium-row[data-position="1"] .winner-podium-medal {
+.winner-modal-podium-slot--1 .winner-modal-podium-medal {
+  font-size: 30px;
   filter: drop-shadow(0 4px 10px var(--c-gold));
 }
-.winner-podium-people {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 14px;
-  min-width: 0;
+.winner-modal-podium-slot--2 .winner-modal-podium-medal {
+  filter: drop-shadow(0 4px 10px oklch(0.82 0.02 250));
 }
-.winner-podium-person {
+.winner-modal-podium-slot--3 .winner-modal-podium-medal {
+  filter: drop-shadow(0 4px 10px oklch(0.68 0.10 50));
+}
+.winner-modal-podium-avatars {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 4px;
   min-width: 0;
 }
-.winner-podium-person .avatar {
-  width: 44px;
-  height: 44px;
-  font-size: 16px;
+.winner-modal-podium-avatars .avatar {
+  width: 48px;
+  height: 48px;
+  font-size: 18px;
   flex: 0 0 auto;
 }
-.winner-podium-row[data-position="1"] .winner-podium-person .avatar {
-  box-shadow: 0 6px 18px -8px var(--c-gold);
+.winner-modal-podium-slot--1 .winner-modal-podium-avatars .avatar {
+  width: 60px;
+  height: 60px;
+  font-size: 20px;
+  box-shadow: 0 8px 22px -8px var(--c-gold);
 }
-.winner-podium-name {
+.winner-modal-podium-avatars.is-tied .avatar:not(:first-child) {
+  margin-left: -14px;
+  border: 2px solid var(--surface-solid);
+}
+.winner-modal-podium-more {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: oklch(1 0 0 / 0.08);
+  border: 1px solid oklch(1 0 0 / 0.18);
+  color: var(--text-dim);
+  font-family: "Geist Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+.winner-modal-podium-name {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text);
-  white-space: nowrap;
+  text-align: center;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.winner-prize-card {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 14px;
-  background: linear-gradient(
-    135deg,
-    oklch(from var(--c-gold) l c h / 0.28),
-    oklch(from var(--c-gold) l c h / 0.10)
-  );
-  border: 1px solid oklch(from var(--c-gold) l c h / 0.55);
-  box-shadow: 0 6px 20px -10px var(--c-gold);
   white-space: nowrap;
 }
-.winner-prize-icon {
-  font-family: 'Sora', system-ui, sans-serif;
-  font-weight: 800;
-  font-size: 18px;
-  color: var(--c-gold);
-  line-height: 1;
+.winner-modal-podium-slot--1 .winner-modal-podium-name { font-size: 14px; }
+.winner-modal-podium-prize {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    oklch(from var(--c-gold) l c h / 0.30),
+    oklch(from var(--c-gold) l c h / 0.08)
+  );
+  border: 1px solid oklch(from var(--c-gold) l c h / 0.55);
+  box-shadow: 0 4px 14px -8px var(--c-gold);
+  white-space: nowrap;
 }
-.winner-prize-amount {
+.winner-modal-podium-slot--1 .winner-modal-podium-prize {
+  padding: 7px 14px;
+  box-shadow: 0 6px 20px -8px var(--c-gold);
+}
+.winner-modal-podium-prize .winner-prize-amount {
   font-family: 'Sora', system-ui, sans-serif;
   font-weight: 800;
-  font-size: clamp(20px, 3vw, 26px);
+  font-size: 17px;
   color: var(--c-gold);
   letter-spacing: -0.01em;
   line-height: 1;
 }
-.winner-prize-amount::after {
+.winner-modal-podium-slot--1 .winner-modal-podium-prize .winner-prize-amount {
+  font-size: 22px;
+}
+.winner-modal-podium-prize .winner-prize-amount::after {
   content: " €";
   font-size: 0.7em;
   opacity: 0.85;
   margin-left: 2px;
 }
 .winner-prize-note {
-  font-size: 11px;
+  font-size: 10px;
   opacity: 0.75;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-left: 4px;
+  letter-spacing: 0.06em;
+  margin-left: 2px;
 }
+.winner-modal-podium-pedestal {
+  width: 100%;
+  border-radius: 14px 14px 0 0;
+  border: 1px solid var(--border-hi, oklch(1 0 0 / 0.16));
+  border-bottom: none;
+  display: grid;
+  place-items: center;
+  margin-top: 6px;
+  position: relative;
+  overflow: hidden;
+}
+.winner-modal-podium-slot--1 .winner-modal-podium-pedestal {
+  height: 88px;
+  background: linear-gradient(180deg, oklch(from var(--c-gold) l c h / 0.55), oklch(from var(--c-gold) l c h / 0.08));
+  box-shadow: 0 -10px 32px -16px var(--c-gold);
+}
+.winner-modal-podium-slot--2 .winner-modal-podium-pedestal {
+  height: 64px;
+  background: linear-gradient(180deg, oklch(0.82 0.02 250 / 0.55), oklch(0.82 0.02 250 / 0.08));
+  box-shadow: 0 -10px 32px -16px oklch(0.82 0.02 250);
+}
+.winner-modal-podium-slot--3 .winner-modal-podium-pedestal {
+  height: 46px;
+  background: linear-gradient(180deg, oklch(0.68 0.10 50 / 0.55), oklch(0.68 0.10 50 / 0.08));
+  box-shadow: 0 -10px 32px -16px oklch(0.68 0.10 50);
+}
+.winner-modal-podium-rank {
+  font-family: 'Sora', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  opacity: 0.88;
+}
+.winner-modal-podium-slot--1 .winner-modal-podium-rank { color: var(--c-gold); font-size: 32px; }
+.winner-modal-podium-slot--2 .winner-modal-podium-rank { color: oklch(0.82 0.02 250); }
+.winner-modal-podium-slot--3 .winner-modal-podium-rank { color: oklch(0.68 0.10 50); }
 
-@media (max-width: 520px) {
-  .winner-podium-row {
-    grid-template-columns: 36px 1fr;
-    grid-template-areas:
-      "medal people"
-      "prize prize";
-    gap: 8px 12px;
-    padding: 10px 12px;
-  }
-  .winner-podium-medal { grid-area: medal; font-size: 26px; }
-  .winner-podium-people { grid-area: people; }
-  .winner-prize-card { grid-area: prize; justify-self: stretch; justify-content: center; }
-  .winner-prize-amount { font-size: 20px; }
+@media (max-width: 480px) {
+  .winner-modal-podium { gap: 4px; padding: 0; }
+  .winner-modal-podium-avatars .avatar { width: 42px; height: 42px; font-size: 15px; }
+  .winner-modal-podium-slot--1 .winner-modal-podium-avatars .avatar { width: 52px; height: 52px; font-size: 18px; }
+  .winner-modal-podium-name { font-size: 12px; }
+  .winner-modal-podium-prize .winner-prize-amount { font-size: 14px; }
+  .winner-modal-podium-slot--1 .winner-modal-podium-prize .winner-prize-amount { font-size: 18px; }
+  .winner-modal-podium-slot--1 .winner-modal-podium-pedestal { height: 72px; }
+  .winner-modal-podium-slot--2 .winner-modal-podium-pedestal { height: 52px; }
+  .winner-modal-podium-slot--3 .winner-modal-podium-pedestal { height: 38px; }
+  .winner-modal-podium-rank { font-size: 22px; }
+  .winner-modal-podium-slot--1 .winner-modal-podium-rank { font-size: 26px; }
 }
 
 .winner-subtitle {
