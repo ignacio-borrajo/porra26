@@ -183,3 +183,54 @@ class TestSeenView:
         client.force_login(u1)
         res = client.post(reverse("announcements:seen", args=[a1.id]))
         assert res.headers.get("X-Modal-Next") == reverse("announcements:modal", args=[a2.id])
+
+
+@pytest.mark.django_db
+def test_modal_renders_sede_grid(client, settings):
+    from decimal import Decimal
+    from accounts.tests.factories import UserFactory, GestorFactory
+    from announcements.models import WinnerAnnouncement
+    from competition.tests.factories import MatchFactory, PredictionFactory, RoundFactory
+    from pot.models import PotSettings
+
+    gestor = GestorFactory()
+    client.force_login(gestor)
+    rd = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    v1 = UserFactory(name="V1", sede="vigo")
+    v2 = UserFactory(name="V2", sede="vigo")
+    v3 = UserFactory(name="V3", sede="vigo")
+    m_a = UserFactory(name="MA", sede="madrid")
+    m = MatchFactory(round=rd, matchday=1, result_home=1, result_away=0)
+    PredictionFactory(player=v1, match=m, earned=5)
+    PredictionFactory(player=v2, match=m, earned=4)
+    PredictionFactory(player=v3, match=m, earned=3)
+    PredictionFactory(player=m_a, match=m, earned=2)
+    s = PotSettings.load()
+    s.sede_winner_prize = Decimal("25.00")
+    s.save(update_fields=["sede_winner_prize"])
+    ann = WinnerAnnouncement.objects.create(scope_kind="sede", points=0)
+    r = client.get(f"/anuncios/{ann.id}/")
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert "winner-modal-sede-grid" in body
+    # Las 6 sedes están presentes
+    for key in ["ourense", "vigo", "asturias", "madrid", "barcelona", "latam"]:
+        assert f'data-sede="{key}"' in body
+    # Madrid resuelta con MA y 25.00 €
+    assert "MA" in body
+    assert "25,00" in body or "25.00" in body
+    # Sedes desiertas: ourense, vigo, asturias, barcelona, latam → todas con "Desierto" salvo madrid
+    assert body.count("Desierto") == 5
+
+
+@pytest.mark.django_db
+def test_modal_sede_card_desierto_state(client):
+    from accounts.tests.factories import GestorFactory
+    from announcements.models import WinnerAnnouncement
+
+    client.force_login(GestorFactory())
+    ann = WinnerAnnouncement.objects.create(scope_kind="sede", points=0)
+    r = client.get(f"/anuncios/{ann.id}/")
+    body = r.content.decode()
+    assert body.count("Desierto") == 6
+    assert "is-empty" in body

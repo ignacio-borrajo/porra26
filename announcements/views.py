@@ -27,6 +27,14 @@ class AnnouncementModalView(LoginRequiredMixin, View):
             WinnerAnnouncement.objects.prefetch_related("winners").select_related("scope_round"),
             pk=pk,
         )
+        if ann.scope_kind == "sede":
+            from pot.services.prizes import sede_winners
+
+            return render(
+                request,
+                "announcements/_winner_modal.html",
+                {"announcement": ann, "sede_winners": sede_winners()},
+            )
         podium = announcement_podium(ann)
         return render(
             request,
