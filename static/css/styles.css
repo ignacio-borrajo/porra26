@@ -2670,6 +2670,7 @@ html.fv .team-profile-halo {
 .ko-canvas {
   position: relative;
   display: flex;
+  align-items: stretch;
   gap: 56px;
   padding: 32px;
   overflow-x: auto;
@@ -2678,21 +2679,24 @@ html.fv .team-profile-halo {
   scroll-behavior: smooth;
   scrollbar-width: none;
   cursor: grab;
-  min-height: 720px;
 }
 .ko-canvas.grabbing { cursor: grabbing; }
 .ko-canvas.prevent-scroll-animation { scroll-behavior: auto; }
 .ko-canvas::-webkit-scrollbar { display: none; }
 
+/* Bracket clásico: cada columna es un grid de 16 filas iguales (16 cruces de R32).
+   Cada ronda da a sus cards el número de filas correspondiente para que su centro
+   quede exactamente en el punto medio entre los dos cruces hermanos de la ronda
+   anterior: R32 span 1, R16 span 2, QF span 4, SF span 8, Final span 16. */
 .ko-col {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  gap: 14px;
+  display: grid;
+  grid-template-rows: auto repeat(16, 1fr);
+  align-items: center;
   min-width: 280px;
   scroll-snap-align: start;
 }
 .ko-col-head {
+  grid-row: 1 / 2;
   position: sticky;
   top: 0;
   z-index: 2;
@@ -2703,6 +2707,12 @@ html.fv .team-profile-halo {
   text-transform: uppercase;
   color: var(--text-dim);
 }
+.ko-col[data-round="r32"]   > .match-card { grid-row: span 1; }
+.ko-col[data-round="r16"]   > .match-card { grid-row: span 2; }
+.ko-col[data-round="qf"]    > .match-card { grid-row: span 4; }
+.ko-col[data-round="sf"]    > .match-card { grid-row: span 8; }
+.ko-col[data-round="final"] > .match-card { grid-row: span 16; }
+.ko-col > .match-card { align-self: center; width: 100%; }
 
 .ko-connectors {
   position: absolute;
@@ -2751,9 +2761,15 @@ html.fv .team-profile-halo {
   .ko-canvas {
     gap: 0;
     padding: 12px 0;
-    min-height: auto;
   }
-  .ko-col { min-width: 100%; padding: 0 16px; }
+  .ko-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 100%;
+    padding: 0 16px;
+  }
+  .ko-col > .match-card { grid-row: auto; align-self: stretch; }
   .ko-connectors { display: none; }
   .ko-dots { display: flex; }
 }
