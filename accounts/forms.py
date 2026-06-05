@@ -102,3 +102,29 @@ class ProfileForm(forms.ModelForm):
             return process_avatar(f)
         except (UnidentifiedImageError, OSError) as err:
             raise forms.ValidationError("El archivo no es una imagen válida.") from err
+
+
+class TeamProfileForm(forms.ModelForm):
+    """Form mínimo para el modal de incentivo al perfil de equipo: solo sede,
+    departamento y puesto, los tres obligatorios."""
+
+    class Meta:
+        model = User
+        fields = ["sede", "dept", "puesto"]
+        labels = {
+            "sede": "Sede",
+            "dept": "Departamento",
+            "puesto": "Puesto",
+        }
+        widgets = {
+            "sede": forms.Select(attrs=INPUT_ATTRS),
+            "dept": forms.Select(attrs=INPUT_ATTRS),
+            "puesto": forms.Select(attrs=INPUT_ATTRS),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field_name in ("sede", "dept", "puesto"):
+            field = self.fields[field_name]
+            field.required = True
+            field.choices = [("", "Selecciona…")] + [c for c in field.choices if c[0]]

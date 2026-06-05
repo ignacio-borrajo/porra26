@@ -33,10 +33,35 @@
 {% endblock %}
 
 {% block scripts %}
-{% if first_announcement_id %}
+{% if first_announcement_id or show_team_profile_modal %}
 <script type="module">
   import { openModal } from "{% static 'js/modal.js' %}";
-  openModal("{% url 'announcements:modal' first_announcement_id %}");
+
+  function waitModalClosed() {
+    return new Promise((resolve) => {
+      const wrap = document.querySelector(".ovl");
+      if (!wrap || !document.body.contains(wrap)) return resolve();
+      const observer = new MutationObserver(() => {
+        if (!document.body.contains(wrap)) {
+          observer.disconnect();
+          resolve();
+        }
+      });
+      observer.observe(document.body, { childList: true });
+    });
+  }
+
+  const queue = [
+    {% if first_announcement_id %}"{% url 'announcements:modal' first_announcement_id %}",{% endif %}
+    {% if show_team_profile_modal %}"{% url 'accounts:team_profile_modal' %}",{% endif %}
+  ].filter(Boolean);
+
+  (async () => {
+    for (const url of queue) {
+      await openModal(url);
+      await waitModalClosed();
+    }
+  })();
 </script>
 {% endif %}
 {% endblock %}

@@ -5,7 +5,7 @@ from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
-from django.http import HttpResponseBadRequest, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -15,7 +15,7 @@ from django.views.generic import TemplateView
 from competition.models import BET_CLOSE_HOURS, Match
 from pot.models import Payment, Prize
 
-from .forms import ChangePasswordForm, LoginForm, ProfileForm
+from .forms import ChangePasswordForm, LoginForm, ProfileForm, TeamProfileForm
 from .models import AuditLog, User
 from .services.password_reset import (
     _client_ip,
@@ -163,6 +163,42 @@ class MyAccountView(LoginRequiredMixin, View):
         )
         messages.success(request, "Contraseña actualizada.")
         return redirect("accounts:my_account")
+
+
+class TeamProfileModalView(LoginRequiredMixin, View):
+    """Modal que aparece en /competicion/ si al usuario le falta sede, dept o
+    puesto. Visualizarlo marca un flag en la sesión para no volver a abrirlo
+    hasta el próximo login, aunque se cierre con X o Escape."""
+
+    login_url = reverse_lazy("accounts:login")
+    template_name = "accounts/_team_profile_modal.html"
+
+    def get(self, request):
+        request.session["team_profile_dismissed"] = True
+        return render(
+            request,
+            self.template_name,
+            {"form": TeamProfileForm(instance=request.user)},
+        )
+
+    def post(self, request):
+        form = TeamProfileForm(request.POST, instance=request.user)
+        if not form.is_valid():
+            resp = render(request, self.template_name, {"form": form})
+            resp["X-Modal-Errors"] = "1"
+            return resp
+        changed = list(form.changed_data)
+        form.save()
+        if changed:
+            AuditLog.objects.create(
+                actor=request.user,
+                action="profile.update",
+                target_type="user",
+                target_id=str(request.user.id),
+                payload={"changed": changed, "source": "team_profile_modal"},
+            )
+        messages.success(request, "¡Listo! Ya compites también en equipo.")
+        return HttpResponse(status=200)
 
 
 class PasswordResetRequestView(View):
