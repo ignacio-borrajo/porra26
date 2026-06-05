@@ -115,9 +115,7 @@ class ChangePasswordView(LoginRequiredMixin, View):
     def post(self, request):
         form = ChangePasswordForm(request.user, request.POST)
         if form.is_valid():
-            current_us = UserSession.objects.filter(
-                session_key=request.session.session_key
-            ).first()
+            current_us = UserSession.objects.filter(session_key=request.session.session_key).first()
             others = list(
                 UserSession.objects.filter(user=request.user)
                 .exclude(session_key=request.session.session_key)
@@ -222,9 +220,7 @@ class MyAccountView(LoginRequiredMixin, View):
 
         # Snapshot de la sesión actual: tras set_password el signal borra
         # todas las UserSession del usuario; la recreamos al final.
-        current_us = UserSession.objects.filter(
-            session_key=request.session.session_key
-        ).first()
+        current_us = UserSession.objects.filter(session_key=request.session.session_key).first()
 
         # Revocar OTRAS sesiones explícitamente, con AuditLog del count real.
         others = list(
@@ -279,8 +275,9 @@ class MyAccountView(LoginRequiredMixin, View):
         if not target or target == request.session.session_key:
             return HttpResponseBadRequest("sesión no válida")
         keys = list(
-            UserSession.objects.filter(user=request.user, session_key=target)
-            .values_list("session_key", flat=True)
+            UserSession.objects.filter(user=request.user, session_key=target).values_list(
+                "session_key", flat=True
+            )
         )
         if keys:
             revoke_sessions(
@@ -431,9 +428,7 @@ class PasswordResetConfirmView(View):
 
         # Tras un reset por email asumimos posible compromiso: cerrar TODAS
         # las sesiones del usuario (incluidas las que un atacante pueda tener).
-        all_keys = list(
-            UserSession.objects.filter(user=user).values_list("session_key", flat=True)
-        )
+        all_keys = list(UserSession.objects.filter(user=user).values_list("session_key", flat=True))
         revoke_sessions(
             user=user,
             session_keys=all_keys,

@@ -20,9 +20,7 @@ def test_middleware_updates_last_seen_for_authenticated_request(client):
     _login(client, user)
     us = UserSession.objects.get(user=user)
     cache.clear()
-    UserSession.objects.filter(pk=us.pk).update(
-        last_seen_at=timezone.now() - timedelta(minutes=5)
-    )
+    UserSession.objects.filter(pk=us.pk).update(last_seen_at=timezone.now() - timedelta(minutes=5))
 
     client.get(reverse("competicion:dashboard"))
 
@@ -43,9 +41,7 @@ def test_middleware_throttle_avoids_double_db_hit(client):
     _login(client, user)
     us = UserSession.objects.get(user=user)
 
-    UserSession.objects.filter(pk=us.pk).update(
-        last_seen_at=timezone.now() - timedelta(hours=1)
-    )
+    UserSession.objects.filter(pk=us.pk).update(last_seen_at=timezone.now() - timedelta(hours=1))
     client.get(reverse("competicion:dashboard"))
     us.refresh_from_db()
     assert us.last_seen_at < timezone.now() - timedelta(minutes=30)

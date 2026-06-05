@@ -104,9 +104,7 @@ def _delete_avatar_file(sender, instance, **kwargs):
 
 
 class UserSession(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="sessions"
-    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sessions")
     session_key = models.CharField(max_length=40, unique=True, db_index=True)
     device_label = models.CharField(max_length=80)
     user_agent_raw = models.CharField(max_length=400, blank=True)

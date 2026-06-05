@@ -106,7 +106,5 @@ def test_revoke_others_kills_all_other_sessions(client):
         )
     resp = client.post(reverse("accounts:my_account"), {"action": "revoke_others"})
     assert resp.status_code == 302
-    remaining = list(
-        UserSession.objects.filter(user=user).values_list("session_key", flat=True)
-    )
+    remaining = list(UserSession.objects.filter(user=user).values_list("session_key", flat=True))
     assert remaining == [current_key]

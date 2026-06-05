@@ -23,9 +23,7 @@ def test_revoke_sessions_deletes_session_and_user_session():
         user=user, session_key="aaaaaaaa", device_label="d", last_seen_at=timezone.now()
     )
 
-    deleted = revoke_sessions(
-        user=user, session_keys=["aaaaaaaa"], actor=user, reason="test"
-    )
+    deleted = revoke_sessions(user=user, session_keys=["aaaaaaaa"], actor=user, reason="test")
 
     assert deleted == 1
     assert not Session.objects.filter(session_key="aaaaaaaa").exists()

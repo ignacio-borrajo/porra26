@@ -52,9 +52,7 @@ def test_voluntary_password_change_kills_other_sessions_but_keeps_current(client
     assert resp.status_code == 302
     # update_session_auth_hash rota la session_key — la actual es la nueva.
     new_key = client.session.session_key
-    remaining = list(
-        UserSession.objects.filter(user=user).values_list("session_key", flat=True)
-    )
+    remaining = list(UserSession.objects.filter(user=user).values_list("session_key", flat=True))
     assert remaining == [new_key]
     assert not UserSession.objects.filter(session_key__in=["other-1", "other-2"]).exists()
 
