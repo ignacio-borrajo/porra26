@@ -39,7 +39,7 @@ def test_group_standings_sede_aggregates_totals(finished_match):
 def test_group_standings_includes_choices_without_members():
     UserFactory(sede="vigo", is_jugador=True)
     keys = {r.key for r in group_standings("sede")}
-    assert {"ourense", "vigo", "asturias", "madrid", "barcelona", "latam"}.issubset(keys)
+    assert {"ourense", "vigo", "asturias", "madrid", "barcelona", "sie"}.issubset(keys)
 
 
 @pytest.mark.django_db
