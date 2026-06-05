@@ -84,3 +84,14 @@ def test_login_records_audit_log(client):
     )
     log = AuditLog.objects.get(action="login", target_id=str(user.id))
     assert log.payload["remembered"] is True
+
+
+def test_logout_removes_user_session(client):
+    user = UserFactory(email="lo@edisa.com", password="Secret123")
+    client.post(
+        reverse("accounts:login"),
+        {"email": "lo@edisa.com", "password": "Secret123", "remember": "1"},
+    )
+    assert UserSession.objects.filter(user=user).count() == 1
+    client.post(reverse("accounts:logout"))
+    assert UserSession.objects.filter(user=user).count() == 0

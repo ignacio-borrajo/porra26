@@ -95,6 +95,8 @@ class LoginView(View):
 
 class LogoutView(View):
     def post(self, request):
+        if request.user.is_authenticated and request.session.session_key:
+            UserSession.objects.filter(session_key=request.session.session_key).delete()
         logout(request)
         return redirect("accounts:login")
 
