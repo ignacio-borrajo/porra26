@@ -99,9 +99,9 @@
       <tbody>
         {% for r in rounds %}
         <tr>
-          <td><span class="chip" data-round="{{ r.id }}">{{ r.label }}</span></td>
-          <td><strong style="font-family:Sora,sans-serif;font-weight:700;font-size:20px">{{ r.points }}</strong> <span style="font-family:'Geist Mono',monospace;color:var(--text-faint);font-size:12px">pts</span></td>
-          <td><strong style="font-family:Sora,sans-serif;font-weight:700;font-size:20px">{{ r.partial_points }}</strong> <span style="font-family:'Geist Mono',monospace;color:var(--text-faint);font-size:12px">pts</span></td>
+          <td data-label="Ronda"><span class="chip" data-round="{{ r.id }}">{{ r.label }}</span></td>
+          <td data-label="Marcador exacto"><strong style="font-family:Sora,sans-serif;font-weight:700;font-size:20px">{{ r.points }}</strong> <span style="font-family:'Geist Mono',monospace;color:var(--text-faint);font-size:12px">pts</span></td>
+          <td data-label="Solo resultado (1·X·2)"><strong style="font-family:Sora,sans-serif;font-weight:700;font-size:20px">{{ r.partial_points }}</strong> <span style="font-family:'Geist Mono',monospace;color:var(--text-faint);font-size:12px">pts</span></td>
         </tr>
         {% endfor %}
       </tbody>
