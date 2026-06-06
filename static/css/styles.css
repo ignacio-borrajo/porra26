@@ -83,9 +83,10 @@
   --text-faint: oklch(0.58 0.025 275);
   --glass-blur: 18px;
   --shadow-glow: 0 1px 0 oklch(1 0 0 / 0.6) inset, 0 20px 50px -24px oklch(0.4 0.06 280 / 0.35);
-  /* La lima base (L≈0.85) no contrasta sobre fondos blancos; en light la
-     oscurecemos para que pills/chips/badges sean legibles. */
-  --c-lime: oklch(0.58 0.18 138);
+  /* La lima y el amarillo base (L≈0.85) no contrastan sobre fondos blancos;
+     en light los oscurecemos para que pills/chips/badges sean legibles. */
+  --c-lime:   oklch(0.58 0.18 138);
+  --c-yellow: oklch(0.62 0.16 75);
   color-scheme: light;
 }
 
