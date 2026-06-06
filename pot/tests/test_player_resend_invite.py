@@ -57,6 +57,27 @@ def test_resend_veterano_envia_reset(gestor, client, jugador_veterano):
     assert "Restablece" in mail.outbox[0].subject
 
 
+def test_resend_con_purpose_welcome_forzado_envia_welcome(gestor, client, jugador_veterano):
+    """El botón "Enviar bienvenida" de la columna acciones permite forzar
+    welcome aunque el usuario ya hubiera entrado al portal."""
+    response = client.post(
+        reverse("pot:player_resend_invite", args=[jugador_veterano.id]),
+        {"purpose": "welcome"},
+    )
+    data = json.loads(response.content)
+    assert data["purpose"] == "welcome"
+    assert "Bienvenido" in mail.outbox[0].subject
+
+
+def test_resend_con_purpose_invalido_cae_a_auto(gestor, client, jugador_veterano):
+    response = client.post(
+        reverse("pot:player_resend_invite", args=[jugador_veterano.id]),
+        {"purpose": "bogus"},
+    )
+    data = json.loads(response.content)
+    assert data["purpose"] == "reset"
+
+
 def test_resend_a_inactivo_404(gestor, client, jugador_pendiente):
     jugador_pendiente.is_active = False
     jugador_pendiente.save(update_fields=["is_active"])
