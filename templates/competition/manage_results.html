@@ -5,7 +5,7 @@
 <h1 class="display" style="font-size:28px">Resultados oficiales</h1>
 <p style="color:var(--text-dim)">Confirma los marcadores. Al confirmar se recalculan los puntos.</p>
 {% include "partials/_round_selector.html" with rounds=rounds active=active_round %}
-{% include "partials/_matchday_selector.html" %}
+<div style="margin-top:10px">{% include "partials/_matchday_selector.html" %}</div>
 {% if pending_teams_matches %}
 <h2 class="eyebrow" style="margin-top:18px">CRUCE PENDIENTE · {{ pending_teams_matches|length }}</h2>
 <div class="table-scroll" style="display:flex;flex-direction:column;gap:10px">

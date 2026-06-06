@@ -1,5 +1,10 @@
 const KEY = "porra26:matchesOrder";
 const MODES = new Set(["date", "group"]);
+const DAY_FMT = new Intl.DateTimeFormat("es-ES", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+});
 
 function readMode() {
   try {
@@ -18,18 +23,55 @@ function writeMode(mode) {
   }
 }
 
-function sortKey(card, mode) {
-  const group = (card.dataset.group || "").toLowerCase();
-  const kickoff = card.dataset.kickoff || "";
-  return mode === "group" ? `${group}|${kickoff}` : kickoff;
+function dayKey(iso) {
+  return (iso || "").slice(0, 10);
 }
 
-function applyOrder(mode) {
-  document.querySelectorAll(".matches-grid").forEach((grid) => {
-    const cards = Array.from(grid.children);
-    cards.sort((a, b) => sortKey(a, mode).localeCompare(sortKey(b, mode)));
-    cards.forEach((c) => grid.appendChild(c));
+function subgroupKey(card, mode) {
+  if (mode === "group") {
+    const g = card.dataset.group || "";
+    return g.length === 1 ? `1${g}` : `2${g}`;
+  }
+  return dayKey(card.dataset.kickoff);
+}
+
+function subgroupLabel(card, mode) {
+  if (mode === "group") {
+    const g = card.dataset.group || "?";
+    return g.length === 1 ? `Grupo ${g}` : g;
+  }
+  const k = card.dataset.kickoff;
+  if (!k) return "";
+  const d = new Date(k);
+  if (Number.isNaN(d.getTime())) return "";
+  const label = DAY_FMT.format(d);
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function rebuild(grid, mode) {
+  const cards = Array.from(grid.querySelectorAll(".match-card"));
+  if (!cards.length) return;
+  cards.sort((a, b) => {
+    const ka = subgroupKey(a, mode);
+    const kb = subgroupKey(b, mode);
+    if (ka !== kb) return ka.localeCompare(kb);
+    return (a.dataset.kickoff || "").localeCompare(b.dataset.kickoff || "");
   });
+  grid.innerHTML = "";
+  let lastKey = null;
+  for (const c of cards) {
+    const k = subgroupKey(c, mode);
+    if (k !== lastKey) {
+      const h = document.createElement("h3");
+      h.className = "eyebrow matches-subgroup-header";
+      h.style.cssText =
+        "grid-column:1/-1;margin:10px 0 -2px;font-size:11px;opacity:.7";
+      h.textContent = subgroupLabel(c, mode);
+      grid.appendChild(h);
+      lastKey = k;
+    }
+    grid.appendChild(c);
+  }
 }
 
 function syncButtons(mode) {
@@ -40,19 +82,21 @@ function syncButtons(mode) {
   });
 }
 
-function init() {
-  const toggle = document.querySelector(".matches-order-toggle");
-  if (!toggle) return;
-  const mode = readMode();
+function applyMode(mode) {
   syncButtons(mode);
-  if (mode === "group") applyOrder(mode);
-  toggle.querySelectorAll("[data-order]").forEach((btn) => {
+  document.querySelectorAll(".matches-grid").forEach((g) => rebuild(g, mode));
+}
+
+function init() {
+  const grids = document.querySelectorAll(".matches-grid");
+  if (!grids.length) return;
+  applyMode(readMode());
+  document.querySelectorAll(".matches-order-toggle [data-order]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const next = btn.dataset.order;
       if (!MODES.has(next)) return;
       writeMode(next);
-      syncButtons(next);
-      applyOrder(next);
+      applyMode(next);
     });
   });
 }
