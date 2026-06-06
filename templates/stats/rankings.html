@@ -9,9 +9,9 @@
   <a class="chip" href="{% url 'stats:historico' %}">Histórico →</a>
 </header>
 
-<nav class="glass rise" style="display:inline-flex;gap:4px;padding:6px;border-radius:14px;margin-bottom:18px">
+<nav class="glass rise rankings-tabs">
   {% for key, label in tabs %}
-    <a href="?tab={{ key }}" class="nav-item{% if key == tab %} is-active{% endif %}" style="padding:8px 16px">{{ label }}</a>
+    <a href="?tab={{ key }}" class="nav-item rankings-tabs__item{% if key == tab %} is-active{% endif %}">{{ label }}</a>
   {% endfor %}
 </nav>
 
