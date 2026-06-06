@@ -5,7 +5,7 @@
      class="chip {% if s.active %}chip-open{% endif %}"
      style="text-decoration:none;{% if not s.open %}opacity:.55{% endif %}"
      {% if not s.open %}aria-disabled="true" title="Jornada bloqueada"{% endif %}>
-    {% if not s.open %}🔒 {% endif %}Jornada {{ s.matchday }}
+    {% if not s.open %}🔒 {% endif %}<span class="label-full">Jornada {{ s.matchday }}</span><span class="label-short" aria-hidden="true">J{{ s.matchday }}</span>
   </a>
   {% endfor %}
 </nav>

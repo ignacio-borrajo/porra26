@@ -548,12 +548,19 @@ a.match-card:hover {
    que tres-cuatro fases entren en la misma fila. */
 .glass[aria-label="Jornadas"],
 .round-selector { flex-wrap: wrap; }
+.glass[aria-label="Jornadas"] .label-short,
+.matches-order-toggle .label-short { display: none; }
 @media (max-width: 560px) {
   .round-selector .chip,
-  .glass[aria-label="Jornadas"] .chip {
+  .glass[aria-label="Jornadas"] .chip,
+  .matches-order-toggle .chip {
     font-size: 10.5px;
     padding: 5px 9px;
   }
+  .glass[aria-label="Jornadas"] .label-full,
+  .matches-order-toggle .label-full { display: none; }
+  .glass[aria-label="Jornadas"] .label-short,
+  .matches-order-toggle .label-short { display: inline; }
 }
 
 /* Scroll interno sin barras visibles (gráfico de evolución con todos los jugadores) */
