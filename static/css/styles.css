@@ -1891,11 +1891,15 @@ img.avatar { object-fit: cover; }
    ============================================================ */
 .winner-modal {
   width: min(520px, 100%);
-  padding: 32px clamp(20px, 4vw, 48px) 28px;
-  border-radius: 24px;
+  padding: 70px clamp(20px, 4vw, 48px) 28px;
+  border-radius: 28px;
   background: var(--surface-solid);
   text-align: center;
   position: relative;
+  overflow: visible;
+  box-shadow:
+    0 30px 80px -30px oklch(0 0 0 / 0.55),
+    0 0 0 1px oklch(1 0 0 / 0.06) inset;
 }
 .winner-modal .modal-x {
   position: absolute;
@@ -1913,23 +1917,70 @@ img.avatar { object-fit: cover; }
   display: grid;
   place-items: center;
   transition: border-color .15s, color .15s, transform .15s;
+  z-index: 3;
 }
 .winner-modal .modal-x:hover {
   border-color: var(--accent);
   color: var(--accent);
   transform: scale(1.05);
 }
-.winner-trophy {
-  font-size: clamp(56px, 8vw, 88px);
-  line-height: 1;
-  margin: 4px 0 8px;
-  filter: drop-shadow(0 8px 22px oklch(from var(--accent) l c h / 0.45));
-  animation: trophy-pop .7s var(--ease-spring) both;
+
+.winner-halo {
+  position: absolute;
+  top: -86px;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  margin-left: -100px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 200deg,
+    var(--c-pink),
+    var(--c-yellow),
+    var(--c-lime),
+    var(--c-cyan),
+    var(--c-pink)
+  );
+  filter: blur(34px);
+  opacity: 0.55;
+  z-index: 0;
+  pointer-events: none;
+  animation: winner-halo-spin 9s linear infinite;
 }
-@keyframes trophy-pop {
-  0% { transform: scale(0.4) rotate(-12deg); opacity: 0; }
-  60% { transform: scale(1.15) rotate(4deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+@keyframes winner-halo-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.winner-trophy {
+  position: absolute;
+  top: -52px;
+  left: 50%;
+  font-size: clamp(76px, 11vw, 108px);
+  line-height: 1;
+  z-index: 2;
+  filter:
+    drop-shadow(0 14px 24px oklch(from var(--c-gold) l c h / 0.55))
+    drop-shadow(0 0 20px oklch(from var(--c-yellow) l c h / 0.45));
+  transform-origin: 50% 90%;
+  animation:
+    winner-trophy-pop 0.85s var(--ease-spring) both,
+    winner-trophy-float 4.5s ease-in-out 0.95s infinite;
+  pointer-events: none;
+}
+@keyframes winner-trophy-pop {
+  0%   { transform: translate(-50%, 18px) scale(0.3) rotate(-22deg); opacity: 0; }
+  55%  { transform: translate(-50%, -6px) scale(1.18) rotate(8deg);  opacity: 1; }
+  100% { transform: translate(-50%, 0)    scale(1)    rotate(0);     opacity: 1; }
+}
+@keyframes winner-trophy-float {
+  0%, 100% { transform: translate(-50%, 0) rotate(0); }
+  50%      { transform: translate(-50%, -7px) rotate(-4deg); }
+}
+
+html.fv .winner-trophy,
+html.fv .winner-halo {
+  animation: none;
 }
 .winner-title {
   font-family: 'Sora', system-ui, sans-serif;
@@ -1937,10 +1988,18 @@ img.avatar { object-fit: cover; }
   font-size: clamp(22px, 3.5vw, 32px);
   line-height: 1.15;
   margin: 4px 0 6px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  background: linear-gradient(
+    100deg,
+    var(--c-pink),
+    var(--c-yellow) 35%,
+    var(--c-lime) 65%,
+    var(--c-cyan)
+  );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  position: relative;
+  z-index: 1;
 }
 .winner-points {
   font-family: 'Geist Mono', ui-monospace, monospace;
@@ -1948,6 +2007,8 @@ img.avatar { object-fit: cover; }
   letter-spacing: 0.04em;
   opacity: 0.78;
   margin: 0 0 6px;
+  position: relative;
+  z-index: 1;
 }
 /* Podio del modal de ganador: orden visual 2º · 1º · 3º */
 .winner-modal-podium {
@@ -1957,6 +2018,8 @@ img.avatar { object-fit: cover; }
   gap: 8px;
   margin: 18px 0 14px;
   padding: 0 4px;
+  position: relative;
+  z-index: 1;
 }
 .winner-modal-podium-slot {
   display: flex;
@@ -2130,6 +2193,8 @@ img.avatar { object-fit: cover; }
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   margin: 18px 0 14px;
+  position: relative;
+  z-index: 1;
 }
 .winner-modal-sede-card {
   display: flex;
@@ -2246,10 +2311,14 @@ img.avatar { object-fit: cover; }
   opacity: 0.7;
   font-size: 14px;
   margin: 4px 0 20px;
+  position: relative;
+  z-index: 1;
 }
 .winner-actions {
   display: flex;
   justify-content: center;
+  position: relative;
+  z-index: 1;
 }
 .winner-actions .btn {
   min-width: 200px;
