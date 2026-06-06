@@ -10,6 +10,11 @@ urlpatterns = [
         views.PlayersImportResultView.as_view(),
         name="players_import_result",
     ),
+    path(
+        "jugadores/bienvenida-masiva/",
+        views.PlayersBulkWelcomeView.as_view(),
+        name="players_bulk_welcome",
+    ),
     path("jugadores/nuevo/", views.PlayerFormView.as_view(), name="player_new"),
     path("jugadores/<int:pk>/", views.PlayerFormView.as_view(), name="player_edit"),
     path("jugadores/<int:pk>/reset/", views.ResetPasswordView.as_view(), name="player_reset"),

@@ -19,8 +19,13 @@ from accounts.models import AuditLog, User
 from accounts.services.token_generator import token_generator
 
 SUBJECTS = {
-    "welcome": "Bienvenido a la porra del Mundial",
+    "welcome": "¡Bienvenido a La Porra del Jefe! 🏆 Mundial FIFA 2026",
     "reset": "Restablece tu contraseña",
+}
+
+TEMPLATES = {
+    "welcome": ("accounts/emails/welcome.html", "accounts/emails/welcome.txt"),
+    "reset": ("accounts/emails/password_reset.html", "accounts/emails/password_reset.txt"),
 }
 
 
@@ -47,8 +52,9 @@ def send_password_reset_email(user, purpose: str, actor=None) -> None:
         "reset_url": reset_url,
         "logo_url": logo_url,
     }
-    html = render_to_string("accounts/emails/password_reset.html", ctx)
-    text = render_to_string("accounts/emails/password_reset.txt", ctx)
+    html_template, text_template = TEMPLATES[purpose]
+    html = render_to_string(html_template, ctx)
+    text = render_to_string(text_template, ctx)
     subject = SUBJECTS[purpose]
 
     message = EmailMultiAlternatives(
