@@ -39,7 +39,9 @@ def test_dashboard_groups_view_renders_order_toggle_and_data_attrs(client):
     MatchFactory(round=grp, group="A", kickoff=timezone.now() + timedelta(days=1))
     r = client.get(reverse("competicion:dashboard") + "?round=groups")
     body = r.content.decode()
-    assert 'class="chip chip-open"\n          data-order="date"' in body or 'data-order="date"' in body
+    assert (
+        'class="chip chip-open"\n          data-order="date"' in body or 'data-order="date"' in body
+    )
     assert 'data-order="group"' in body
     assert 'data-group="A"' in body
     assert "matches-order.js" in body
