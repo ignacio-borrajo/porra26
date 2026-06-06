@@ -18,4 +18,4 @@ jobs:
           curl --fail --silent --show-error --max-time 60 \
             -X POST \
             -H "Authorization: Bearer ${{ secrets.PORRA26_API_TOKEN }}" \
-            "${{ secrets.PORRA26_BASE_URL }}/competicion/api/recordatorios/disparar/"
+            "${{ secrets.PORRA26_BASE_URL }}/competicion/api/teams/recordatorios/disparar/"
