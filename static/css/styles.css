@@ -1083,6 +1083,11 @@ select.input {
     color: var(--text-faint);
     font-weight: 500;
   }
+  .rules-table td[data-label]:not([data-label="Ronda"]) strong {
+    display: inline-block;
+    min-width: 2ch;
+    text-align: right;
+  }
 }
 
 /* ============================================================
