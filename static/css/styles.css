@@ -1180,6 +1180,37 @@ img.avatar { object-fit: cover; }
   }
 }
 
+/* Tabs de la página Rankings (Clasificación · Sede · Puesto · Departamento).
+   En escritorio se muestran en una sola línea; en móvil los 4 nombres no
+   entran a 14px y provocan scroll horizontal, así que reducimos tipografía
+   y padding y permitimos que envuelvan a dos filas centradas. */
+.rankings-tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+}
+.rankings-tabs__item { padding: 8px 16px; }
+@media (max-width: 560px) {
+  .rankings-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    gap: 2px;
+    padding: 4px;
+  }
+  .rankings-tabs__item {
+    padding: 6px 10px;
+    font-size: 12px;
+    gap: 6px;
+    flex: 1 1 auto;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
 /* Tabs Global / Jornada-Ronda (radio CSS, sin JS) */
 .lb-scope-input { position: absolute; opacity: 0; pointer-events: none; }
 .lb-tabs {
