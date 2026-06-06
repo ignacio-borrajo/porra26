@@ -6,6 +6,8 @@
      data-bracket-code="{{ match.bracket_code|default:'' }}"
      data-feeds-into="{{ match.feeds_into_code|default:'' }}"
      data-status="{{ st }}"
+     data-group="{{ match.group }}"
+     data-kickoff="{{ match.kickoff|date:'c' }}"
      style="cursor:default;opacity:.85">
   <div class="match-card-head">
     <span class="eyebrow">{% if match.group|length <= 1 %}Grupo {{ match.group }}{% else %}{{ match.group }}{% endif %}</span>
@@ -37,12 +39,16 @@
    data-bracket-code="{{ match.bracket_code|default:'' }}"
    data-feeds-into="{{ match.feeds_into_code|default:'' }}"
    data-status="{{ st }}"
+   data-group="{{ match.group }}"
+   data-kickoff="{{ match.kickoff|date:'c' }}"
    class="match-card glass rise">
 {% elif match.editable %}
 <a class="match-card glass rise"
    data-bracket-code="{{ match.bracket_code|default:'' }}"
    data-feeds-into="{{ match.feeds_into_code|default:'' }}"
    data-status="{{ st }}"
+   data-group="{{ match.group }}"
+   data-kickoff="{{ match.kickoff|date:'c' }}"
    style="cursor:not-allowed">
 {% else %}
 <a href="{% url 'competicion:detail' match.id %}"
@@ -50,6 +56,8 @@
    data-bracket-code="{{ match.bracket_code|default:'' }}"
    data-feeds-into="{{ match.feeds_into_code|default:'' }}"
    data-status="{{ st }}"
+   data-group="{{ match.group }}"
+   data-kickoff="{{ match.kickoff|date:'c' }}"
    class="match-card glass rise{% if st == 'live' %} match-card-live{% endif %}">
 {% endif %}
   <div class="match-card-head">

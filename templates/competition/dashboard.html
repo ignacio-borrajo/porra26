@@ -9,21 +9,26 @@
     {% if is_ko_view %}
       {% include "competition/_ko_canvas.html" with ko_rounds=ko_rounds active_ko_id=active_ko_id my_preds=my_preds %}
     {% else %}
+      {% if active_round == 'groups' %}{% if open_matches or live_matches or done_matches %}
+        <div style="display:flex;justify-content:flex-end">
+          {% include "partials/_matches_order_toggle.html" %}
+        </div>
+      {% endif %}{% endif %}
       {% if open_matches %}
       <h2 class="eyebrow" style="margin-top:24px">ABIERTOS · {{ open_matches|length }}</h2>
-      <div class="stagger" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+      <div class="stagger matches-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
         {% for m in open_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
       </div>
       {% endif %}
       {% if live_matches %}
       <h2 class="eyebrow" style="margin-top:24px">EN JUEGO · {{ live_matches|length }}</h2>
-      <div class="stagger" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+      <div class="stagger matches-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
         {% for m in live_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
       </div>
       {% endif %}
       {% if done_matches %}
       <h2 class="eyebrow" style="margin-top:24px">FINALIZADOS · {{ done_matches|length }}</h2>
-      <div class="stagger" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+      <div class="stagger matches-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
         {% for m in done_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
       </div>
       {% endif %}
@@ -37,6 +42,9 @@
 {% endblock %}
 
 {% block scripts %}
+{% if not is_ko_view %}
+<script type="module" src="{% static 'js/matches-order.js' %}"></script>
+{% endif %}
 {% if first_announcement_id or show_team_profile_modal %}
 <script type="module">
   import { openModal } from "{% static 'js/modal.js' %}";
