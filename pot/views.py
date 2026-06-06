@@ -189,7 +189,10 @@ class ResetPasswordView(GestorRequiredMixin, View):
 class PlayerResendInviteView(GestorRequiredMixin, View):
     def post(self, request, pk):
         user = get_object_or_404(User, pk=pk, is_active=True)
-        if user.must_change_password and user.last_login is None:
+        forced = (request.POST.get("purpose") or "").strip().lower()
+        if forced in ("welcome", "reset"):
+            purpose = forced
+        elif user.must_change_password and user.last_login is None:
             purpose = "welcome"
         else:
             purpose = "reset"

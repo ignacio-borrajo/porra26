@@ -23,7 +23,7 @@
   {% if dir %}<input type="hidden" name="dir" value="{{ dir }}">{% endif %}
 </form>
 <div class="glass table-scroll" style="border-radius:16px">
-  <div class="table-row" style="display:grid;grid-template-columns:2.4fr 1.6fr 0.8fr 1fr 0.9fr 160px;padding:14px;font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.18em;border-bottom:1px solid var(--border)">
+  <div class="table-row" style="display:grid;grid-template-columns:2.4fr 1.6fr 0.8fr 1fr 0.9fr 200px;padding:14px;font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.18em;border-bottom:1px solid var(--border)">
     {% for c in columns %}
     <a href="{{ c.url }}" style="display:inline-flex;align-items:center;gap:6px;color:inherit;text-decoration:none{% if c.is_active %};color:var(--text){% endif %}" title="Ordenar por {{ c.label }}">
       <span>{{ c.label }}</span>
@@ -35,7 +35,7 @@
     <span>Acciones</span>
   </div>
   {% for p in players %}
-  <div class="table-row" style="display:grid;grid-template-columns:2.4fr 1.6fr 0.8fr 1fr 0.9fr 160px;padding:14px;align-items:center;border-bottom:1px solid var(--border);{% if not p.is_active %}opacity:0.5{% endif %}">
+  <div class="table-row" style="display:grid;grid-template-columns:2.4fr 1.6fr 0.8fr 1fr 0.9fr 200px;padding:14px;align-items:center;border-bottom:1px solid var(--border);{% if not p.is_active %}opacity:0.5{% endif %}">
     <div>
       <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
         <strong>{{ p.name }}</strong>
@@ -59,6 +59,7 @@
     <div style="display:flex;gap:6px;justify-self:end">
       <button class="btn btn-ghost" data-modal-url="{% url 'pot:player_edit' p.id %}" style="width:32px;height:32px;padding:0" title="Editar">{% icon "edit" width=14 %}</button>
       <button class="btn btn-ghost" type="button" data-resend-invite-url="{% url 'pot:player_resend_invite' p.id %}" style="width:32px;height:32px;padding:0" title="Reenviar email de acceso">{% icon "mail" width=14 %}</button>
+      <button class="btn btn-ghost" type="button" data-resend-invite-url="{% url 'pot:player_resend_invite' p.id %}" data-purpose="welcome" style="width:32px;height:32px;padding:0" title="Enviar email de bienvenida">{% icon "trophy" width=14 %}</button>
       <button class="btn btn-ghost" data-modal-url="{% url 'pot:player_set_password' p.id %}" style="width:32px;height:32px;padding:0" title="Cambiar contraseña">{% icon "lock" width=14 %}</button>
       <form method="post" action="{% url 'pot:player_toggle_active' p.id %}" style="display:inline">
         {% csrf_token %}

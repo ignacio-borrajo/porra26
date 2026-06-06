@@ -20,10 +20,14 @@ document.addEventListener("click", (e) => {
   if (!btn) return;
   e.preventDefault();
   const url = btn.dataset.resendInviteUrl;
+  const forced = btn.dataset.purpose;
+  const body = new FormData();
+  if (forced) body.append("purpose", forced);
   btn.disabled = true;
   fetch(url, {
     method: "POST",
     headers: { "X-CSRFToken": getCsrf(), Accept: "application/json" },
+    body,
   })
     .then((r) => r.json().catch(() => null))
     .then((data) => {
