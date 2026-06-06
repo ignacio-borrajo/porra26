@@ -1,5 +1,5 @@
 {% if matchdays %}
-<nav class="glass" style="display:flex;gap:6px;padding:8px;border-radius:14px;margin-top:10px" aria-label="Jornadas">
+<nav class="glass" style="display:flex;gap:6px;padding:8px;border-radius:14px" aria-label="Jornadas">
   {% for s in matchday_state %}
   <a href="?round={{ active_round }}&matchday={{ s.matchday }}"
      class="chip {% if s.active %}chip-open{% endif %}"

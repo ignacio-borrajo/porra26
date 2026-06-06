@@ -1,6 +1,6 @@
 # Toggle de orden en vista de Jornadas — Por fecha / Por grupos
 
-Fecha: 2026-06-06
+Fecha: 2026-06-06 (v2: 2026-06-06)
 Estado: aprobado
 
 ## Motivación
@@ -17,26 +17,26 @@ Añadir un toggle **Por fecha / Por grupos** permite alternar entre las dos lect
 - Rondas KO (`r32`, `r16`, `qf`, `sf`, `final`) — esas rondas renderizan `_ko_canvas.html` (bracket), no la lista de cards. El toggle no se muestra en KO.
 - Otras vistas que reutilicen `_match_card.html` (manage_results, etc.). El toggle se incluye explícitamente en `dashboard.html`, no en el partial de card.
 
-El **selector de jornadas** (J1/J2/J3) sigue activo en ambos modos del toggle. El toggle solo afecta al orden de las cards dentro de la jornada seleccionada.
+El **selector de jornadas** (J1/J2/J3) sigue activo en ambos modos del toggle. El toggle solo afecta a la agrupación de las cards dentro de la jornada seleccionada.
 
 ## Comportamiento
 
+Ambos modos comparten estructura: dentro de cada bloque de estado (ABIERTOS / EN JUEGO / FINALIZADOS) se inyectan **sub-headers** que agrupan visualmente las cards. Solo cambia la clave de agrupación.
+
 ### Modo "Por fecha" (default)
 
-Idéntico al comportamiento actual:
-- Tres bloques con header eyebrow: ABIERTOS · N, EN JUEGO · N, FINALIZADOS · N.
-- Dentro de cada bloque, cards ordenadas por `kickoff` ascendente.
+- Sub-headers por día con formato "Viernes 12 junio" (`Intl.DateTimeFormat('es-ES', { weekday, day, month })`).
+- Dentro de cada sub-grupo, cards ordenadas por `kickoff` ascendente.
 
 ### Modo "Por grupos"
 
-- Se mantienen los tres bloques de estado con sus headers eyebrow (ABIERTOS / EN JUEGO / FINALIZADOS).
-- Dentro de cada bloque, las cards se ordenan **alfabéticamente por grupo** (A, B, C, …, L).
+- Sub-headers "Grupo A", "Grupo B", …, "Grupo L" alfabéticamente.
+- Dentro de cada sub-grupo, cards ordenadas por `kickoff` ascendente.
 - Empate de grupo (mismo grupo en el mismo bloque de estado) → desempate por `kickoff` ascendente.
-- Cada card sigue siendo el `match-card` actual, sin cambios visuales internos — su propio eyebrow ya muestra "Grupo X".
 
 ### Persistencia
 
-- Clave `localStorage`: `porra26.matchesOrder`, valores `"date"` (default) o `"group"`.
+- Clave `localStorage`: `porra26:matchesOrder`, valores `"date"` (default) o `"group"`.
 - Si no hay valor guardado o el valor es desconocido → se asume `"date"`.
 - El cambio es **puramente en cliente**, sin recarga ni round-trip al servidor.
 
@@ -48,76 +48,69 @@ El toggle se renderiza si y solo si:
 
 ## UI
 
-Segmented control en estilo glass, alineado a la derecha encima del primer bloque de partidos. Misma estética que los chips existentes (clases `chip` / `chip-open`).
+Segmented control glass con dos botones `chip`. En **PC** queda en la misma fila que el selector de jornada (J1/J2/J3), empujado a la derecha con `margin-left:auto`. En **móvil** baja a la línea inferior gracias a `flex-wrap`.
 
 ```
 [Grupos · 3p] [Octavos · 7p] ...
-[J1] [J2] [J3]
-
-                              ┌────────────────────────┐
-                              │ ● Por fecha │ Por grupos │
-                              └────────────────────────┘
+[J1] [J2] [J3]                  [● Por fecha · Por grupos]
 
 ABIERTOS · 4
-┌ … ┐ ┌ … ┐ ┌ … ┐ ┌ … ┐
+Viernes 12 junio
+┌ … ┐ ┌ … ┐
+Sábado 13 junio
+┌ … ┐ ┌ … ┐
 
 EN JUEGO · 1
+Domingo 14 junio
 ┌ … ┐
-
-FINALIZADOS · 7
-┌ … ┐ ┌ … ┐ ┌ … ┐ ...
 ```
 
 Dos `<button>` con `aria-pressed="true|false"` y `data-order="date|group"`. El activo lleva `chip-open` (mismo tratamiento que J1 activo). El contenedor padre lleva clase `matches-order-toggle`.
 
 ## Implementación
 
-Cambios mínimos, todo cliente.
+Cambios mínimos, sub-headers construidos en cliente para no duplicar HTML server-side.
 
 ### Templates
 
-- **`templates/competition/_match_card.html`**: añadir atributos `data-group` y `data-kickoff` al elemento raíz de cada card (tanto en la rama `pending_teams` como en la rama normal). `data-kickoff` usa `kickoff|date:'c'` (ISO 8601) para `localeCompare` lexicográfico fiable.
-- **`templates/partials/_matches_order_toggle.html`** (nuevo): markup del segmented control.
-- **`templates/competition/dashboard.html`**: incluir el toggle condicional justo después del selector de jornada y solo si `not is_ko_view` y hay partidos.
+- **`templates/competition/_match_card.html`**: añadir atributos `data-group` y `data-kickoff` (ISO 8601, `kickoff|date:'c'`) al elemento raíz de cada card.
+- **`templates/partials/_matches_order_toggle.html`** (nuevo): markup del segmented control sin margen propio.
+- **`templates/partials/_matchday_selector.html`**: quitar `margin-top:10px` (lo asume el wrapper).
+- **`templates/competition/manage_results.html`**: envolver el include del matchday_selector con un `<div style="margin-top:10px">` para preservar el espaciado original.
+- **`templates/competition/dashboard.html`**: wrap del matchday_selector + toggle en un `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">`. Toggle dentro de un sub-div con `margin-left:auto`.
 
 ### JS
 
 - **`static/js/matches-order.js`** (nuevo, módulo ES):
-  1. Al cargar el DOM:
-     - Lee `localStorage.getItem('porra26.matchesOrder')`. Si es `"group"`, aplica el reordenado.
-     - Sincroniza el estado visual del toggle (`aria-pressed` y clase activa).
-  2. Bindea click en los dos botones; cada click:
-     - Guarda en localStorage.
-     - Actualiza `aria-pressed` / clase activa.
-     - Reordena los hijos de cada `.matches-grid` (clase nueva añadida a los `<div class="stagger">` que contienen las cards de partidos).
-  3. La función de reordenado:
-     - `date`: ordena por `data-kickoff` ascendente.
-     - `group`: ordena por `data-group` ASCII case-insensitive, desempate por `data-kickoff`.
-     - Re-inserta los nodos en el contenedor con `appendChild` en orden (no recrea).
-  4. El módulo se carga desde `dashboard.html` con `<script type="module" src="{% static 'js/matches-order.js' %}">` dentro del bloque `{% block scripts %}`, solo cuando `not is_ko_view`.
+  1. Al cargar el DOM, lee `localStorage.getItem('porra26:matchesOrder')` (default `"date"`).
+  2. Para cada `.matches-grid`: vacía el contenedor y reinserta cards intercaladas con `<h3 class="eyebrow matches-subgroup-header">` (con `grid-column:1/-1` para abarcar toda la fila del grid auto-fill). La clave de agrupación y la etiqueta se calculan según el modo:
+     - `date`: clave `YYYY-MM-DD` (slice del ISO), etiqueta `Intl.DateTimeFormat('es-ES', { weekday, day, month })` con primera letra capitalizada.
+     - `group`: clave `1{letra}` para grupos de 1 char (A→L) y `2{...}` para etiquetas largas, etiqueta `Grupo {letra}` o la propia etiqueta si es larga.
+  3. Bindea click en los dos botones del toggle → guarda en localStorage y vuelve a aplicar el modo.
+  4. El módulo se carga desde `dashboard.html` con `<script type="module" src="{% static 'js/matches-order.js' %}">` solo cuando `not is_ko_view`.
 
 Si el navegador no soporta localStorage o falla por modo privado, el módulo cae a "date" silenciosamente.
 
 ### CSS
 
-- Reutilizar clases existentes (`glass`, `chip`, `chip-open`, `mono`). Pequeños ajustes inline o en un bloque de estilos del partial para centrar/espaciar el control. No se introduce hoja de estilos nueva.
-- En móvil el toggle queda centrado, con ancho 100% si hace falta (`flex-wrap`).
+- Reutilizar clases existentes (`glass`, `chip`, `chip-open`, `eyebrow`). Los sub-headers usan `.eyebrow` + estilos inline (`grid-column:1/-1;margin:10px 0 -2px;font-size:11px;opacity:.7`).
+- No se introduce hoja de estilos nueva.
 
 ## Accesibilidad
 
 - `<nav aria-label="Orden de los partidos">` envolviendo los botones.
-- `role="tablist"` en el nav y `role="tab"` + `aria-selected` en cada botón (o `aria-pressed` si tratamos como toggle puro — usaremos `aria-pressed` por simplicidad, no hay panel asociado distinto).
-- El reorden no necesita anuncio explícito a screen reader; los headers de estado siguen siendo el punto de orientación.
+- Botones con `aria-pressed="true|false"`.
+- Los sub-headers son `<h3>`, navegables por screen reader como puntos de orientación adicionales dentro de cada bloque de estado.
 
 ## Lo que NO entra
 
-- Mini-tabla de clasificación del grupo dentro de la card (idea futura, requiere standing en vivo del grupo).
+- Mini-tabla de clasificación del grupo dentro de la card (idea futura, requiere standings en vivo).
 - Vista "todas las jornadas mezcladas" (otro feature).
-- Animación de reordenado (FLIP/morph). Si lo necesitamos más adelante, no rompe nada de esta entrega.
+- Animación de reordenado (FLIP/morph).
 - Persistencia por usuario en backend. Cookie/localStorage por dispositivo es suficiente.
 - Toggle en otras vistas (manage_results, KO, etc.).
 
 ## Tests
 
-- **Unit (Django)**: no requeridos para nueva lógica de backend — no la hay. Verificar que `dashboard.html` sigue renderizando sin errores en los casos: groups con partidos, groups sin partidos, KO. Ya hay tests del dashboard que cubren render básico; añadir una aserción mínima de que `data-group` aparece en el HTML cuando hay partidos.
-- **Manual**: en `?round=groups&matchday=1`, alternar el toggle y comprobar que el orden cambia y persiste tras recargar.
+- **Unit (Django)**: tests existentes verifican que `data-group`, ambos `data-order` y `matches-order.js` aparecen en el render de Grupos, y que ninguno aparece en KO. No se añade lógica nueva en backend.
+- **Manual**: en `?round=groups&matchday=1`, alternar el toggle y comprobar que aparecen los sub-headers correctos en cada modo y que el estado persiste tras recargar.

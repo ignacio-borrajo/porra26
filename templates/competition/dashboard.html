@@ -4,16 +4,18 @@
 <div class="dashboard-grid">
   <section>
     {% include "partials/_round_selector.html" with rounds=rounds active=active_round %}
-    {% include "partials/_matchday_selector.html" %}
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">
+      {% include "partials/_matchday_selector.html" %}
+      {% if active_round == 'groups' and not is_ko_view %}{% if open_matches or live_matches or done_matches %}
+      <div style="margin-left:auto">
+        {% include "partials/_matches_order_toggle.html" %}
+      </div>
+      {% endif %}{% endif %}
+    </div>
 
     {% if is_ko_view %}
       {% include "competition/_ko_canvas.html" with ko_rounds=ko_rounds active_ko_id=active_ko_id my_preds=my_preds %}
     {% else %}
-      {% if active_round == 'groups' %}{% if open_matches or live_matches or done_matches %}
-        <div style="display:flex;justify-content:flex-end">
-          {% include "partials/_matches_order_toggle.html" %}
-        </div>
-      {% endif %}{% endif %}
       {% if open_matches %}
       <h2 class="eyebrow" style="margin-top:24px">ABIERTOS · {{ open_matches|length }}</h2>
       <div class="stagger matches-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
