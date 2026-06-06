@@ -12,6 +12,10 @@ from django.views import View
 
 from accounts.mixins import GestorRequiredMixin
 from accounts.models import AuditLog, User
+from accounts.services.bulk_welcome import (
+    pending_welcome_recipients,
+    send_bulk_welcome_async,
+)
 from accounts.services.password_reset import send_password_reset_email
 from competition.models import Round
 from pot.forms import (
@@ -191,6 +195,56 @@ class PlayerResendInviteView(GestorRequiredMixin, View):
             purpose = "reset"
         send_password_reset_email(user, purpose=purpose, actor=request.user)
         return JsonResponse({"ok": True, "email": user.email, "purpose": purpose})
+
+
+class PlayersBulkWelcomeView(GestorRequiredMixin, View):
+    """Modal de confirmación + disparo del envío masivo de bienvenida.
+
+    El POST lanza el envío en un Thread daemon con throttling (~0.6 s entre
+    correos) para no saturar Resend. Devuelve inmediatamente con un toast;
+    el progreso queda en AuditLog (bulk_welcome_emails_started / _finished).
+    """
+
+    template_name = "pot/_players_bulk_welcome_modal.html"
+
+    def _is_modal(self, request) -> bool:
+        return request.headers.get("X-Modal") == "1"
+
+    def get(self, request):
+        recipients = list(pending_welcome_recipients().values("id", "name", "email"))
+        return render(
+            request,
+            self.template_name,
+            {
+                "recipients": recipients,
+                "count": len(recipients),
+                "modal": self._is_modal(request),
+            },
+        )
+
+    def post(self, request):
+        user_ids = list(pending_welcome_recipients().values_list("id", flat=True))
+        target = reverse("pot:manage_players")
+        if not user_ids:
+            messages.info(request, "No hay jugadores pendientes de activar.")
+            if self._is_modal(request):
+                response = HttpResponse(status=200)
+                response["X-Modal-Redirect"] = target
+                return response
+            return redirect(target)
+
+        send_bulk_welcome_async(user_ids, actor=request.user)
+        n = len(user_ids)
+        messages.success(
+            request,
+            f"Enviando email de bienvenida a {n} jugador{'es' if n != 1 else ''}. "
+            "El envío se reparte en segundos para no saturar el servicio de correo.",
+        )
+        if self._is_modal(request):
+            response = HttpResponse(status=200)
+            response["X-Modal-Redirect"] = target
+            return response
+        return redirect(target)
 
 
 class PasswordRevealView(GestorRequiredMixin, View):

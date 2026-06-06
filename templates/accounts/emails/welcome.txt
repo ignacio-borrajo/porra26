@@ -1,0 +1,10 @@
+¡Bienvenido a La Porra del Jefe!
+
+Tu cuenta de la porra interna del Mundial FIFA 2026 está lista. Pronostica
+los partidos, suma puntos por aciertos y compite por el bote con el resto
+de la empresa.
+
+Activa tu cuenta y establece tu contraseña aquí (el enlace caduca en 7 días):
+{{ reset_url }}
+
+— La Porra del Jefe · Mundial FIFA 2026 · Edición interna EDISA

@@ -6,6 +6,9 @@
   <span class="chip chip-open">{{ active_count }} activos</span>
   <span class="chip">{{ paid_count }}/{{ total_count }} pagado</span>
   <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-ghost" data-modal-url="{% url 'pot:players_bulk_welcome' %}" title="Enviar email de bienvenida a todos los pendientes de activar">
+      {% icon "mail" width=14 %} Enviar bienvenida
+    </button>
     <button class="btn btn-ghost" data-modal-url="{% url 'pot:players_import' %}">
       Importar Excel
     </button>

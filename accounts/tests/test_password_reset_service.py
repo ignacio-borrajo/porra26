@@ -38,8 +38,12 @@ def test_send_welcome_usa_otro_asunto_y_copy(alice):
 
     assert len(mail.outbox) == 1
     msg = mail.outbox[0]
-    assert msg.subject == "Bienvenido a la porra del Mundial"
-    assert "bienvenido" in msg.body.lower() or "te han creado cuenta" in msg.body.lower()
+    assert "Bienvenido" in msg.subject
+    assert "Porra del Jefe" in msg.subject
+    assert "bienvenido" in msg.body.lower()
+    html = msg.alternatives[0][0]
+    assert "Bienvenido a La Porra del Jefe" in html
+    assert "Activar mi cuenta" in html
 
 
 def test_send_usa_password_reset_from_email(alice, settings):
@@ -77,6 +81,7 @@ def test_send_registra_auditlog(alice, gestor):
     assert log.target_id == str(alice.id)
     assert log.payload["purpose"] == "welcome"
     assert "Bienvenido" in log.payload["subject"]
+    assert "Porra del Jefe" in log.payload["subject"]
 
 
 def test_send_rechaza_purpose_invalido(alice):

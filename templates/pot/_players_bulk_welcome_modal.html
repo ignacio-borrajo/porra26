@@ -1,0 +1,46 @@
+{% load icons %}
+<section class="glass pop" style="width:min(560px,100%);border-radius:28px;padding:28px;background:var(--surface-solid)">
+  <header style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:12px">
+    <div>
+      <span class="eyebrow">Envío masivo</span>
+      <h2 class="display" style="margin:6px 0 0;font-size:22px">Emails de bienvenida</h2>
+    </div>
+    <button type="button" data-modal-close class="btn btn-ghost" style="width:38px;height:38px;padding:0;border-radius:12px">{% icon "x" width=14 %}</button>
+  </header>
+
+  {% if count == 0 %}
+  <p style="margin:0 0 18px;color:var(--text-dim);line-height:1.55;font-size:14px">
+    No hay jugadores pendientes de activar. Solo se envía bienvenida a usuarios
+    activos que aún no han entrado nunca al portal.
+  </p>
+  <div style="display:flex;justify-content:flex-end">
+    <button type="button" data-modal-close class="btn btn-ghost">Cerrar</button>
+  </div>
+  {% else %}
+  <p style="margin:0 0 14px;color:var(--text-dim);line-height:1.55;font-size:14px">
+    Se enviará el email de bienvenida (con enlace para establecer contraseña) a
+    <strong style="color:var(--text)">{{ count }} jugador{{ count|pluralize:"es" }}</strong>
+    que todavía no han entrado al portal. El envío se reparte con una pausa
+    entre correos para no saturar el servicio de correo.
+  </p>
+
+  <div style="max-height:220px;overflow:auto;border:1px solid var(--border);border-radius:14px;padding:6px 10px;margin-bottom:18px">
+    {% for r in recipients %}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 4px;border-bottom:1px solid var(--border);font-size:13px;gap:8px">
+      <strong style="color:var(--text);font-weight:600">{{ r.name }}</strong>
+      <span class="mono" style="font-size:11.5px;color:var(--text-faint);text-align:right">{{ r.email }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <form method="post" action="{% url 'pot:players_bulk_welcome' %}">
+    {% csrf_token %}
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button type="button" data-modal-close class="btn btn-ghost">Cancelar</button>
+      <button type="submit" class="btn btn-primary">
+        {% icon "mail" width=14 %} Enviar a {{ count }} jugador{{ count|pluralize:"es" }}
+      </button>
+    </div>
+  </form>
+  {% endif %}
+</section>
