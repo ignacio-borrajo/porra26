@@ -32,6 +32,34 @@ def test_dashboard_shows_matches(client):
 
 
 @pytest.mark.django_db
+def test_dashboard_groups_view_renders_order_toggle_and_data_attrs(client):
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    grp = RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    MatchFactory(round=grp, group="A", kickoff=timezone.now() + timedelta(days=1))
+    r = client.get(reverse("competicion:dashboard") + "?round=groups")
+    body = r.content.decode()
+    assert (
+        'class="chip chip-open"\n          data-order="date"' in body or 'data-order="date"' in body
+    )
+    assert 'data-order="group"' in body
+    assert 'data-group="A"' in body
+    assert "matches-order.js" in body
+
+
+@pytest.mark.django_db
+def test_dashboard_ko_view_hides_order_toggle(client):
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    RoundFactory(id="groups", points=3, label="G", short="G", order=1)
+    RoundFactory(id="r16", points=7, label="Octavos", short="8º", order=2)
+    r = client.get(reverse("competicion:dashboard") + "?round=r16")
+    body = r.content.decode()
+    assert 'data-order="group"' not in body
+    assert "matches-order.js" not in body
+
+
+@pytest.mark.django_db
 def test_predict_post_creates_prediction(client):
     u = UserFactory(must_change_password=False)
     client.force_login(u)
