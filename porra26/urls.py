@@ -25,6 +25,7 @@ urlpatterns = [
     # service worker sea "/" y controle toda la app.
     path("manifest.webmanifest", pwa_views.manifest, name="pwa-manifest"),
     path("service-worker.js", pwa_views.service_worker, name="pwa-sw"),
+    path("offline/", pwa_views.offline, name="pwa-offline"),
     path("", include(("accounts.urls", "accounts"), namespace="accounts")),
     path("competicion/", include(("competition.urls", "competicion"), namespace="competicion")),
     path("stats/", include(("stats.urls", "stats"), namespace="stats")),
