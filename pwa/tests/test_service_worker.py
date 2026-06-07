@@ -37,3 +37,23 @@ def test_sw_includes_version(client):
     assert "const VERSION" in body
     assert 'const VERSION = ""' not in body
     assert "const VERSION = ''" not in body
+
+
+@pytest.mark.django_db
+def test_sw_precaches_offline_page(client):
+    """El install debe meter /offline/ en cache para poder servirla cuando el
+    origen esté caído (redeploy de Railway). Sin esto el fallback no existe."""
+    response = client.get("/service-worker.js")
+    body = response.content.decode("utf-8")
+    assert "/offline/" in body
+    assert "cache.add" in body or "cache.addAll" in body
+
+
+@pytest.mark.django_db
+def test_sw_falls_back_on_navigation_5xx(client):
+    """El handler de fetch debe distinguir navegaciones (mode === 'navigate')
+    y servir la página cacheada cuando la red falla o el server da 5xx."""
+    response = client.get("/service-worker.js")
+    body = response.content.decode("utf-8")
+    assert "'navigate'" in body or '"navigate"' in body
+    assert ">= 500" in body
