@@ -1,4 +1,7 @@
+import hashlib
+import logging
 import os
+import sys
 
 import dj_database_url
 
@@ -7,6 +10,34 @@ from .base import MIDDLEWARE
 
 DEBUG = False
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+
+# Soporte para rotar SECRET_KEY sin desloguear a todos los usuarios. Django
+# verifica firmas de cookies de sesión contra `SECRET_KEY` primero y, si
+# falla, contra cada entrada de `SECRET_KEY_FALLBACKS`. Para rotar:
+#   1. Mueve el SECRET_KEY actual a DJANGO_SECRET_KEY_FALLBACK.
+#   2. Pon uno nuevo en DJANGO_SECRET_KEY.
+#   3. Tras 30 días (vida útil máxima de las cookies de sesión) borra el
+#      fallback.
+_fallback = os.environ.get("DJANGO_SECRET_KEY_FALLBACK", "").strip()
+SECRET_KEY_FALLBACKS = [_fallback] if _fallback else []
+
+
+# Diagnóstico: imprime un fingerprint del SECRET_KEY (SHA-256 truncado, no la
+# clave) al arranque del proceso. Si en dos deploys consecutivos el
+# fingerprint cambia sin que hayamos rotado adrede, Railway está mutando la
+# variable: TODA cookie de sesión queda inválida y los usuarios se deslogean.
+def _secret_fingerprint(key: str) -> str:
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:12]
+
+
+_fp_current = _secret_fingerprint(SECRET_KEY)
+_fp_fallback = _secret_fingerprint(_fallback) if _fallback else "—"
+print(
+    f"[boot] SECRET_KEY fingerprint={_fp_current} fallback={_fp_fallback}",
+    file=sys.stderr,
+    flush=True,
+)
+logging.getLogger("django").info("SECRET_KEY fingerprint=%s fallback=%s", _fp_current, _fp_fallback)
 
 ALLOWED_HOSTS = [
     h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if h.strip()
