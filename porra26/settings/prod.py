@@ -21,6 +21,7 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 _fallback = os.environ.get("DJANGO_SECRET_KEY_FALLBACK", "").strip()
 SECRET_KEY_FALLBACKS = [_fallback] if _fallback else []
 
+
 # Diagnóstico: imprime un fingerprint del SECRET_KEY (SHA-256 truncado, no la
 # clave) al arranque del proceso. Si en dos deploys consecutivos el
 # fingerprint cambia sin que hayamos rotado adrede, Railway está mutando la
@@ -36,9 +37,7 @@ print(
     file=sys.stderr,
     flush=True,
 )
-logging.getLogger("django").info(
-    "SECRET_KEY fingerprint=%s fallback=%s", _fp_current, _fp_fallback
-)
+logging.getLogger("django").info("SECRET_KEY fingerprint=%s fallback=%s", _fp_current, _fp_fallback)
 
 ALLOWED_HOSTS = [
     h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if h.strip()
