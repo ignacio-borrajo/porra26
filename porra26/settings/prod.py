@@ -102,3 +102,37 @@ CACHES = {
 # SMTP saliente y TEAMS_DESTINATION_EMAIL viven en base.py (leídos del
 # entorno) para que el management command de cierre por email funcione en
 # todos los entornos. Aquí no hace falta nada específico de producción.
+
+# Logging: sin esta config, el LOGGING por defecto de Django filtra los logs
+# INFO/WARNING de la aplicación cuando DEBUG=False (el handler de consola por
+# defecto tiene un filtro `require_debug_true`). Resultado: cualquier
+# `logger.info(...)` desde nuestro código se descarta y nunca llega a stderr,
+# que es lo que Railway captura como "Deploy Logs". Esta configuración mínima
+# manda INFO+ del root a stderr para que nuestros logs sean visibles, y
+# silencia el SQL de django.db.backends (que es ruido a este nivel).
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "concise": {
+            "format": "[{asctime}] {levelname} {name}: {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "stderr": {
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stderr",
+            "formatter": "concise",
+        },
+    },
+    "root": {
+        "handlers": ["stderr"],
+        "level": "INFO",
+    },
+    "loggers": {
+        # django.db.backends emite cada SQL a DEBUG; lo dejamos en WARNING
+        # para no inundar los logs de Railway con cada query.
+        "django.db.backends": {"level": "WARNING", "propagate": True},
+    },
+}
