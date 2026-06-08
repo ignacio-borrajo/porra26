@@ -66,15 +66,33 @@ class LoginView(View):
         sessionid = request.COOKIES.get("sessionid", "")
         # `list(request.session.keys())` fuerza la carga lazy de la sesión.
         session_keys = sorted(request.session.keys()) if request.session.session_key else []
+        # Para distinguir 'row vacío en DB' (algo llamó a session.create()) de
+        # 'decode falla' (firma inválida → Django devuelve {} pero el row tiene
+        # bytes), miramos el tamaño bruto del session_data. Decode falla emite
+        # también un warning django.security.SuspiciousSession en otra línea.
+        raw_len = -1
+        if request.session.session_key:
+            from django.contrib.sessions.models import Session
+
+            try:
+                raw_len = len(
+                    Session.objects.values_list("session_data", flat=True).get(
+                        session_key=request.session.session_key
+                    )
+                )
+            except Session.DoesNotExist:
+                raw_len = -2
         logger.info(
             "login.get cookie_present=%s cookie_prefix=%s session_loaded=%s"
-            " authenticated=%s session_keys=%s has_auth_id=%s next=%s ua=%s",
+            " authenticated=%s session_keys=%s has_auth_id=%s raw_session_data_len=%s"
+            " next=%s ua=%s",
             bool(sessionid),
             (sessionid[:8] + "…") if sessionid else "",
             request.session.session_key is not None,
             request.user.is_authenticated,
             ",".join(session_keys) or "—",
             "_auth_user_id" in session_keys,
+            raw_len,
             request.GET.get("next", ""),
             request.META.get("HTTP_USER_AGENT", "")[:80],
         )
