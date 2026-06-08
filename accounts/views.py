@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import messages
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.forms import SetPasswordForm
@@ -24,6 +26,8 @@ from .services.password_reset import (
 from .services.sessions import parse_device_label, revoke_sessions
 from .validators import validate_email_domain
 
+logger = logging.getLogger(__name__)
+
 
 class LoginView(View):
     template_name = "accounts/login.html"
@@ -46,6 +50,23 @@ class LoginView(View):
         }
 
     def get(self, request):
+        # Diagnóstico temporal del bug "logout en redeploy": logamos cada hit
+        # a la página de login con el estado que ve Django, para distinguir:
+        #   - cookie no llega (browser/proxy se la come)
+        #   - cookie llega pero Django no encuentra la Session row (DB)
+        #   - cookie llega, sesión cargada, user anónimo (session_auth_hash
+        #     mismatch tras un cambio de SECRET_KEY o de password)
+        # `next` indica que vienen de un LoginRequiredMixin (no entrada directa).
+        sessionid = request.COOKIES.get("sessionid", "")
+        logger.info(
+            "login.get cookie_present=%s cookie_prefix=%s session_loaded=%s authenticated=%s next=%s ua=%s",
+            bool(sessionid),
+            (sessionid[:8] + "…") if sessionid else "",
+            request.session.session_key is not None,
+            request.user.is_authenticated,
+            request.GET.get("next", ""),
+            request.META.get("HTTP_USER_AGENT", "")[:80],
+        )
         if request.user.is_authenticated:
             return redirect("competicion:dashboard")
         return render(request, self.template_name, {"form": LoginForm(), **self._info_context()})
