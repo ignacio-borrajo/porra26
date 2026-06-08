@@ -59,6 +59,7 @@ def test_login_get_emits_diagnostic_log(client, caplog):
         "authenticated=",
         "session_keys=",
         "has_auth_id=",
+        "raw_session_data_len=",
     ):
         assert field in msg, f"falta '{field}' en el log diagnóstico"
 
