@@ -53,9 +53,14 @@ def test_login_get_emits_diagnostic_log(client, caplog):
     diag = [rec for rec in caplog.records if "login.get" in rec.getMessage()]
     assert diag, "Se esperaba un log 'login.get ...' por cada GET a /"
     msg = diag[0].getMessage()
-    assert "cookie_present=" in msg
-    assert "session_loaded=" in msg
-    assert "authenticated=" in msg
+    for field in (
+        "cookie_present=",
+        "session_loaded=",
+        "authenticated=",
+        "session_keys=",
+        "has_auth_id=",
+    ):
+        assert field in msg, f"falta '{field}' en el log diagnóstico"
 
 
 @pytest.mark.django_db

@@ -50,20 +50,31 @@ class LoginView(View):
         }
 
     def get(self, request):
-        # Diagnóstico temporal del bug "logout en redeploy": logamos cada hit
-        # a la página de login con el estado que ve Django, para distinguir:
-        #   - cookie no llega (browser/proxy se la come)
-        #   - cookie llega pero Django no encuentra la Session row (DB)
-        #   - cookie llega, sesión cargada, user anónimo (session_auth_hash
-        #     mismatch tras un cambio de SECRET_KEY o de password)
-        # `next` indica que vienen de un LoginRequiredMixin (no entrada directa).
+        # Diagnóstico del bug "logout en redeploy". Con la última iteración
+        # (PR #77) confirmamos que la cookie llega, Django carga la Session
+        # row, pero `authenticated=False`. Esto puede deberse a tres causas
+        # internas dentro de django.contrib.auth.get_user, y los keys de la
+        # sesión las distinguen:
+        #   - _auth_user_id ausente → la sesión existe pero nunca tuvo login
+        #     o algo la limpió sin borrar la row
+        #   - _auth_user_id presente, _auth_user_hash ausente → sesión vieja
+        #     sin firma (rara, anterior a Django 1.7)
+        #   - _auth_user_id y _auth_user_hash presentes → backend no está en
+        #     AUTHENTICATION_BACKENDS, o backend.get_user(id) devuelve None
+        #     (usuario borrado o is_active=False), o session_auth_hash no
+        #     coincide (cambio de SECRET_KEY o password)
         sessionid = request.COOKIES.get("sessionid", "")
+        # `list(request.session.keys())` fuerza la carga lazy de la sesión.
+        session_keys = sorted(request.session.keys()) if request.session.session_key else []
         logger.info(
-            "login.get cookie_present=%s cookie_prefix=%s session_loaded=%s authenticated=%s next=%s ua=%s",
+            "login.get cookie_present=%s cookie_prefix=%s session_loaded=%s"
+            " authenticated=%s session_keys=%s has_auth_id=%s next=%s ua=%s",
             bool(sessionid),
             (sessionid[:8] + "…") if sessionid else "",
             request.session.session_key is not None,
             request.user.is_authenticated,
+            ",".join(session_keys) or "—",
+            "_auth_user_id" in session_keys,
             request.GET.get("next", ""),
             request.META.get("HTTP_USER_AGENT", "")[:80],
         )
