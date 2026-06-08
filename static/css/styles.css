@@ -2707,6 +2707,12 @@ html.fv .team-profile-halo {
   margin: 6px 0 4px;
 }
 .historico-export { text-decoration: none; }
+.historico-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-dim);
+  max-width: 640px;
+}
 
 .history-legend {
   display: flex;
@@ -2727,6 +2733,8 @@ html.fv .team-profile-halo {
 .legend-dot--exact   { background: oklch(from var(--c-lime)   l c h / 0.55); }
 .legend-dot--partial { background: oklch(from var(--c-yellow) l c h / 0.55); }
 .legend-dot--miss    { background: var(--border-hi); }
+.legend-dot--pending { background: oklch(from var(--accent) l c h / 0.35); }
+.legend-dot--empty   { background: transparent; border: 1px dashed var(--border-hi); }
 
 .history-wrap {
   overflow: auto;
@@ -2793,6 +2801,11 @@ html.fv .team-profile-halo {
   font-weight: 700;
 }
 .history-matrix .hm-cell--miss { color: var(--text-faint); }
+.history-matrix .hm-cell--pending {
+  background: oklch(from var(--accent) l c h / 0.10);
+  color: var(--text-dim);
+  font-style: italic;
+}
 .history-matrix .hm-cell--empty { color: transparent; }
 .history-matrix .hm-player {
   font-family: var(--font-sans);

@@ -5,6 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.tests.factories import UserFactory
+from competition.models import Match
 from competition.tests.factories import (
     MatchFactory,
     PredictionFactory,
@@ -55,7 +56,7 @@ def test_historico_includes_export_link(client):
 
 
 @pytest.mark.django_db
-def test_historico_omits_unfinished_matches(client):
+def test_historico_omits_matches_with_betting_open(client):
     grp = RoundFactory(id="groups", points=3, partial_points=1, short="G", order=1)
     now = timezone.now()
     finished = MatchFactory(
@@ -80,3 +81,25 @@ def test_historico_omits_unfinished_matches(client):
     assert "AAA" in body and "BBB" in body
     assert "CCC" not in body and "DDD" not in body
     _ = finished, open_match
+
+
+@pytest.mark.django_db
+def test_historico_includes_live_matches_without_result(client):
+    grp = RoundFactory(id="groups", points=3, partial_points=1, short="G", order=1)
+    now = timezone.now()
+    MatchFactory(
+        round=grp,
+        home=TeamFactory(code="ESP", name="España"),
+        away=TeamFactory(code="FRA", name="Francia"),
+        kickoff=now - timedelta(minutes=10),
+    )
+    ana = UserFactory(name="Ana López", email="ana@edisa.com")
+    PredictionFactory(player=ana, match=Match.objects.first(), home=1, away=2, earned=None)
+
+    client.force_login(ana)
+    r = client.get(reverse("stats:historico"))
+    body = r.content.decode()
+    assert "ESP" in body and "FRA" in body
+    assert "1-2" in body  # pronóstico visible
+    assert "hm-cell--pending" in body  # marca de pendiente
+    assert "—" in body  # placeholder de resultado pendiente

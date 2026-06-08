@@ -13,6 +13,7 @@ _HEADER_FONT = Font(bold=True, color="FFFFFFFF")
 _RESULT_FONT = Font(italic=True, bold=True)
 _EXACT_FILL = PatternFill("solid", fgColor="FF22C55E")
 _PARTIAL_FILL = PatternFill("solid", fgColor="FFF59E0B")
+_PENDING_FONT = Font(italic=True, color="FF6B7280")
 _HIT_FONT = Font(color="FFFFFFFF", bold=True)
 _TOTAL_FONT = Font(bold=True)
 _CENTER = Alignment(horizontal="center", vertical="center")
@@ -38,7 +39,8 @@ def render_xlsx(matrix: HistoryMatrix) -> bytes:
         cell.alignment = _CENTER
 
     for idx, m in enumerate(matrix.matches, start=2):
-        cell = ws.cell(row=2, column=idx, value=f"{m.result_home}-{m.result_away}")
+        value = f"{m.result_home}-{m.result_away}" if m.resolved else "—"
+        cell = ws.cell(row=2, column=idx, value=value)
         cell.font = _RESULT_FONT
         cell.alignment = _CENTER
 
@@ -59,6 +61,8 @@ def render_xlsx(matrix: HistoryMatrix) -> bytes:
             elif cell_data.state == "partial":
                 cell.fill = _PARTIAL_FILL
                 cell.font = _HIT_FONT
+            elif cell_data.state == "pending":
+                cell.font = _PENDING_FONT
         total_cell = ws.cell(row=row_idx, column=last_col, value=matrix.totals.get(p.id, 0))
         total_cell.font = _TOTAL_FONT
         total_cell.alignment = _RIGHT
