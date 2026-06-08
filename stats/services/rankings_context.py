@@ -39,11 +39,17 @@ def build_general_context(
     scope_max_pts = 1
     scope_label = None
     if scope is not None:
-        scope_rows = standings(
-            round_id=scope.round_id,
-            matchday=scope.matchday,
-            player_ids=player_ids_list,
-        )
+        if scope.round_ids is not None:
+            scope_rows = standings(
+                round_ids=scope.round_ids,
+                player_ids=player_ids_list,
+            )
+        else:
+            scope_rows = standings(
+                round_id=scope.round_id,
+                matchday=scope.matchday,
+                player_ids=player_ids_list,
+            )
         scope_has_points = bool(scope_rows) and scope_rows[0].pts > 0
         scope_my_row = next((r for r in scope_rows if r.player_id == user.id), None)
         scope_my_rank = scope_my_row.position if scope_my_row and scope_has_points else None
