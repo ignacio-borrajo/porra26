@@ -5,6 +5,9 @@
   <div>
     <div class="eyebrow">MUNDIAL 2026</div>
     <h1 class="display historico-title">Histórico de pronósticos</h1>
+    <p class="historico-subtitle">
+      Los pronósticos se muestran en cuanto se cierran las apuestas de cada partido (al pitido inicial). El resultado oficial aparece después, cuando el gestor lo introduce.
+    </p>
   </div>
   <a class="chip chip-open historico-export" href="{% url 'stats:historico_export' %}" download>
     Exportar a Excel
@@ -14,7 +17,9 @@
 <div class="history-legend rise">
   <span><i class="legend-dot legend-dot--exact"></i> Marcador exacto</span>
   <span><i class="legend-dot legend-dot--partial"></i> Acierto 1·X·2</span>
-  <span><i class="legend-dot legend-dot--miss"></i> Fallo o sin pronóstico</span>
+  <span><i class="legend-dot legend-dot--miss"></i> Fallo</span>
+  <span><i class="legend-dot legend-dot--pending"></i> Pendiente de resolver</span>
+  <span><i class="legend-dot legend-dot--empty"></i> Sin pronóstico</span>
 </div>
 
 {% if matrix.matches and matrix.players %}
@@ -33,7 +38,9 @@
       <tr>
         <th class="hm-sticky-col hm-sticky-row-2 hm-corner"></th>
         {% for m in matrix.matches %}
-          <th class="hm-sticky-row-2 hm-result">{{ m.result_home }}-{{ m.result_away }}</th>
+          <th class="hm-sticky-row-2 hm-result">
+            {% if m.resolved %}{{ m.result_home }}-{{ m.result_away }}{% else %}—{% endif %}
+          </th>
         {% endfor %}
         <th class="hm-sticky-col-right hm-sticky-row-2 hm-corner"></th>
       </tr>
@@ -57,7 +64,7 @@
 </div>
 {% else %}
 <div class="glass rise" style="padding:24px;text-align:center;color:var(--text-faint)">
-  Todavía no hay partidos finalizados. El histórico aparecerá en cuanto se resuelva el primero.
+  Todavía no hay pronósticos en el histórico. Aparecerán en cuanto se cierren las apuestas del primer partido.
 </div>
 {% endif %}
 {% endblock %}

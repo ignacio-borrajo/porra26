@@ -1,17 +1,24 @@
 """Construye la matriz jugador × partido para la página de Histórico.
 
-Solo entran partidos finalizados (`finished_at` no nulo) en orden cronológico.
+Entran los partidos cuyo plazo de apuestas ya ha cerrado: tanto los finalizados
+(con resultado oficial) como los que están en juego o a la espera de resultado
+(`kickoff <= now`). Los partidos abiertos (apuestas activas) y los KO sin
+equipos asignados quedan fuera. El orden es cronológico (kickoff ascendente).
+
 Los jugadores van en el mismo orden que la clasificación general (gestores
 puros excluidos). Cada celda es el pronóstico del jugador para ese partido,
-etiquetado por estado de acierto:
+etiquetado por estado:
 
 - ``exact``   — marcador exacto (puntos == ``exact_points_applied``).
 - ``partial`` — acierto 1·X·2 (``earned > 0`` y no exacto).
 - ``miss``    — pronosticó pero falló (``earned == 0``).
+- ``pending`` — pronosticó y el partido aún no tiene resultado oficial.
 - ``empty``   — no apostó.
 """
 
 from dataclasses import dataclass
+
+from django.utils import timezone
 
 from competition.models import Match, Prediction
 from competition.services.standings import standings
@@ -26,8 +33,9 @@ class HistoryMatch:
     away_code: str
     away_name: str
     away_flag: str
-    result_home: int
-    result_away: int
+    result_home: int | None
+    result_away: int | None
+    resolved: bool
 
 
 @dataclass(frozen=True)
@@ -40,7 +48,7 @@ class HistoryPlayer:
 
 @dataclass(frozen=True)
 class HistoryCell:
-    state: str  # "exact" | "partial" | "miss" | "empty"
+    state: str  # "exact" | "partial" | "miss" | "pending" | "empty"
     home: int | None
     away: int | None
 
@@ -57,8 +65,9 @@ _EMPTY = HistoryCell(state="empty", home=None, away=None)
 
 
 def build_matrix() -> HistoryMatrix:
+    now = timezone.now()
     matches_qs = (
-        Match.objects.filter(finished_at__isnull=False)
+        Match.objects.filter(kickoff__lte=now, home__isnull=False, away__isnull=False)
         .select_related("home", "away")
         .order_by("kickoff", "id")
     )
@@ -73,10 +82,12 @@ def build_matrix() -> HistoryMatrix:
             away_flag=m.away.flag,
             result_home=m.result_home,
             result_away=m.result_away,
+            resolved=m.finished_at is not None,
         )
         for m in matches_qs
     ]
     match_ids = [m.id for m in matches]
+    resolved_ids = {m.id for m in matches if m.resolved}
     exact_by_match = {m.id: m.exact_points_applied for m in matches_qs}
 
     rows = standings()
@@ -98,15 +109,18 @@ def build_matrix() -> HistoryMatrix:
             match_id__in=match_ids, player_id__in=player_ids
         ).values_list("player_id", "match_id", "home", "away", "earned")
         for player_id, match_id, home, away, earned in preds:
-            exact_pts = exact_by_match.get(match_id)
-            if earned is None:
-                state = "empty"
-            elif earned == exact_pts:
-                state = "exact"
-            elif earned > 0:
-                state = "partial"
+            if match_id not in resolved_ids:
+                state = "pending"
             else:
-                state = "miss"
+                exact_pts = exact_by_match.get(match_id)
+                if earned is None:
+                    state = "pending"
+                elif earned == exact_pts:
+                    state = "exact"
+                elif earned > 0:
+                    state = "partial"
+                else:
+                    state = "miss"
             cells[player_id][match_id] = HistoryCell(state=state, home=home, away=away)
 
     for pid in player_ids:

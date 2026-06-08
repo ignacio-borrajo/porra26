@@ -14,7 +14,7 @@ from stats.services.history_matrix import build_matrix
 
 
 @pytest.mark.django_db
-def test_only_finished_matches_are_included():
+def test_only_matches_with_closed_betting_are_included():
     grp = RoundFactory(id="groups", points=3, partial_points=1, short="G", order=1)
     now = timezone.now()
     finished = MatchFactory(
@@ -42,8 +42,78 @@ def test_only_finished_matches_are_included():
     matrix = build_matrix()
     match_ids = [m.id for m in matrix.matches]
     assert finished.id in match_ids
+    assert live_match.id in match_ids
     assert open_match.id not in match_ids
-    assert live_match.id not in match_ids
+
+
+@pytest.mark.django_db
+def test_match_without_teams_is_excluded_even_if_kickoff_passed():
+    grp = RoundFactory(id="r16", points=5, partial_points=1, short="16", order=2)
+    now = timezone.now()
+    MatchFactory(
+        round=grp,
+        home=None,
+        away=None,
+        kickoff=now - timedelta(minutes=5),
+        home_slot="W-G1",
+        away_slot="W-G2",
+    )
+    matrix = build_matrix()
+    assert matrix.matches == []
+
+
+@pytest.mark.django_db
+def test_live_match_has_no_result_and_is_marked_unresolved():
+    grp = RoundFactory(id="groups", points=3, partial_points=1, short="G", order=1)
+    now = timezone.now()
+    MatchFactory(
+        round=grp,
+        home=TeamFactory(code="ESP"),
+        away=TeamFactory(code="FRA"),
+        kickoff=now - timedelta(minutes=20),
+    )
+    matrix = build_matrix()
+    m = matrix.matches[0]
+    assert m.resolved is False
+    assert m.result_home is None
+    assert m.result_away is None
+
+
+@pytest.mark.django_db
+def test_pending_cell_for_prediction_on_unresolved_match():
+    grp = RoundFactory(id="groups", points=3, partial_points=1, short="G", order=1)
+    now = timezone.now()
+    m = MatchFactory(
+        round=grp,
+        home=TeamFactory(),
+        away=TeamFactory(),
+        kickoff=now - timedelta(minutes=10),
+    )
+    p = UserFactory(name="P", email="p@edisa.com")
+    PredictionFactory(player=p, match=m, home=1, away=2, earned=None)
+
+    matrix = build_matrix()
+    cell = matrix.cells[p.id][m.id]
+    assert cell.state == "pending"
+    assert cell.home == 1 and cell.away == 2
+
+
+@pytest.mark.django_db
+def test_empty_cell_for_unresolved_match_when_no_prediction():
+    grp = RoundFactory(id="groups", points=3, partial_points=1, short="G", order=1)
+    now = timezone.now()
+    m = MatchFactory(
+        round=grp,
+        home=TeamFactory(),
+        away=TeamFactory(),
+        kickoff=now - timedelta(minutes=10),
+    )
+    p = UserFactory(name="P", email="p@edisa.com")
+
+    matrix = build_matrix()
+    cell = matrix.cells[p.id][m.id]
+    assert cell.state == "empty"
+    assert cell.home is None and cell.away is None
 
 
 @pytest.mark.django_db
@@ -258,3 +328,4 @@ def test_match_carries_team_codes_and_result():
     assert m.away_flag == "🇫🇷"
     assert m.result_home == 2
     assert m.result_away == 1
+    assert m.resolved is True
