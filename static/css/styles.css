@@ -10,7 +10,19 @@
 /* Polyfill de banderas para Windows (Edge/Chrome): Segoe UI Emoji no
    renderiza los pares "regional indicator" como bandera. Cargamos una
    webfont con SOLO los glifos de bandera y unicode-range restringido,
-   así no afecta al resto del texto. */
+   así no afecta al resto del texto.
+
+   IMPORTANTE: 'Apple Color Emoji' tiene que ir ANTES de
+   'Twemoji Country Flags' en las pilas --font-*. Si Safari (Mac/iOS)
+   pinta la bandera con el COLR/CPAL de Twemoji, deja el estado de color
+   "sucio" y los caracteres siguientes en la misma línea (nombre del
+   equipo, ":" del marcador, número del input) heredan el color
+   dominante de la paleta de la bandera. Forzando AppleColorEmoji en
+   Mac/iOS (no instalado en otras plataformas, por lo que el navegador
+   lo salta), Twemoji solo se usa en Windows como fallback real y el
+   bug desaparece. Segoe UI Emoji no se lista: tiene los regional
+   indicators sueltos pero sin la ligadura de bandera, así que si
+   ganara a Twemoji en Windows volveríamos a ver "ES" en vez de 🇪🇸. */
 @font-face {
   font-family: 'Twemoji Country Flags';
   unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067,
@@ -34,9 +46,9 @@
   --accent: var(--c-blue);
   --accent-2: var(--c-cyan);
 
-  --font-display: 'Twemoji Country Flags', 'Sora', system-ui, sans-serif;
-  --font-sans: 'Twemoji Country Flags', 'Inter', system-ui, sans-serif;
-  --font-mono: 'Twemoji Country Flags', 'Geist Mono', ui-monospace, monospace;
+  --font-display: 'Sora', system-ui, sans-serif, 'Apple Color Emoji', 'Twemoji Country Flags';
+  --font-sans: 'Inter', system-ui, sans-serif, 'Apple Color Emoji', 'Twemoji Country Flags';
+  --font-mono: 'Geist Mono', ui-monospace, monospace, 'Apple Color Emoji', 'Twemoji Country Flags';
 
   --r-sm: 10px;
   --r-md: 16px;
