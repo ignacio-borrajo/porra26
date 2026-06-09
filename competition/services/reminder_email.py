@@ -77,13 +77,17 @@ def _build_html(match: Match, kind: str, pending: list[User], now) -> str:
     remaining = _remaining_phrase(match, kind, now)
     names_str, overflow = _format_names(pending)
     tail = f" … y {overflow} más." if overflow else ""
+    # Outlook y Teams colapsan los márgenes por defecto de <p>; los forzamos
+    # inline para que los párrafos respiren al renderizarse.
+    p_style = "margin: 0 0 18px 0; line-height: 1.5;"
+    p_last = "margin: 0; line-height: 1.5;"
     return (
-        f"<p>⏰ <b>{match.home.name} vs {match.away.name}</b> arranca a las "
+        f'<p style="{p_style}">⏰ <b>{match.home.name} vs {match.away.name}</b> arranca a las '
         f"<b>{kickoff_local:%H:%M}</b>.</p>\n"
-        f"<p>Faltan <b>{remaining}</b> y quedan <b>{len(pending)} jugadores</b> "
-        f"sin apostar:</p>\n"
-        f"<p>{names_str}{tail}</p>\n"
-        f'<p><a href="{COMPETICION_URL}">Ir a apostar →</a></p>'
+        f'<p style="{p_style}">Faltan <b>{remaining}</b> y quedan '
+        f"<b>{len(pending)} jugadores</b> sin apostar:</p>\n"
+        f'<p style="{p_style}">{names_str}{tail}</p>\n'
+        f'<p style="{p_last}"><a href="{COMPETICION_URL}">Ir a apostar →</a></p>'
     )
 
 
