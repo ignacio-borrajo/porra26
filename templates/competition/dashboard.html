@@ -47,6 +47,20 @@
 {% if not is_ko_view %}
 <script type="module" src="{% static 'js/matches-order.js' %}"></script>
 {% endif %}
+{% if has_live_matches %}
+<script id="live-autorefresh" type="module">
+  // Recarga la página cada 60s cuando hay partidos en juego para que el
+  // marcador parcial y la clasificación live se vean al vuelo. Pausa si el
+  // usuario tiene un modal abierto o la pestaña está oculta para no
+  // interrumpir mientras está apostando ni gastar recursos en background.
+  const INTERVAL_MS = 60_000;
+  setInterval(() => {
+    if (document.hidden) return;
+    if (document.querySelector(".ovl")) return;
+    window.location.reload();
+  }, INTERVAL_MS);
+</script>
+{% endif %}
 {% if first_announcement_id or show_team_profile_modal %}
 <script type="module">
   import { openModal } from "{% static 'js/modal.js' %}";

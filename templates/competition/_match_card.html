@@ -83,6 +83,10 @@
         <span class="score-bubble">{{ match.result_home }}</span>
         <span class="score-sep">:</span>
         <span class="score-bubble">{{ match.result_away }}</span>
+      {% elif st == 'live' and match.live_score %}
+        <span class="score-bubble">{{ match.live_score.home_score }}</span>
+        <span class="score-sep live-colon">:</span>
+        <span class="score-bubble">{{ match.live_score.away_score }}</span>
       {% else %}
         <span class="match-vs display">VS</span>
       {% endif %}

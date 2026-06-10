@@ -42,12 +42,17 @@ def _live_points_for(pred: Prediction, ls: LiveScore, round_) -> int:
     return 0
 
 
-def _live_deltas(player_ids: Iterable[int] | None = None) -> dict[int, int]:
+def _live_deltas(
+    player_ids: Iterable[int] | None = None,
+    round_id: str | None = None,
+    matchday: int | None = None,
+    round_ids: Iterable[str] | None = None,
+) -> dict[int, int]:
     """Suma puntos hipotéticos por jugador para partidos con LiveScore.
 
     Solo considera partidos **sin resolver** (sin `result_home`/`result_away`)
     para no duplicar con `standings()`, que ya cuenta los resueltos vía
-    `Prediction.earned`.
+    `Prediction.earned`. Acepta los mismos scope-args que `standings()`.
     """
     qs = Prediction.objects.filter(
         match__live_score__isnull=False,
@@ -56,6 +61,12 @@ def _live_deltas(player_ids: Iterable[int] | None = None) -> dict[int, int]:
         player__is_active=True,
         player__is_jugador=True,
     ).select_related("match", "match__round", "match__live_score")
+    if round_id is not None:
+        qs = qs.filter(match__round_id=round_id)
+    if round_ids is not None:
+        qs = qs.filter(match__round_id__in=list(round_ids))
+    if matchday is not None:
+        qs = qs.filter(match__matchday=matchday)
     if player_ids is not None:
         qs = qs.filter(player_id__in=list(player_ids))
 
@@ -68,15 +79,35 @@ def _live_deltas(player_ids: Iterable[int] | None = None) -> dict[int, int]:
     return deltas
 
 
-def live_standings(player_ids: Iterable[int] | None = None) -> list[LiveStandingRow]:
+def live_standings(
+    round_id: str | None = None,
+    matchday: int | None = None,
+    player_ids: Iterable[int] | None = None,
+    *,
+    round_ids: Iterable[str] | None = None,
+) -> list[LiveStandingRow]:
     """Clasificación general con `pts` (oficial) y `live_pts` (oficial + parciales).
 
     Reordenado por `live_pts`, así el podio "en directo" refleja el estado
     actual de los partidos. Si no hay ningún `LiveScore`, `live_pts == pts`
     y el orden es idéntico al de `standings()`.
+
+    Acepta los mismos scope-args que `standings()` (`round_id`, `matchday`,
+    `round_ids`, `player_ids`): el filtrado se aplica tanto a los puntos
+    congelados como a los deltas en directo.
     """
-    base = standings(player_ids=player_ids)
-    deltas = _live_deltas(player_ids)
+    base = standings(
+        round_id=round_id,
+        matchday=matchday,
+        player_ids=player_ids,
+        round_ids=round_ids,
+    )
+    deltas = _live_deltas(
+        player_ids=player_ids,
+        round_id=round_id,
+        matchday=matchday,
+        round_ids=round_ids,
+    )
 
     rows = [
         LiveStandingRow(**{**row.__dict__, "live_pts": row.pts + deltas.get(row.player_id, 0)})
