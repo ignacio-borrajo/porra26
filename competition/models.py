@@ -50,6 +50,7 @@ class Match(models.Model):
     home_slot = models.CharField(max_length=12, blank=True)
     away_slot = models.CharField(max_length=12, blank=True)
     bracket_code = models.CharField(max_length=12, blank=True, null=True, unique=True)
+    external_id = models.CharField(max_length=64, blank=True, null=True, unique=True)
     kickoff = models.DateTimeField()
     result_home = models.PositiveSmallIntegerField(null=True, blank=True)
     result_away = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -137,6 +138,52 @@ class BetsClosingReport(models.Model):
 
     def __str__(self):
         return f"ClosingReport(match={self.match_id}, sent={self.sent_at is not None})"
+
+
+class LiveScore(models.Model):
+    """Marcador parcial de un partido en juego.
+
+    Espejo de lo que reporta el sports API externo. NO sustituye a
+    `Match.result_home`/`result_away`, que son el resultado oficial que solo
+    fija el gestor y congelan los puntos. Cuando el gestor introduce el
+    oficial, este registro puede quedarse o borrarse — es irrelevante.
+    """
+
+    PERIOD_PRE = "PRE"
+    PERIOD_FIRST_HALF = "1H"
+    PERIOD_HALFTIME = "HT"
+    PERIOD_SECOND_HALF = "2H"
+    PERIOD_EXTRA_TIME = "ET"
+    PERIOD_PENALTIES = "PEN"
+    PERIOD_FULL_TIME = "FT"
+    PERIOD_CHOICES = [
+        (PERIOD_PRE, "Antes del saque"),
+        (PERIOD_FIRST_HALF, "1ª parte"),
+        (PERIOD_HALFTIME, "Descanso"),
+        (PERIOD_SECOND_HALF, "2ª parte"),
+        (PERIOD_EXTRA_TIME, "Prórroga"),
+        (PERIOD_PENALTIES, "Penaltis"),
+        (PERIOD_FULL_TIME, "Final"),
+    ]
+
+    match = models.OneToOneField(
+        Match,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="live_score",
+    )
+    home_score = models.PositiveSmallIntegerField(default=0)
+    away_score = models.PositiveSmallIntegerField(default=0)
+    minute = models.PositiveSmallIntegerField(null=True, blank=True)
+    period = models.CharField(max_length=4, choices=PERIOD_CHOICES, default=PERIOD_PRE)
+    source = models.CharField(max_length=40, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["updated_at"])]
+
+    def __str__(self):
+        return f"LiveScore(match={self.match_id}, {self.home_score}-{self.away_score}, {self.period})"
 
 
 class BetsReminderLog(models.Model):

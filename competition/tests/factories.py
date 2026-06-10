@@ -39,6 +39,7 @@ class MatchFactory(factory.django.DjangoModelFactory):
     home = factory.SubFactory(TeamFactory)
     away = factory.SubFactory(TeamFactory)
     kickoff = factory.LazyFunction(lambda: timezone.now() + timedelta(days=1))
+    external_id = None
 
     @factory.post_generation
     def _seed_points_applied(self, create, extracted, **kwargs):

@@ -18,4 +18,5 @@ urlpatterns = [
         views.recordatorio_enviar,
         name="recordatorio_enviar",
     ),
+    path("live/tick/", views.live_tick, name="live_tick"),
 ]

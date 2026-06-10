@@ -154,6 +154,39 @@ Plan: [`docs/superpowers/plans/2026-06-04-recordatorios-apuestas.md`](superpower
 
 ---
 
+## Fase 9 — Marcadores en directo + clasificación live
+
+**Objetivo:** publicar una clasificación "en directo" que vaya actualizándose con los marcadores parciales mientras se juegan los partidos.
+
+Spec rápida (decisión cerrada en sesión con Ignacio el 2026-06-10):
+
+- **Productor de datos:** un servicio externo (sports API por confirmar — candidatos: API-Football, Sportradar). Queda fuera del alcance del backend mientras no tengamos credenciales contratadas.
+- **Cron:** **cron-job.org** (gratis) golpea cada minuto un endpoint Bearer del backend. Mismo patrón que Fase 8.
+- **Tick = `POST /competicion/api/teams/live/tick/`**: el endpoint comprueba en BD si hay algún `Match` en estado `live`. Si no hay ninguno, devuelve `204` en pocos ms — **0 € de coste real en Railway** porque el contenedor web ya está vivo 24/7 y el tick "vacío" consume solo unos ms de CPU.
+- **Cuando sí hay partidos live**, el service llama al provider externo, parsea los marcadores parciales y los persiste en `LiveScore` (modelo nuevo, 1-1 con `Match`). **Nunca** toca `result_home`/`result_away` de `Match` — eso sigue siendo exclusivo del gestor para el resultado oficial.
+- **Clasificación en directo:** `live_standings()` calcula puntos *hipotéticos* sobre la marcha sumando los puntos de los pronósticos contra `LiveScore` cuando lo hay, y contra `result_home/away` cuando ya hay resultado oficial. **Solo lectura**, los puntos no se congelan hasta que el gestor confirme el resultado oficial.
+
+Por qué descartamos otras opciones (sesión de diseño con Ignacio):
+- **Polling desde un worker dedicado de Railway:** sobreingeniería, gasta RAM 24/7 (~2-4 €/mes).
+- **Cron nativo de Railway:** cada disparo arranca un contenedor desde cero (~5-10 s cold start). 99% del tiempo desperdiciado.
+- **Servidor externo que empuje vía webhook al backend:** arquitectónicamente más limpio pero introduce otro servicio que mantener y otro punto de fallo. Reservado como evolución futura si el polling se queda corto.
+- **Cron-job.org haciendo el polling y empujando solo en cambios:** cron-job.org no ejecuta código, solo golpea URLs. Servicios que sí podrían (Cloudflare Workers, GitHub Actions) añadirían un segundo codebase con su propio estado, deploy y secretos. La ganancia es marginal (el tick vacío en Django cuesta ms).
+
+Trabajo de backend (este PR sienta el cimiento, sin provider real todavía):
+
+- [x] Modelo `LiveScore` (1-1 con `Match`) + migración.
+- [x] Campo `Match.external_id` (nullable, único) para mapeo contra el API externo.
+- [x] Service `competition/services/live_scores.py` con interfaz `LiveScoreProvider` + provider stub para tests.
+- [x] Endpoint `POST /competicion/api/teams/live/tick/` con Bearer (mismo `TEAMS_API_TOKEN`).
+- [x] Función `live_standings()` para clasificación en directo (lectura).
+- [ ] Provider real (cuando se contrate sports API).
+- [ ] UI: actualizar `CompetitionView` para mostrar marcadores parciales y clasificación live (siguiente PR).
+- [ ] Configurar cron-job.org apuntando a `/competicion/api/teams/live/tick/` con `Authorization: Bearer …` (operativo, post-merge).
+
+**Hecho cuando:** el endpoint responde 204 sin partidos live, y cuando los hay procesa el tick contra un provider configurable; la función `live_standings()` recalcula clasificación con marcadores parciales sin tocar `result_home/away`.
+
+---
+
 ## Orden de prioridad si hay que recortar
 
 1. Login + Competición + pronósticos + clasificación (el corazón del producto).
