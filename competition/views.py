@@ -7,8 +7,8 @@ from django.views import View
 from accounts.mixins import GestorRequiredMixin
 from accounts.models import User
 from competition.models import Match, Prediction, Round
+from competition.services.live_standings import live_standings
 from competition.services.resolve import clear_match_result, resolve_match
-from competition.services.standings import standings
 
 KO_ROUND_IDS = ("r32", "r16", "qf", "sf", "final")
 
@@ -48,7 +48,9 @@ class CompetitionView(LoginRequiredMixin, View):
             else:
                 active_md = _default_matchday(active_id, matchdays)
 
-        match_qs = Match.objects.filter(round_id=active_id).select_related("home", "away", "round")
+        match_qs = Match.objects.filter(round_id=active_id).select_related(
+            "home", "away", "round", "live_score"
+        )
         if active_md is not None:
             match_qs = match_qs.filter(matchday=active_md)
         matches = list(match_qs.order_by("kickoff"))
@@ -71,14 +73,18 @@ class CompetitionView(LoginRequiredMixin, View):
             {"matchday": md, "open": True, "active": md == active_md} for md in matchdays
         ]
 
-        rows = standings()
+        rows = live_standings()
+        for r in rows:
+            r.pts = r.live_pts
         has_points = bool(rows) and rows[0].pts > 0
         my_row = next((r for r in rows if r.player_id == request.user.id), None)
         my_rank = my_row.position if my_row and has_points else None
         my_is_tied = bool(my_row and my_row.is_tied and has_points)
         max_pts = max((r.pts for r in rows), default=0) or 1
 
-        scope_rows = standings(round_id=active_id, matchday=active_md)
+        scope_rows = live_standings(round_id=active_id, matchday=active_md)
+        for r in scope_rows:
+            r.pts = r.live_pts
         scope_has_points = bool(scope_rows) and scope_rows[0].pts > 0
         scope_my_row = next((r for r in scope_rows if r.player_id == request.user.id), None)
         scope_my_rank = scope_my_row.position if scope_my_row and scope_has_points else None
@@ -158,6 +164,7 @@ class CompetitionView(LoginRequiredMixin, View):
                 "open_matches": open_matches,
                 "live_matches": live_matches,
                 "done_matches": done_matches,
+                "has_live_matches": bool(live_matches),
                 "standings": rows,
                 "standings_users": users_by_id,
                 "my_rank": my_rank,

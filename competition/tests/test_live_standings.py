@@ -102,6 +102,60 @@ def test_live_standings_ignores_predictions_without_live_score_on_done_match():
 
 
 @pytest.mark.django_db
+def test_live_standings_respects_round_id_scope():
+    """Con round_id solo cuenta deltas de matches de esa ronda."""
+    from competition.tests.factories import RoundFactory
+
+    alice = UserFactory(name="Alice")
+    groups = RoundFactory(id="groups", points=3, partial_points=1, order=1)
+    r16 = RoundFactory(id="r16", label="Octavos", short="R16", points=7, partial_points=1, order=3)
+
+    live_groups = MatchFactory(
+        round=groups,
+        kickoff=timezone.now() - timedelta(minutes=10),
+        external_id="g1",
+    )
+    LiveScore.objects.create(match=live_groups, home_score=1, away_score=0)
+    PredictionFactory(player=alice, match=live_groups, home=1, away=0)
+
+    live_r16 = MatchFactory(
+        round=r16,
+        kickoff=timezone.now() - timedelta(minutes=5),
+        external_id="k1",
+    )
+    LiveScore.objects.create(match=live_r16, home_score=2, away_score=1)
+    PredictionFactory(player=alice, match=live_r16, home=2, away=1)
+
+    rows_groups = live_standings(round_id="groups")
+    alice_g = next(r for r in rows_groups if r.name == "Alice")
+    assert alice_g.live_pts == groups.points
+
+    rows_r16 = live_standings(round_id="r16")
+    alice_k = next(r for r in rows_r16 if r.name == "Alice")
+    assert alice_k.live_pts == r16.points
+
+
+@pytest.mark.django_db
+def test_live_standings_respects_matchday_scope():
+    alice = UserFactory(name="Alice")
+    m1 = MatchFactory(
+        matchday=1, kickoff=timezone.now() - timedelta(minutes=10), external_id="m1-md1"
+    )
+    LiveScore.objects.create(match=m1, home_score=2, away_score=0)
+    PredictionFactory(player=alice, match=m1, home=2, away=0)
+
+    m2 = MatchFactory(
+        matchday=2, kickoff=timezone.now() - timedelta(minutes=5), external_id="m1-md2"
+    )
+    LiveScore.objects.create(match=m2, home_score=1, away_score=1)
+    PredictionFactory(player=alice, match=m2, home=0, away=0)
+
+    rows_md1 = live_standings(matchday=1)
+    alice_md1 = next(r for r in rows_md1 if r.name == "Alice")
+    assert alice_md1.live_pts == m1.round.points
+
+
+@pytest.mark.django_db
 def test_live_standings_sorts_by_live_pts():
     a = UserFactory(name="Aaa")
     b = UserFactory(name="Bbb")

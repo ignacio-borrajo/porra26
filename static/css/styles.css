@@ -313,6 +313,7 @@ a.match-card:hover {
   color: var(--text);
 }
 .score-sep { color: var(--text-faint); font-weight: 700; }
+.score-sep.live-colon { color: var(--c-red); }
 .match-card-meta {
   display: flex;
   align-items: center;
