@@ -160,12 +160,21 @@ def recordatorios_disparar(request):
 def _build_default_provider() -> LiveScoreProvider:
     """Construye el provider por defecto desde settings.
 
-    Hoy devuelve un provider stub que no consulta nada externo, así el
-    endpoint queda funcional desde día 1 (no rompe el cron) aunque todavía
-    no tengamos contratada la sports API. Cuando se contrate, se sustituye
-    aquí — el resto de la app no se entera.
+    Si `FOOTBALL_DATA_API_KEY` está configurada (variable de entorno en
+    Railway), devuelve el provider real de football-data.org. Si no, cae a
+    un provider stub que no consulta nada — útil en desarrollo y en
+    entornos donde no se ha configurado el API key todavía.
     """
-    from competition.services.live_scores import LiveScoreUpdate  # noqa: F401
+    from django.conf import settings
+
+    api_key = getattr(settings, "FOOTBALL_DATA_API_KEY", "") or ""
+    if api_key:
+        from competition.services.football_data import FootballDataProvider
+
+        return FootballDataProvider(
+            api_key=api_key,
+            competition_code=getattr(settings, "FOOTBALL_DATA_COMPETITION", "WC"),
+        )
 
     class _NoopProvider:
         name = "noop"

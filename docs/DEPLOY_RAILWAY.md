@@ -69,6 +69,14 @@ Pestaña **Variables** del servicio web → **Raw editor** → pega `.env.railwa
 - `DEFAULT_FROM_EMAIL` → mientras no haya dominio propio, déjalo en `PORRA 26 <onboarding@resend.dev>`. Si más adelante verificas un dominio en Resend (ver §12), cámbialo a `PORRA 26 <bot@tu-dominio>`.
 - `TEAMS_DESTINATION_EMAIL` → tu buzón corporativo personal (`ignacio.borrajo@edisa.com`). Tiene que coincidir con la dirección con la que te registraste en Resend mientras estés en modo sin dominio verificado.
 - `TEAMS_API_TOKEN` → mismo token que pegarás en el flow de Power Automate (opción B del §8). Si solo usas el flujo *email-driven* (opción A), no hace falta tocarlo, pero conviene dejar un valor aleatorio para no exponer el endpoint REST.
+- `FOOTBALL_DATA_API_KEY` → clave del tier gratuito de [football-data.org](https://www.football-data.org/client/register). Sin esta variable, el endpoint `live/tick/` cae a un provider noop y los marcadores parciales no se actualizan. Tras configurarla, lanza una sola vez:
+
+  ```bash
+  railway run python manage.py seed_match_external_ids
+  ```
+
+  para casar el calendario local contra los IDs de football-data (por fecha + TLA). Cuando se resuelvan equipos KO en la BD, vuelve a lanzarlo (re-ejecutable, solo rellena los que faltan; añade `--force` para reescribir).
+- `FOOTBALL_DATA_COMPETITION` → opcional, default `WC` (FIFA World Cup). Solo cambiar si una próxima edición usa otra clave.
 
 `DATABASE_URL` NO la pegues: viene por referencia del paso 3.2.
 

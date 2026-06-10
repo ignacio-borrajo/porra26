@@ -6,6 +6,8 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
+from competition.api.views import _build_default_provider
+from competition.services.football_data import FootballDataProvider
 from competition.services.live_scores import LiveScoreUpdate
 from competition.tests.factories import MatchFactory
 
@@ -69,6 +71,21 @@ def test_endpoint_returns_summary_when_live_match_updated(client):
     data = res.json()
     assert data["processed"] == 1
     assert data["created"] == 1
+
+
+@override_settings(FOOTBALL_DATA_API_KEY="")
+def test_default_provider_is_noop_without_api_key():
+    provider = _build_default_provider()
+    assert provider.name == "noop"
+    assert provider.fetch(["123"]) == []
+
+
+@override_settings(FOOTBALL_DATA_API_KEY="real-key", FOOTBALL_DATA_COMPETITION="WC")
+def test_default_provider_is_football_data_with_api_key():
+    provider = _build_default_provider()
+    assert isinstance(provider, FootballDataProvider)
+    assert provider.api_key == "real-key"
+    assert provider.competition_code == "WC"
 
 
 @pytest.mark.django_db

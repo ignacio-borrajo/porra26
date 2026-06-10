@@ -104,6 +104,11 @@ RULES_UPDATED_AT = date(2026, 6, 1)
 
 TEAMS_API_TOKEN = os.getenv("TEAMS_API_TOKEN", "")
 
+# football-data.org (tier gratuito). Si está vacío, el endpoint live/tick/
+# cae a un provider noop y no consulta el API externo. Ver `docs/PLAN.md` §Fase 9.
+FOOTBALL_DATA_API_KEY = os.getenv("FOOTBALL_DATA_API_KEY", "")
+FOOTBALL_DATA_COMPETITION = os.getenv("FOOTBALL_DATA_COMPETITION", "WC")
+
 # URL pública del portal. La usan los servicios que generan enlaces absolutos
 # en emails (recordatorios de partidos, recuperación de contraseña, etc.).
 SITE_URL = os.getenv("SITE_URL", "https://laporradeljefe.es")
