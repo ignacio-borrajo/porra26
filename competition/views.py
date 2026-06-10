@@ -58,12 +58,15 @@ class CompetitionView(LoginRequiredMixin, View):
         my_preds = {
             p.match_id: p for p in Prediction.objects.filter(player=request.user, match__in=matches)
         }
-        open_matches, live_matches, done_matches = [], [], []
+        open_matches, live_matches, awaiting_matches, done_matches = [], [], [], []
         for m in matches:
             m.my_pred = my_preds.get(m.id)
             st = m.status
             if st == "live":
-                live_matches.append(m)
+                if m.awaiting_validation:
+                    awaiting_matches.append(m)
+                else:
+                    live_matches.append(m)
             elif st == "done":
                 done_matches.append(m)
             else:
@@ -163,8 +166,9 @@ class CompetitionView(LoginRequiredMixin, View):
                 "matchday_state": matchday_state,
                 "open_matches": open_matches,
                 "live_matches": live_matches,
+                "awaiting_matches": awaiting_matches,
                 "done_matches": done_matches,
-                "has_live_matches": bool(live_matches),
+                "has_live_matches": bool(live_matches) or bool(awaiting_matches),
                 "standings": rows,
                 "standings_users": users_by_id,
                 "my_rank": my_rank,
@@ -366,7 +370,10 @@ class ManageResultsView(GestorRequiredMixin, View):
 
 class ResultOfficialView(GestorRequiredMixin, View):
     def get(self, request, match_id):
-        m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
+        m = get_object_or_404(
+            Match.objects.select_related("home", "away", "round", "live_score"),
+            pk=match_id,
+        )
         from competition.services.predictions import (
             next_pending_result_match,
             pending_result_matches_count,
@@ -374,10 +381,29 @@ class ResultOfficialView(GestorRequiredMixin, View):
 
         pending_count = pending_result_matches_count()
         has_next = next_pending_result_match(after_match=m) is not None
+
+        # Pre-rellenar inputs: oficial > live_score > 0. Si football-data ya
+        # marcó FT, el gestor abre el modal y solo tiene que pulsar Confirmar.
+        if m.has_result:
+            default_home = m.result_home
+            default_away = m.result_away
+        elif getattr(m, "live_score", None):
+            default_home = m.live_score.home_score
+            default_away = m.live_score.away_score
+        else:
+            default_home = 0
+            default_away = 0
+
         return render(
             request,
             "competition/_official_modal.html",
-            {"match": m, "pending_count": pending_count, "has_next": has_next},
+            {
+                "match": m,
+                "pending_count": pending_count,
+                "has_next": has_next,
+                "default_home": default_home,
+                "default_away": default_away,
+            },
         )
 
     def post(self, request, match_id):

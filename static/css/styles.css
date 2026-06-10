@@ -314,6 +314,11 @@ a.match-card:hover {
 }
 .score-sep { color: var(--text-faint); font-weight: 700; }
 .score-sep.live-colon { color: var(--c-red); }
+.chip-awaiting {
+  color: var(--c-yellow);
+  border-color: oklch(from var(--c-yellow) l c h / 0.5);
+  background: oklch(from var(--c-yellow) l c h / 0.12);
+}
 .match-card-meta {
   display: flex;
   align-items: center;

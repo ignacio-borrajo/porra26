@@ -17,7 +17,7 @@
         </div>
         <div class="score-grid__stepper">
           <button type="button" class="btn btn-ghost" data-step="-1" aria-label="Restar gol {{ match.home.name }}">−</button>
-          <input name="home" type="text" inputmode="numeric" data-max="20" value="{{ match.result_home|default:0 }}" class="input" readonly>
+          <input name="home" type="text" inputmode="numeric" data-max="20" value="{{ default_home }}" class="input" readonly>
           <button type="button" class="btn btn-ghost" data-step="1" aria-label="Sumar gol {{ match.home.name }}">+</button>
         </div>
       </div>
@@ -29,7 +29,7 @@
         </div>
         <div class="score-grid__stepper">
           <button type="button" class="btn btn-ghost" data-step="-1" aria-label="Restar gol {{ match.away.name }}">−</button>
-          <input name="away" type="text" inputmode="numeric" data-max="20" value="{{ match.result_away|default:0 }}" class="input" readonly>
+          <input name="away" type="text" inputmode="numeric" data-max="20" value="{{ default_away }}" class="input" readonly>
           <button type="button" class="btn btn-ghost" data-step="1" aria-label="Sumar gol {{ match.away.name }}">+</button>
         </div>
       </div>
