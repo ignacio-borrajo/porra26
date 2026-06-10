@@ -172,16 +172,17 @@ Por qué descartamos otras opciones (sesión de diseño con Ignacio):
 - **Servidor externo que empuje vía webhook al backend:** arquitectónicamente más limpio pero introduce otro servicio que mantener y otro punto de fallo. Reservado como evolución futura si el polling se queda corto.
 - **Cron-job.org haciendo el polling y empujando solo en cambios:** cron-job.org no ejecuta código, solo golpea URLs. Servicios que sí podrían (Cloudflare Workers, GitHub Actions) añadirían un segundo codebase con su propio estado, deploy y secretos. La ganancia es marginal (el tick vacío en Django cuesta ms).
 
-Trabajo de backend (este PR sienta el cimiento, sin provider real todavía):
+Trabajo de backend:
 
 - [x] Modelo `LiveScore` (1-1 con `Match`) + migración.
 - [x] Campo `Match.external_id` (nullable, único) para mapeo contra el API externo.
 - [x] Service `competition/services/live_scores.py` con interfaz `LiveScoreProvider` + provider stub para tests.
 - [x] Endpoint `POST /competicion/api/teams/live/tick/` con Bearer (mismo `TEAMS_API_TOKEN`).
 - [x] Función `live_standings()` para clasificación en directo (lectura).
-- [ ] Provider real (cuando se contrate sports API).
+- [x] Provider real: `FootballDataProvider` contra **football-data.org** (tier gratuito, ~10 req/min, latencia 60-90 s). Activado por `FOOTBALL_DATA_API_KEY` en settings; sin clave cae a `_NoopProvider`.
+- [x] Management command `seed_match_external_ids`: casa partidos por fecha + TLA contra `/v4/competitions/WC/matches` y rellena `Match.external_id`.
+- [x] Configurar cron-job.org apuntando a `/competicion/api/teams/live/tick/` con `Authorization: Bearer …`.
 - [ ] UI: actualizar `CompetitionView` para mostrar marcadores parciales y clasificación live (siguiente PR).
-- [ ] Configurar cron-job.org apuntando a `/competicion/api/teams/live/tick/` con `Authorization: Bearer …` (operativo, post-merge).
 
 **Hecho cuando:** el endpoint responde 204 sin partidos live, y cuando los hay procesa el tick contra un provider configurable; la función `live_standings()` recalcula clasificación con marcadores parciales sin tocar `result_home/away`.
 
