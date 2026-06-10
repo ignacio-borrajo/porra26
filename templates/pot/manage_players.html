@@ -36,14 +36,17 @@
   </div>
   {% for p in players %}
   <div class="table-row" style="display:grid;grid-template-columns:2.4fr 1.6fr 0.8fr 1fr 0.9fr 200px;padding:14px;align-items:center;border-bottom:1px solid var(--border);{% if not p.is_active %}opacity:0.5{% endif %}">
-    <div>
-      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
-        <strong>{{ p.name }}</strong>
-        {% if p.is_gestor %}<span class="chip" style="padding:1px 6px;font-size:9px;color:var(--c-cyan);border-color:oklch(from var(--c-cyan) l c h / 0.4)">administrador</span>{% endif %}
-        {% if not p.is_jugador %}<span class="chip" style="padding:1px 6px;font-size:9px;color:var(--text-faint)">no juega</span>{% endif %}
-        {% if p.must_change_password and not p.last_login %}<span class="chip" style="padding:1px 6px;font-size:9px;color:var(--c-yellow);border-color:oklch(from var(--c-yellow) l c h / 0.4);background:oklch(from var(--c-yellow) l c h / 0.10)">Pendiente de activar</span>{% endif %}
+    <div style="display:flex;align-items:center;gap:10px;min-width:0">
+      {% include "partials/_avatar.html" with u=p size=36 %}
+      <div style="min-width:0;flex:1">
+        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+          <strong>{{ p.name }}</strong>
+          {% if p.is_gestor %}<span class="chip" style="padding:1px 6px;font-size:9px;color:var(--c-cyan);border-color:oklch(from var(--c-cyan) l c h / 0.4)">administrador</span>{% endif %}
+          {% if not p.is_jugador %}<span class="chip" style="padding:1px 6px;font-size:9px;color:var(--text-faint)">no juega</span>{% endif %}
+          {% if p.must_change_password and not p.last_login %}<span class="chip" style="padding:1px 6px;font-size:9px;color:var(--c-yellow);border-color:oklch(from var(--c-yellow) l c h / 0.4);background:oklch(from var(--c-yellow) l c h / 0.10)">Pendiente de activar</span>{% endif %}
+        </div>
+        <div class="mono" style="font-size:11px;color:var(--text-faint)">{{ p.email }}</div>
       </div>
-      <div class="mono" style="font-size:11px;color:var(--text-faint)">{{ p.email }}</div>
     </div>
     <div style="font-size:12.5px;color:var(--text-dim);line-height:1.5">
       {{ p.get_puesto_display|default:"—" }}
