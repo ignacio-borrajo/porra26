@@ -58,16 +58,18 @@
    data-status="{{ st }}"
    data-group="{{ match.group }}"
    data-kickoff="{{ match.kickoff|date:'c' }}"
-   class="match-card glass rise{% if st == 'live' %} match-card-live{% endif %}">
+   class="match-card glass rise{% if st == 'live' and not match.awaiting_validation %} match-card-live{% endif %}">
 {% endif %}
   <div class="match-card-head">
     <span class="eyebrow">{% if match.group|length <= 1 %}Grupo {{ match.group }}{% else %}{{ match.group }}{% endif %}</span>
     <span class="chip
       {% if st == 'open' %}chip-open
+      {% elif st == 'live' and match.awaiting_validation %}chip-awaiting
       {% elif st == 'live' %}chip-live
       {% elif st == 'done' %}chip-done{% endif %}">
-      {% if st == 'live' %}<span class="dot dot-pulse"></span>{% endif %}
+      {% if st == 'live' and not match.awaiting_validation %}<span class="dot dot-pulse"></span>{% endif %}
       {% if st == 'open' %}Abierto
+      {% elif st == 'live' and match.awaiting_validation %}Pendiente oficial
       {% elif st == 'live' %}En juego
       {% elif st == 'done' %}Finalizado{% endif %}
     </span>
@@ -85,7 +87,7 @@
         <span class="score-bubble">{{ match.result_away }}</span>
       {% elif st == 'live' and match.live_score %}
         <span class="score-bubble">{{ match.live_score.home_score }}</span>
-        <span class="score-sep live-colon">:</span>
+        <span class="score-sep{% if not match.awaiting_validation %} live-colon{% endif %}">:</span>
         <span class="score-bubble">{{ match.live_score.away_score }}</span>
       {% else %}
         <span class="match-vs display">VS</span>

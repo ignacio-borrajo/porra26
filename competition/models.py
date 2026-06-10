@@ -96,6 +96,16 @@ class Match(models.Model):
         return self.editable
 
     @property
+    def awaiting_validation(self) -> bool:
+        """True si el partido terminó (provider reporta FT) y el gestor aún no
+        ha confirmado el resultado oficial. Visualmente la card deja de pintarse
+        como "En juego" y pasa al estado intermedio "Pendiente oficial"."""
+        if self.has_result:
+            return False
+        ls = getattr(self, "live_score", None)
+        return ls is not None and ls.period == "FT"
+
+    @property
     def teams_slug(self) -> str:
         return f"{self.home_id.lower()}-vs-{self.away_id.lower()}-{self.kickoff:%Y-%m-%d}"
 

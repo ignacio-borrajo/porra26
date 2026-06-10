@@ -6,7 +6,7 @@
     {% include "partials/_round_selector.html" with rounds=rounds active=active_round %}
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">
       {% include "partials/_matchday_selector.html" %}
-      {% if active_round == 'groups' and not is_ko_view %}{% if open_matches or live_matches or done_matches %}
+      {% if active_round == 'groups' and not is_ko_view %}{% if open_matches or live_matches or awaiting_matches or done_matches %}
       <div style="margin-left:auto">
         {% include "partials/_matches_order_toggle.html" %}
       </div>
@@ -28,13 +28,19 @@
         {% for m in live_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
       </div>
       {% endif %}
+      {% if awaiting_matches %}
+      <h2 class="eyebrow" style="margin-top:24px">PENDIENTE OFICIAL · {{ awaiting_matches|length }}</h2>
+      <div class="stagger matches-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+        {% for m in awaiting_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
+      </div>
+      {% endif %}
       {% if done_matches %}
       <h2 class="eyebrow" style="margin-top:24px">FINALIZADOS · {{ done_matches|length }}</h2>
       <div class="stagger matches-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
         {% for m in done_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
       </div>
       {% endif %}
-      {% if not open_matches and not live_matches and not done_matches %}
+      {% if not open_matches and not live_matches and not awaiting_matches and not done_matches %}
       <p class="glass" style="padding:18px;margin-top:18px">No hay partidos en esta ronda todavía.</p>
       {% endif %}
     {% endif %}
