@@ -13,6 +13,7 @@ from competition.api.auth import require_teams_api_token
 from competition.models import BetsClosingReport, BetsReminderLog, Match
 from competition.services.closing_email import send_closure_email
 from competition.services.closing_report import build_closing_pdf
+from competition.services.live_scores import LiveScoreProvider, tick
 from competition.services.reminder_email import send_reminder_email
 from competition.services.reminders import matches_due_for_kind
 
@@ -153,6 +154,41 @@ def recordatorios_disparar(request):
             "skipped_empty": skipped_empty,
             "errors": errors,
         }
+    return JsonResponse(summary)
+
+
+def _build_default_provider() -> LiveScoreProvider:
+    """Construye el provider por defecto desde settings.
+
+    Hoy devuelve un provider stub que no consulta nada externo, así el
+    endpoint queda funcional desde día 1 (no rompe el cron) aunque todavía
+    no tengamos contratada la sports API. Cuando se contrate, se sustituye
+    aquí — el resto de la app no se entera.
+    """
+    from competition.services.live_scores import LiveScoreUpdate  # noqa: F401
+
+    class _NoopProvider:
+        name = "noop"
+
+        def fetch(self, external_ids):  # noqa: ARG002
+            return []
+
+    return _NoopProvider()
+
+
+@require_teams_api_token
+@require_POST
+def live_tick(request):
+    """Procesa un disparo del cron externo (cron-job.org) sobre marcadores live.
+
+    Devuelve 204 si no había nada que actualizar — caso del 99% del tiempo,
+    cuando no hay ningún partido en juego — para que el cron no genere ruido
+    en logs. Devuelve 200 + JSON con el resumen cuando sí ha procesado algo.
+    """
+    provider = _build_default_provider()
+    summary = tick(provider)
+    if summary["processed"] == 0 and summary["errors"] == 0:
+        return HttpResponse(status=204)
     return JsonResponse(summary)
 
 
