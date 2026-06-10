@@ -183,7 +183,9 @@ class LiveScore(models.Model):
         indexes = [models.Index(fields=["updated_at"])]
 
     def __str__(self):
-        return f"LiveScore(match={self.match_id}, {self.home_score}-{self.away_score}, {self.period})"
+        return (
+            f"LiveScore(match={self.match_id}, {self.home_score}-{self.away_score}, {self.period})"
+        )
 
 
 class BetsReminderLog(models.Model):
