@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 
 from accounts.models import User
-from competition.services.standings import standings
+from competition.services.live_standings import live_standings
 from stats.services.matchday_options import current_option, matchday_options, parse_scope_key
 
 
@@ -16,10 +16,16 @@ def build_general_context(
     Devuelve el dict con `standings`, `scope_standings`, `md_options`, etc.
     Si `player_ids` está presente, las clasificaciones quedan limitadas a
     esos jugadores y las posiciones se recalculan desde 1 dentro del grupo.
+
+    Las dos clasificaciones usan `live_standings()`: en `r.pts` ya viene la
+    mezcla "oficial + hipotético" para que las tablas se vean en directo
+    cuando hay partidos en juego.
     """
     player_ids_list = list(player_ids) if player_ids is not None else None
 
-    rows = standings(player_ids=player_ids_list)
+    rows = live_standings(player_ids=player_ids_list)
+    for r in rows:
+        r.pts = r.live_pts
     has_points = bool(rows) and rows[0].pts > 0
     my_row = next((r for r in rows if r.player_id == user.id), None)
     my_rank = my_row.position if my_row and has_points else None
@@ -40,16 +46,18 @@ def build_general_context(
     scope_label = None
     if scope is not None:
         if scope.round_ids is not None:
-            scope_rows = standings(
+            scope_rows = live_standings(
                 round_ids=scope.round_ids,
                 player_ids=player_ids_list,
             )
         else:
-            scope_rows = standings(
+            scope_rows = live_standings(
                 round_id=scope.round_id,
                 matchday=scope.matchday,
                 player_ids=player_ids_list,
             )
+        for r in scope_rows:
+            r.pts = r.live_pts
         scope_has_points = bool(scope_rows) and scope_rows[0].pts > 0
         scope_my_row = next((r for r in scope_rows if r.player_id == user.id), None)
         scope_my_rank = scope_my_row.position if scope_my_row and scope_has_points else None
