@@ -138,7 +138,7 @@ Plan de implementación: [`docs/superpowers/plans/2026-06-01-cierre-apuestas-ema
 Spec: [`docs/superpowers/specs/2026-06-04-recordatorios-apuestas-design.md`](superpowers/specs/2026-06-04-recordatorios-apuestas-design.md).
 Plan: [`docs/superpowers/plans/2026-06-04-recordatorios-apuestas.md`](superpowers/plans/2026-06-04-recordatorios-apuestas.md).
 
-**Arquitectura distinta de Fase 7**: aquí el cron sí hace falta (la naturaleza del aviso es temporal, no on-demand). Pero **fuera de Railway**: GitHub Actions cron `*/15 * * * *` llama un endpoint Bearer del backend. Coste Railway = 0 cuando no hay trabajo.
+**Arquitectura distinta de Fase 7**: aquí el cron sí hace falta (la naturaleza del aviso es temporal, no on-demand). Pero **fuera de Railway**: **cron-job.org** golpea cada 15 min un endpoint Bearer del backend. Mismo patrón que Fase 9 (live_tick). Coste Railway = 0 cuando no hay trabajo. *Histórico:* arrancó en GitHub Actions, pero el cron de Actions se retrasaba 1–5 h en picos de carga y dejaba pasar las ventanas T-30M (y a veces incluso T-2H) sin disparar — migrado a cron-job.org el 2026-06-11.
 
 - [x] Modelo `BetsReminderLog` (kind ∈ {T_MINUS_4H, T_MINUS_2_5H, MANUAL}) + migración.
 - [x] Service `get_pending_bettors` y `matches_due_for_kind`.
@@ -146,9 +146,8 @@ Plan: [`docs/superpowers/plans/2026-06-04-recordatorios-apuestas.md`](superpower
 - [x] Management command `send_match_reminders`.
 - [x] Endpoints `POST /api/recordatorios/disparar/` (cron) y `POST /api/recordatorios/<id>/enviar/` (botón gestor).
 - [x] UI en `/competicion/resultados/`: pill `🟠 N sin apostar` y botón `✉ Recordatorio` por partido upcoming.
-- [x] GitHub Actions workflow `.github/workflows/match-reminders.yml`.
+- [ ] Job de cron-job.org apuntando a `/competicion/api/teams/recordatorios/disparar/` con `Authorization: Bearer …` (mismo `TEAMS_API_TOKEN` que `live_tick`).
 - [ ] Power Automate flow nuevo configurado (subject filter `[Porra26 RECORDATORIO]`).
-- [ ] Secrets `PORRA26_API_TOKEN` y `PORRA26_BASE_URL` configurados en GitHub.
 
 **Hecho cuando:** un partido entra en ventana T-4h y aparece el aviso en Teams listando los rezagados; el gestor también puede pulsar el botón desde Resultados y disparar uno manual.
 
