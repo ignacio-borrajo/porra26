@@ -75,3 +75,22 @@ def test_autorefresh_script_only_when_live(client):
     m.delete()  # ya no quedan live
     res_calm = client.get(reverse("stats:rankings"))
     assert b"live-autorefresh" not in res_calm.content
+
+
+@pytest.mark.django_db
+def test_group_detail_renders_live_strip(client):
+    user = UserFactory(sede="vigo")
+    client.force_login(user)
+
+    grp = RoundFactory(id="groups", points=3, order=1)
+    home = Team.objects.create(code="POR", name="Portugal", flag="🇵🇹")
+    away = Team.objects.create(code="GER", name="Alemania", flag="🇩🇪")
+    m = MatchFactory(round=grp, home=home, away=away, kickoff=timezone.now() - timedelta(minutes=15))
+    LiveScore.objects.create(match=m, home_score=1, away_score=2, period="2H", minute=65)
+
+    res = client.get(reverse("stats:rankings_group", kwargs={"dim": "sede", "key": "vigo"}))
+    html = res.content.decode()
+
+    assert "live-strip" in html
+    assert "POR" in html and "GER" in html
+    assert b"live-autorefresh" in res.content
