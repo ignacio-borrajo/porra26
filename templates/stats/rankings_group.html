@@ -12,6 +12,8 @@
   </p>
 </header>
 
+{% include "partials/_live_matches_strip.html" %}
+
 {% if player_count == 0 %}
   <section class="glass rise" style="padding:24px;border-radius:22px">
     <p style="color:var(--text-faint);margin:0">Aún no hay jugadores en {{ group_label }}.</p>
@@ -55,5 +57,18 @@
       {% endif %}
     </div>
   </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if has_live_matches %}
+<script id="live-autorefresh" type="module">
+  const INTERVAL_MS = 60_000;
+  setInterval(() => {
+    if (document.hidden) return;
+    if (document.querySelector(".ovl")) return;
+    window.location.reload();
+  }, INTERVAL_MS);
+</script>
 {% endif %}
 {% endblock %}

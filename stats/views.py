@@ -4,12 +4,23 @@ from django.shortcuts import render
 from django.views import View
 
 from accounts.models import User
+from competition.services.live_view import current_live_matches
 from stats.services.group_standings import CHOICES_BY_DIMENSION, group_standings
 from stats.services.history import per_player_history
 from stats.services.history_matrix import build_matrix
 from stats.services.history_xlsx import render_xlsx
 from stats.services.kpis import donut, kpis
 from stats.services.rankings_context import build_general_context
+
+
+def _live_context() -> dict:
+    """Bloque común para inyectar partidos en juego en las vistas de Rankings."""
+    live_matches, awaiting_matches = current_live_matches()
+    return {
+        "live_matches": live_matches,
+        "awaiting_matches": awaiting_matches,
+        "has_live_matches": bool(live_matches) or bool(awaiting_matches),
+    }
 
 
 class StatsView(LoginRequiredMixin, View):
@@ -71,6 +82,7 @@ class RankingsView(LoginRequiredMixin, View):
                     "top_users": top_users,
                 }
             )
+        ctx.update(_live_context())
         return render(request, "stats/rankings.html", ctx)
 
 
@@ -114,4 +126,5 @@ class GroupRankingsView(LoginRequiredMixin, View):
                 "player_count": len(player_ids),
             }
         )
+        ctx.update(_live_context())
         return render(request, "stats/rankings_group.html", ctx)

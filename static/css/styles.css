@@ -2975,3 +2975,59 @@ html.fv .team-profile-halo {
     padding: 4px 0;
   }
 }
+
+/* === Banda "EN JUEGO" en Rankings ===================================== */
+.live-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 18px;
+  margin: 16px 0;
+  border-radius: 22px;
+}
+.live-strip__head { display: flex; align-items: center; justify-content: space-between; }
+.live-strip__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.live-strip__chip {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: oklch(from var(--accent) l c h / 0.06);
+  border: 1px solid var(--border);
+  min-width: 220px;
+}
+.live-strip__chip--awaiting {
+  background: oklch(from var(--c-yellow) l c h / 0.08);
+  border-color: oklch(from var(--c-yellow) l c h / 0.4);
+}
+.live-strip__chip--pending {
+  background: transparent;
+  border-style: dashed;
+}
+.live-strip__teams { display: flex; align-items: center; gap: 10px; }
+.live-strip__team { display: flex; align-items: center; gap: 6px; }
+.live-strip__team .team-flag { font-size: 22px; }
+.live-strip__code { font-size: 13px; letter-spacing: 0.05em; }
+.live-strip__score { display: flex; align-items: center; gap: 4px; }
+.live-strip__score .score-bubble {
+  min-width: 30px;
+  height: 36px;
+  font-size: 18px;
+  padding: 0 6px;
+}
+.live-strip__foot { font-size: 11px; color: var(--text-dim); letter-spacing: 0.04em; }
+.live-strip__chip--awaiting .live-strip__foot { color: var(--c-yellow); }
+.live-strip__empty { margin: 0; color: var(--text-faint); font-size: 13px; }

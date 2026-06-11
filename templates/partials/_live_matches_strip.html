@@ -1,0 +1,70 @@
+{# Banda superior con los partidos en juego y los pendientes de oficial.
+   Espera del contexto: live_matches, awaiting_matches.
+   Siempre se renderiza; si no hay nada, muestra un placeholder. #}
+<section class="glass rise live-strip" aria-label="Partidos en juego">
+  <header class="live-strip__head">
+    <span class="eyebrow">EN JUEGO{% with total=live_matches|length|add:awaiting_matches|length %}{% if total %} · {{ total }}{% endif %}{% endwith %}</span>
+  </header>
+
+  {% if live_matches or awaiting_matches %}
+    <ul class="live-strip__list">
+      {% for m in live_matches %}
+        <li class="live-strip__chip{% if not m.live_score %} live-strip__chip--pending{% endif %}">
+          <div class="live-strip__teams">
+            <span class="live-strip__team">
+              <span class="team-flag">{{ m.home.flag }}</span>
+              <strong class="live-strip__code mono">{{ m.home.code }}</strong>
+            </span>
+            {% if m.live_score %}
+              <span class="live-strip__score">
+                <span class="score-bubble">{{ m.live_score.home_score }}</span>
+                <span class="score-sep live-colon">:</span>
+                <span class="score-bubble">{{ m.live_score.away_score }}</span>
+              </span>
+            {% else %}
+              <span class="match-vs display">VS</span>
+            {% endif %}
+            <span class="live-strip__team">
+              <span class="team-flag">{{ m.away.flag }}</span>
+              <strong class="live-strip__code mono">{{ m.away.code }}</strong>
+            </span>
+          </div>
+          <span class="live-strip__foot mono">
+            {% if m.live_score %}
+              {% if m.live_score.period == "HT" %}Descanso
+              {% elif m.live_score.period == "ET" %}Prórroga{% if m.live_score.minute %} {{ m.live_score.minute }}'{% endif %}
+              {% elif m.live_score.period == "PEN" %}Penaltis
+              {% elif m.live_score.period == "1H" %}1ª parte{% if m.live_score.minute %} {{ m.live_score.minute }}'{% endif %}
+              {% elif m.live_score.period == "2H" %}2ª parte{% if m.live_score.minute %} {{ m.live_score.minute }}'{% endif %}
+              {% else %}{{ m.live_score.get_period_display }}{% endif %}
+            {% else %}
+              Esperando marcador
+            {% endif %}
+          </span>
+        </li>
+      {% endfor %}
+      {% for m in awaiting_matches %}
+        <li class="live-strip__chip live-strip__chip--awaiting">
+          <div class="live-strip__teams">
+            <span class="live-strip__team">
+              <span class="team-flag">{{ m.home.flag }}</span>
+              <strong class="live-strip__code mono">{{ m.home.code }}</strong>
+            </span>
+            <span class="live-strip__score">
+              <span class="score-bubble">{{ m.live_score.home_score }}</span>
+              <span class="score-sep">:</span>
+              <span class="score-bubble">{{ m.live_score.away_score }}</span>
+            </span>
+            <span class="live-strip__team">
+              <span class="team-flag">{{ m.away.flag }}</span>
+              <strong class="live-strip__code mono">{{ m.away.code }}</strong>
+            </span>
+          </div>
+          <span class="live-strip__foot mono">Pendiente oficial</span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="live-strip__empty">No hay partidos en juego ahora mismo.</p>
+  {% endif %}
+</section>
