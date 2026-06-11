@@ -310,3 +310,107 @@ def test_enviar_endpoint_redirects_on_html_accept(client, _clear_outbox):
     )
     assert res.status_code == 302
     assert res.url == reverse("competicion:manage_results")
+
+
+# --- POST cierres_disparar -------------------------------------------------
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_disparar_requires_auth(client):
+    res = client.post(reverse("competicion:api:cierres_disparar"))
+    assert res.status_code == 401
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_disparar_rejects_get(client):
+    res = client.get(reverse("competicion:api:cierres_disparar"), **AUTH)
+    assert res.status_code == 405
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_disparar_returns_zero_when_nothing_pending(client, _clear_outbox):
+    from django.core import mail
+
+    MatchFactory(kickoff=timezone.now() + timedelta(hours=6))  # abierto
+    res = client.post(reverse("competicion:api:cierres_disparar"), **AUTH)
+    assert res.status_code == 200
+    assert res.json() == {"checked": 0, "sent": 0, "errors": 0}
+    assert mail.outbox == []
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_disparar_sends_all_pending(client, _clear_outbox):
+    from django.core import mail
+
+    now = timezone.now()
+    m1 = MatchFactory(kickoff=now - timedelta(minutes=20))
+    m2 = MatchFactory(kickoff=now - timedelta(minutes=10))
+    res = client.post(reverse("competicion:api:cierres_disparar"), **AUTH)
+    assert res.status_code == 200
+    assert res.json() == {"checked": 2, "sent": 2, "errors": 0}
+    assert len(mail.outbox) == 2
+    assert BetsClosingReport.objects.get(match=m1).sent_at is not None
+    assert BetsClosingReport.objects.get(match=m2).sent_at is not None
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_disparar_skips_already_sent(client, _clear_outbox):
+    from django.core import mail
+
+    now = timezone.now()
+    m_sent = MatchFactory(kickoff=now - timedelta(minutes=20))
+    BetsClosingReport.objects.create(match=m_sent, sent_at=now)
+    m_pending = MatchFactory(kickoff=now - timedelta(minutes=10))
+    res = client.post(reverse("competicion:api:cierres_disparar"), **AUTH)
+    assert res.status_code == 200
+    assert res.json() == {"checked": 1, "sent": 1, "errors": 0}
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].subject == _expected_subject(m_pending)
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_disparar_is_idempotent_between_calls(client, _clear_outbox):
+    from django.core import mail
+
+    MatchFactory(kickoff=timezone.now() - timedelta(minutes=10))
+    res1 = client.post(reverse("competicion:api:cierres_disparar"), **AUTH)
+    res2 = client.post(reverse("competicion:api:cierres_disparar"), **AUTH)
+    assert res1.json() == {"checked": 1, "sent": 1, "errors": 0}
+    assert res2.json() == {"checked": 0, "sent": 0, "errors": 0}
+    assert len(mail.outbox) == 1
+
+
+@pytest.mark.django_db
+@override_settings(TEAMS_API_TOKEN=TOKEN)
+def test_disparar_counts_errors_and_continues(monkeypatch, client, _clear_outbox):
+    from django.core import mail
+
+    now = timezone.now()
+    m_ok = MatchFactory(kickoff=now - timedelta(minutes=20))
+    m_ko = MatchFactory(kickoff=now - timedelta(minutes=10))
+
+    real = __import__("competition.services.closing_email", fromlist=["send_closure_email"])
+    real_send = real.send_closure_email
+
+    def flaky(match):
+        if match.id == m_ko.id:
+            raise RuntimeError("SMTP roto")
+        return real_send(match)
+
+    monkeypatch.setattr("competition.api.views.send_closure_email", flaky)
+    res = client.post(reverse("competicion:api:cierres_disparar"), **AUTH)
+    assert res.status_code == 200
+    assert res.json() == {"checked": 2, "sent": 1, "errors": 1}
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].subject == _expected_subject(m_ok)
+
+
+def _expected_subject(match):
+    kickoff_local = timezone.localtime(match.kickoff)
+    return f"[Porra26] {match.home.name} vs {match.away.name} · {kickoff_local:%d/%m %H:%M}"
