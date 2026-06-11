@@ -153,24 +153,22 @@ Cuando verifiques un dominio propio en Resend (ver `docs/DEPLOY_RAILWAY.md` §12
 
 Aparte del PDF de cierre, hay un **segundo flow** que publica avisos en Teams 2 h y 30 min antes de que se cierren las apuestas, listando a los rezagados (ver `docs/superpowers/specs/2026-06-04-recordatorios-apuestas-design.md`). Es independiente del flow descrito arriba — mismo buzón Outlook destino, mismo chat de Teams, distinto filtro de asunto y sin adjunto.
 
-### 9.1 Disparador externo: GitHub Actions
+### 9.1 Disparador externo: cron-job.org
 
-El cron vive fuera de Railway, en `.github/workflows/match-reminders.yml`:
+El cron vive fuera de Railway, en [cron-job.org](https://cron-job.org) — mismo servicio que ya usamos para `live_tick` (Fase 9). El job se configura desde el dashboard de cron-job.org y **no vive en el repo**:
 
-```yaml
-on:
-  schedule:
-    - cron: '*/15 * * * *'
-  workflow_dispatch:
-```
+| Campo | Valor |
+|---|---|
+| URL | `https://laporradeljefe.es/competicion/api/teams/recordatorios/disparar/` |
+| Método | `POST` |
+| Schedule | cada 15 min |
+| Header | `Authorization: Bearer <TEAMS_API_TOKEN>` (mismo valor que la env var de Railway). |
 
-Cada disparo hace `curl POST` a `https://laporradeljefe.es/competicion/api/recordatorios/disparar/` con un `Authorization: Bearer ${{ secrets.PORRA26_API_TOKEN }}`. El backend recorre las dos ventanas (T-4h, T-2.5h) y envía un email por cada partido con rezagados.
+Cada disparo hace POST al endpoint y el backend recorre las dos ventanas (T-2h, T-30min) enviando un email por cada partido con rezagados. La respuesta es JSON con el resumen (`{"T_MINUS_2H": {"checked": N, "sent": N, …}, …}`) — los logs del job en cron-job.org guardan el body para auditoría.
 
-**Secrets necesarios en GitHub** (Settings → Secrets and variables → Actions):
-- `PORRA26_API_TOKEN` → mismo valor que la env var `TEAMS_API_TOKEN` de Railway.
-- `PORRA26_BASE_URL` → `https://laporradeljefe.es`.
+**Por qué cron-job.org y no GitHub Actions**: arrancamos esto en `.github/workflows/match-reminders.yml`, pero el cron de GitHub Actions se retrasaba 1–5 h en picos de carga (gaps reales de 67–292 min frente a los 15 min declarados). La ventana T-30M (que solo es 30 min de ancho) se perdía casi siempre. cron-job.org sí cumple la cadencia con precisión de minuto. Migrado el 2026-06-11.
 
-Si el cron va lento (GitHub avisa de retrasos > 1 h en picos), usa `workflow_dispatch` para forzar disparo desde la pestaña Actions.
+Para disparo manual desde el dashboard de cron-job.org: cualquier job tiene botón **Run now**. Equivalente al `workflow_dispatch` que teníamos antes.
 
 ### 9.2 El flow en Power Automate
 
@@ -199,7 +197,7 @@ El email de recordatorio se envía como `multipart/alternative` con HTML estruct
 
 ### 9.3 Prueba manual
 
-Desde local con un partido en ventana T-4h:
+Desde local con un partido en ventana T-2h:
 
 ```bash
 railway run python manage.py send_match_reminders --match-id <id>
@@ -209,13 +207,13 @@ O forzar el endpoint directo con `curl`:
 
 ```bash
 curl -fsS -X POST \
-  -H "Authorization: Bearer $PORRA26_API_TOKEN" \
-  https://laporradeljefe.es/competicion/api/recordatorios/disparar/
+  -H "Authorization: Bearer $TEAMS_API_TOKEN" \
+  https://laporradeljefe.es/competicion/api/teams/recordatorios/disparar/
 ```
 
 ### 9.4 Verificación
 
-- **GitHub Actions**: pestaña Actions del repo → "Recordatorios de apuestas" → historial de ejecuciones.
+- **cron-job.org → History** del job: el panel muestra cada disparo con código HTTP, latencia y el JSON de respuesta del backend.
 - **AuditLog en Django admin**: filas con `action="bets_reminder_sent"` muestran qué se envió, a quién y cuándo.
 - **BetsReminderLog**: una fila por `(match, kind)`. Si falta el log de una ventana esperada, no se envió (probablemente porque no había rezagados).
 
