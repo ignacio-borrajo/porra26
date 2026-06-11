@@ -109,7 +109,7 @@ Specs:
 
 **Adaptación a Railway**: durante el despliegue migramos de PythonAnywhere a Railway porque PA no permite SMTP saliente sin Hacker plan ($5/mes) y porque Railway nos da SMTP saliente libre, Postgres gestionado y volumen persistente. El SMTP lo provee Resend (free tier, 100 envíos/día) por el puerto 2587.
 
-**Disparo del envío — on-demand, no cron**: el plan original contemplaba un cron `*/10 min` que recorriese matches pendientes. Lo descartamos al replantearlo: con ~104 partidos en todo el Mundial, un cron consume miles de invocaciones para mover 100 emails (mal ratio), y el gestor ya entra a la plataforma a introducir el resultado oficial — pulsar un botón en esa misma pantalla es trivial. El comando `send_pending_closures` se mantiene como herramienta CLI para reenvíos masivos en emergencia. Ver `docs/DEPLOY_RAILWAY.md` §14.
+**Disparo del envío — cron + botón manual**: arrancamos solo con on-demand desde el botón del gestor (descartado el cron `*/10` original por ratio invocaciones/eventos malo). El primer partido del Mundial mostró el problema: los jugadores esperan ver el PDF al pitido inicial, no horas después cuando el gestor mete el resultado oficial. Solución vigente: un job en cron-job.org cada 15 min llama a `POST /competicion/api/teams/cierres/disparar/`, que recorre los matches con `kickoff <= now` y `sent_at` vacío. El service `send_closure_email` es idempotente, el PDF se pinta con "VS" cuando aún no hay marcador. El botón "✉️ Enviar" en `/competicion/resultados/` sigue para reenvíos manuales. El comando `send_pending_closures` sigue disponible como herramienta CLI para reenvíos masivos en emergencia. Ver `docs/TEAMS_FLOW.md` §0.
 
 Backend ya implementado (modelo, PDF, endpoint `/pdf` para descarga manual, sección "Estado de envíos") sigue valiendo tal cual; solo cambia el "transporte" del PDF al chat.
 
@@ -122,12 +122,14 @@ Backend ya implementado (modelo, PDF, endpoint `/pdf` para descarga manual, secc
 - [x] Eliminar endpoint `marcar-enviado` (ya no se consume desde fuera).
 - [x] SMTP de Resend desde Railway en producción (puerto 2587).
 - [x] Endpoint POST `/api/teams/cierres/<id>/enviar/` + botón Enviar/Reenviar en panel del gestor.
-- [ ] `docs/TEAMS_FLOW.md` con el flujo on-demand (Outlook trigger + Teams Post message in chat).
+- [x] Endpoint POST `/api/teams/cierres/disparar/` para que cron-job.org dispare todos los pendientes al kickoff.
+- [ ] `docs/TEAMS_FLOW.md` con el flujo (Outlook trigger + Teams Post message in chat).
 - [ ] Power Automate flow configurado + regla Outlook que filtra `[Porra26]`.
+- [ ] Job de cron-job.org dado de alta apuntando a `/cierres/disparar/`.
 
 Plan de implementación: [`docs/superpowers/plans/2026-06-01-cierre-apuestas-email.md`](superpowers/plans/2026-06-01-cierre-apuestas-email.md).
 
-**Hecho cuando:** el gestor pulsa "Enviar" tras introducir el resultado oficial y en segundos aparece el PDF en el chat de Teams. Si el envío falla puede reenviar desde la misma pantalla.
+**Hecho cuando:** a los pocos minutos del pitido inicial aparece automáticamente el PDF en el chat de Teams sin intervención del gestor. Si el cron falla, el gestor puede forzar reenvío desde `/competicion/resultados/`.
 
 ---
 
