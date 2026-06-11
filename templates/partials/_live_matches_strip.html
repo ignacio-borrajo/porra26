@@ -1,6 +1,3 @@
-{# Banda superior con los partidos en juego y los pendientes de oficial.
-   Espera del contexto: live_matches, awaiting_matches.
-   Siempre se renderiza; si no hay nada, muestra un placeholder. #}
 <section class="glass rise live-strip" aria-label="Partidos en juego">
   <header class="live-strip__head">
     <span class="eyebrow">EN JUEGO{% with total=live_matches|length|add:awaiting_matches|length %}{% if total %} · {{ total }}{% endif %}{% endwith %}</span>

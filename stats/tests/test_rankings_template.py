@@ -45,6 +45,21 @@ def test_live_strip_renders_empty_placeholder(client):
 
 
 @pytest.mark.django_db
+def test_live_strip_does_not_leak_template_comments(client):
+    """`{# ... #}` solo cierra una línea; los multilínea se escapaban como texto."""
+    user = UserFactory()
+    client.force_login(user)
+    RoundFactory(id="groups", points=3, order=1)
+
+    res = client.get(reverse("stats:rankings"))
+    html = res.content.decode()
+
+    assert "{#" not in html
+    assert "#}" not in html
+    assert "live_matches, awaiting_matches" not in html
+
+
+@pytest.mark.django_db
 def test_live_strip_renders_awaiting_chip(client):
     user = UserFactory()
     client.force_login(user)
