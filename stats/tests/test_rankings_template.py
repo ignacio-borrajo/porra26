@@ -19,7 +19,9 @@ def test_live_strip_renders_match_with_score(client):
     grp = RoundFactory(id="groups", points=3, order=1)
     home = Team.objects.create(code="ESP", name="España", flag="🇪🇸")
     away = Team.objects.create(code="FRA", name="Francia", flag="🇫🇷")
-    m = MatchFactory(round=grp, home=home, away=away, kickoff=timezone.now() - timedelta(minutes=10))
+    m = MatchFactory(
+        round=grp, home=home, away=away, kickoff=timezone.now() - timedelta(minutes=10)
+    )
     LiveScore.objects.create(match=m, home_score=2, away_score=1, period="2H", minute=70)
 
     res = client.get(reverse("stats:rankings"))
@@ -85,7 +87,9 @@ def test_group_detail_renders_live_strip(client):
     grp = RoundFactory(id="groups", points=3, order=1)
     home = Team.objects.create(code="POR", name="Portugal", flag="🇵🇹")
     away = Team.objects.create(code="GER", name="Alemania", flag="🇩🇪")
-    m = MatchFactory(round=grp, home=home, away=away, kickoff=timezone.now() - timedelta(minutes=15))
+    m = MatchFactory(
+        round=grp, home=home, away=away, kickoff=timezone.now() - timedelta(minutes=15)
+    )
     LiveScore.objects.create(match=m, home_score=1, away_score=2, period="2H", minute=65)
 
     res = client.get(reverse("stats:rankings_group", kwargs={"dim": "sede", "key": "vigo"}))

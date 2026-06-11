@@ -4,7 +4,7 @@ import pytest
 from django.utils import timezone
 
 from accounts.tests.factories import UserFactory
-from competition.models import Prediction
+from competition.models import LiveScore, Prediction
 from competition.tests.factories import MatchFactory, RoundFactory
 from stats.services.group_standings import group_standings
 
@@ -111,9 +111,6 @@ def test_group_standings_has_dense_position_with_ties(finished_match):
     assert positions == [1]
     for r in rows:
         assert r.is_tied is True
-
-
-from competition.models import LiveScore
 
 
 @pytest.mark.django_db

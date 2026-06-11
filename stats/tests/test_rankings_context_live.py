@@ -35,9 +35,7 @@ def test_scope_standings_include_live_points():
     grp = RoundFactory(id="groups", points=3, partial_points=1, order=1)
     alice = UserFactory(name="Alice")
 
-    m = MatchFactory(
-        round=grp, matchday=1, kickoff=timezone.now() - timedelta(minutes=10)
-    )
+    m = MatchFactory(round=grp, matchday=1, kickoff=timezone.now() - timedelta(minutes=10))
     LiveScore.objects.create(match=m, home_score=1, away_score=0, period="1H", minute=20)
     PredictionFactory(player=alice, match=m, home=1, away=0)
 

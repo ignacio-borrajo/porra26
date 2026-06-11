@@ -16,9 +16,7 @@ def test_returns_live_and_awaiting_separately():
     live = MatchFactory(round=grp, kickoff=timezone.now() - timedelta(minutes=10))
     LiveScore.objects.create(match=live, home_score=1, away_score=0, period="1H", minute=20)
     awaiting = MatchFactory(round=grp, kickoff=timezone.now() - timedelta(hours=2))
-    LiveScore.objects.create(
-        match=awaiting, home_score=2, away_score=2, period="FT", minute=95
-    )
+    LiveScore.objects.create(match=awaiting, home_score=2, away_score=2, period="FT", minute=95)
 
     live_matches, awaiting_matches = current_live_matches()
 
