@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from accounts.models import User
-from competition.services.standings import standings
+from competition.services.live_standings import live_standings
 
 Dimension = Literal["sede", "puesto", "dept"]
 
@@ -40,7 +40,9 @@ def group_standings(dimension: Dimension) -> list[GroupRow]:
     choices = CHOICES_BY_DIMENSION[dimension]
     labels = {key: label for key, label in choices}
 
-    standings_rows = standings()
+    standings_rows = live_standings()
+    for r in standings_rows:
+        r.pts = r.live_pts
     users = User.objects.filter(is_active=True, is_jugador=True).only("id", dimension)
     user_group = {u.id: (getattr(u, dimension) or "__none__") for u in users}
 

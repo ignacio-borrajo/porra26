@@ -111,3 +111,38 @@ def test_group_standings_has_dense_position_with_ties(finished_match):
     assert positions == [1]
     for r in rows:
         assert r.is_tied is True
+
+
+from competition.models import LiveScore
+
+
+@pytest.mark.django_db
+def test_group_standings_includes_live_points_in_total():
+    grp = RoundFactory(id="groups", points=3, partial_points=1, order=1)
+    alice = UserFactory(sede="vigo", is_jugador=True)
+    UserFactory(sede="vigo", is_jugador=True)  # bob sin predicción
+
+    m = MatchFactory(round=grp, kickoff=timezone.now() - timedelta(minutes=10))
+    LiveScore.objects.create(match=m, home_score=2, away_score=1, period="2H", minute=70)
+    Prediction.objects.create(player=alice, match=m, home=2, away=1)
+
+    rows = {r.key: r for r in group_standings("sede")}
+
+    # Alice suma 3 hipotéticos → vigo tiene total=3, avg=1.5.
+    assert rows["vigo"].total == 3
+    assert rows["vigo"].avg == 1.5
+
+
+@pytest.mark.django_db
+def test_group_standings_top_pts_reflects_live():
+    grp = RoundFactory(id="groups", points=3, partial_points=1, order=1)
+    alice = UserFactory(name="Alice", sede="vigo", is_jugador=True)
+
+    m = MatchFactory(round=grp, kickoff=timezone.now() - timedelta(minutes=10))
+    LiveScore.objects.create(match=m, home_score=1, away_score=0, period="1H", minute=20)
+    Prediction.objects.create(player=alice, match=m, home=1, away=0)
+
+    rows = {r.key: r for r in group_standings("sede")}
+
+    assert rows["vigo"].top_pts == 3
+    assert rows["vigo"].top_name == "Alice"
