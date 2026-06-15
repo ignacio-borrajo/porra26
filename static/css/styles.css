@@ -560,6 +560,15 @@ a.match-card:hover {
     color: var(--accent);
   }
 
+  /* min-width: 0 en las grid items para que el track 1fr de
+     `.dashboard-grid` pueda comprimirse por debajo del min-content de
+     los hijos. Sin esto, en la tab Clasificación algún descendiente
+     del leaderboard con min-content > viewport (nombre largo en el
+     podio sin truncar, h2 con font display, etc.) arrastraba al grid
+     entero y desbordaba el viewport del móvil. */
+  .comp-col--matches,
+  .comp-col--rank { min-width: 0; }
+
   /* Conmutación de paneles. Por defecto (tab Pronósticos) ocultamos la
      sección live y la columna de clasificación. */
   .comp-section--live { display: none; }
