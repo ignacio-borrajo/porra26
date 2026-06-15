@@ -1,8 +1,24 @@
 {% extends "base.html" %}
 {% load static %}
 {% block main %}
+{% if live_matches and not is_ko_view %}
+<input type="radio" name="comp-tab" id="comp-tab-live" class="comp-tab-input" checked>
+{% endif %}
+<input type="radio" name="comp-tab" id="comp-tab-pred" class="comp-tab-input" {% if not live_matches or is_ko_view %}checked{% endif %}>
+<input type="radio" name="comp-tab" id="comp-tab-rank" class="comp-tab-input">
+
+<nav class="comp-mobile-tabs" aria-label="Vista de competición">
+  {% if live_matches and not is_ko_view %}
+  <label for="comp-tab-live" class="comp-mobile-tab" data-tab="live">
+    En Juego <span class="comp-mobile-tab__count">{{ live_matches|length }}</span>
+  </label>
+  {% endif %}
+  <label for="comp-tab-pred" class="comp-mobile-tab" data-tab="pred">Pronósticos</label>
+  <label for="comp-tab-rank" class="comp-mobile-tab" data-tab="rank">Clasificación</label>
+</nav>
+
 <div class="dashboard-grid">
-  <section>
+  <section class="comp-col comp-col--matches">
     {% include "partials/_round_selector.html" with rounds=rounds active=active_round %}
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">
       {% include "partials/_matchday_selector.html" %}
@@ -14,38 +30,44 @@
     </div>
 
     {% if is_ko_view %}
-      {% include "competition/_ko_canvas.html" with ko_rounds=ko_rounds active_ko_id=active_ko_id my_preds=my_preds %}
+      <div class="comp-section comp-section--pred">
+        {% include "competition/_ko_canvas.html" with ko_rounds=ko_rounds active_ko_id=active_ko_id my_preds=my_preds %}
+      </div>
     {% else %}
-      {% if open_matches %}
-      <h2 class="eyebrow" style="margin-top:24px">ABIERTOS · {{ open_matches|length }}</h2>
-      <div class="stagger matches-grid">
-        {% for m in open_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
-      </div>
-      {% endif %}
       {% if live_matches %}
-      <h2 class="eyebrow" style="margin-top:24px">EN JUEGO · {{ live_matches|length }}</h2>
-      <div class="stagger matches-grid">
-        {% for m in live_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
+      <div class="comp-section comp-section--live">
+        <h2 class="eyebrow" style="margin-top:24px">EN JUEGO · {{ live_matches|length }}</h2>
+        <div class="stagger matches-grid">
+          {% for m in live_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
+        </div>
       </div>
       {% endif %}
-      {% if awaiting_matches %}
-      <h2 class="eyebrow" style="margin-top:24px">PENDIENTE OFICIAL · {{ awaiting_matches|length }}</h2>
-      <div class="stagger matches-grid">
-        {% for m in awaiting_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
+      <div class="comp-section comp-section--pred">
+        {% if open_matches %}
+        <h2 class="eyebrow" style="margin-top:24px">ABIERTOS · {{ open_matches|length }}</h2>
+        <div class="stagger matches-grid">
+          {% for m in open_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
+        </div>
+        {% endif %}
+        {% if awaiting_matches %}
+        <h2 class="eyebrow" style="margin-top:24px">PENDIENTE OFICIAL · {{ awaiting_matches|length }}</h2>
+        <div class="stagger matches-grid">
+          {% for m in awaiting_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
+        </div>
+        {% endif %}
+        {% if done_matches %}
+        <h2 class="eyebrow" style="margin-top:24px">FINALIZADOS · {{ done_matches|length }}</h2>
+        <div class="stagger matches-grid">
+          {% for m in done_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
+        </div>
+        {% endif %}
+        {% if not open_matches and not live_matches and not awaiting_matches and not done_matches %}
+        <p class="glass" style="padding:18px;margin-top:18px">No hay partidos en esta ronda todavía.</p>
+        {% endif %}
       </div>
-      {% endif %}
-      {% if done_matches %}
-      <h2 class="eyebrow" style="margin-top:24px">FINALIZADOS · {{ done_matches|length }}</h2>
-      <div class="stagger matches-grid">
-        {% for m in done_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
-      </div>
-      {% endif %}
-      {% if not open_matches and not live_matches and not awaiting_matches and not done_matches %}
-      <p class="glass" style="padding:18px;margin-top:18px">No hay partidos en esta ronda todavía.</p>
-      {% endif %}
     {% endif %}
   </section>
-  <aside>{% include "partials/_leaderboard.html" with rows=standings me=request.user users=standings_users my_rank=my_rank max_pts=max_pts scope_rows=scope_standings scope_my_rank=scope_my_rank scope_max_pts=scope_max_pts scope_label=scope_label %}</aside>
+  <aside class="comp-col comp-col--rank">{% include "partials/_leaderboard.html" with rows=standings me=request.user users=standings_users my_rank=my_rank max_pts=max_pts scope_rows=scope_standings scope_my_rank=scope_my_rank scope_max_pts=scope_max_pts scope_label=scope_label %}</aside>
 </div>
 {% endblock %}
 
