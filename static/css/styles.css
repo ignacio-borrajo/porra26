@@ -506,6 +506,72 @@ a.match-card:hover {
   }
 }
 
+/* ---------------- Tabs móviles dashboard competición ----------------
+   Solo se activan a partir del breakpoint <= 860px. En escritorio los
+   radios siguen presentes en el DOM pero no afectan nada (todas las
+   columnas y secciones se muestran de forma normal).
+   En móvil convertimos la pantalla en 3 vistas conmutables: En Juego,
+   Pronósticos y Clasificación. Implementado con radios CSS (sin JS).  */
+.comp-tab-input { position: absolute; opacity: 0; pointer-events: none; }
+.comp-mobile-tabs { display: none; }
+
+@media (max-width: 860px) {
+  .comp-mobile-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: oklch(from var(--text) l c h / 0.04);
+    margin-bottom: 14px;
+  }
+  .comp-mobile-tab {
+    flex: 1;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    padding: 8px 10px;
+    border-radius: 10px;
+    color: var(--text-dim);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .comp-mobile-tab__count {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: oklch(from var(--c-red) l c h / 0.18);
+    color: var(--c-red);
+    border: 1px solid oklch(from var(--c-red) l c h / 0.45);
+  }
+  #comp-tab-live:checked ~ .comp-mobile-tabs .comp-mobile-tab[data-tab="live"],
+  #comp-tab-pred:checked ~ .comp-mobile-tabs .comp-mobile-tab[data-tab="pred"],
+  #comp-tab-rank:checked ~ .comp-mobile-tabs .comp-mobile-tab[data-tab="rank"] {
+    background: oklch(from var(--accent) l c h / 0.16);
+    border: 1px solid oklch(from var(--accent) l c h / 0.45);
+    color: var(--accent);
+  }
+
+  /* Conmutación de paneles. Por defecto (tab Pronósticos) ocultamos la
+     sección live y la columna de clasificación. */
+  .comp-section--live { display: none; }
+  .comp-col--rank { display: none; }
+
+  #comp-tab-live:checked ~ .dashboard-grid .comp-section--live { display: block; }
+  #comp-tab-live:checked ~ .dashboard-grid .comp-section--pred { display: none; }
+
+  #comp-tab-rank:checked ~ .dashboard-grid .comp-col--matches { display: none; }
+  #comp-tab-rank:checked ~ .dashboard-grid .comp-col--rank { display: block; }
+}
+
 /* Topbar: en pantallas pequeñas ocultamos la nav de escritorio y los
    botones secundarios. La navegación pasa a una bottom-nav fija (jugador)
    o a un drawer detrás de un botón hamburguesa (gestor). */
