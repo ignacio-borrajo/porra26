@@ -34,24 +34,42 @@ _STATUS_TO_PERIOD = {
     "PAUSED": LiveScore.PERIOD_HALFTIME,
     "FINISHED": LiveScore.PERIOD_FULL_TIME,
     "AWARDED": LiveScore.PERIOD_FULL_TIME,
+    "EXTRA_TIME": LiveScore.PERIOD_EXTRA_TIME,
+    "PENALTY_SHOOTOUT": LiveScore.PERIOD_PENALTIES,
 }
 
+_LIVE_STATUSES = {"IN_PLAY", "LIVE"}
 
-def _period_from(status: str, minute: int | None) -> str:
+
+def _period_from(status: str, minute: int | None, score: dict | None = None) -> str:
+    # El tier gratis suele devolver `minute=None` y `status=LIVE` (no `IN_PLAY`);
+    # por eso, además del minuto, miramos `score.duration` y `score.halfTime`.
     mapped = _STATUS_TO_PERIOD.get(status)
     if mapped is not None:
         return mapped
-    if status != "IN_PLAY":
+    if status not in _LIVE_STATUSES:
         return LiveScore.PERIOD_FIRST_HALF
-    if minute is None:
-        return LiveScore.PERIOD_FIRST_HALF
-    if minute <= 45:
-        return LiveScore.PERIOD_FIRST_HALF
-    if minute <= 90:
-        return LiveScore.PERIOD_SECOND_HALF
-    if minute <= 120:
+
+    score = score or {}
+    duration = score.get("duration")
+    if duration == "PENALTY_SHOOTOUT":
+        return LiveScore.PERIOD_PENALTIES
+    if duration == "EXTRA_TIME":
         return LiveScore.PERIOD_EXTRA_TIME
-    return LiveScore.PERIOD_PENALTIES
+
+    if isinstance(minute, int):
+        if minute <= 45:
+            return LiveScore.PERIOD_FIRST_HALF
+        if minute <= 90:
+            return LiveScore.PERIOD_SECOND_HALF
+        if minute <= 120:
+            return LiveScore.PERIOD_EXTRA_TIME
+        return LiveScore.PERIOD_PENALTIES
+
+    half_time = score.get("halfTime") or {}
+    if half_time.get("home") is not None or half_time.get("away") is not None:
+        return LiveScore.PERIOD_SECOND_HALF
+    return LiveScore.PERIOD_FIRST_HALF
 
 
 class FootballDataProvider:
@@ -93,9 +111,10 @@ class FootballDataProvider:
             eid = str(match.get("id"))
             if eid not in wanted:
                 continue
-            score = (match.get("score") or {}).get("fullTime") or {}
-            home = score.get("home") or 0
-            away = score.get("away") or 0
+            score = match.get("score") or {}
+            full_time = score.get("fullTime") or {}
+            home = full_time.get("home") or 0
+            away = full_time.get("away") or 0
             minute = match.get("minute")
             status = match.get("status", "")
             out.append(
@@ -104,7 +123,7 @@ class FootballDataProvider:
                     home_score=int(home),
                     away_score=int(away),
                     minute=minute if minute is not None else None,
-                    period=_period_from(status, minute),
+                    period=_period_from(status, minute, score),
                 )
             )
         return out

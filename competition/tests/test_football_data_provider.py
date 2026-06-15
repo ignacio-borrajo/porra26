@@ -167,6 +167,145 @@ def test_fetch_handles_null_minute(urlopen, provider):
 
 
 @patch("competition.services.football_data.urlopen")
+def test_fetch_treats_live_status_like_in_play(urlopen, provider):
+    """football-data.org devuelve `LIVE` (no solo `IN_PLAY`) y el filtro de la
+    request lo incluye explícitamente. Debe mapearse por minuto igual que IN_PLAY."""
+    urlopen.return_value = _resp(
+        {
+            "matches": [
+                {
+                    "id": 1,
+                    "status": "LIVE",
+                    "minute": 67,
+                    "score": {
+                        "fullTime": {"home": 1, "away": 0},
+                        "halfTime": {"home": 0, "away": 0},
+                    },
+                    "homeTeam": {"tla": "A"},
+                    "awayTeam": {"tla": "B"},
+                }
+            ]
+        }
+    )
+    out = provider.fetch(["1"])
+    assert out[0].period == "2H"
+
+
+@patch("competition.services.football_data.urlopen")
+def test_fetch_infers_second_half_from_halftime_score_when_minute_missing(urlopen, provider):
+    """En tier gratuito `minute` suele venir null. Si `score.halfTime` ya tiene
+    valores, la 1ª parte ha terminado y estamos en 2H aunque no haya minuto."""
+    urlopen.return_value = _resp(
+        {
+            "matches": [
+                {
+                    "id": 1,
+                    "status": "IN_PLAY",
+                    "minute": None,
+                    "score": {
+                        "duration": "REGULAR",
+                        "fullTime": {"home": 2, "away": 1},
+                        "halfTime": {"home": 1, "away": 0},
+                    },
+                    "homeTeam": {"tla": "A"},
+                    "awayTeam": {"tla": "B"},
+                }
+            ]
+        }
+    )
+    out = provider.fetch(["1"])
+    assert out[0].period == "2H"
+
+
+@patch("competition.services.football_data.urlopen")
+def test_fetch_uses_duration_for_extra_time_when_minute_missing(urlopen, provider):
+    urlopen.return_value = _resp(
+        {
+            "matches": [
+                {
+                    "id": 1,
+                    "status": "IN_PLAY",
+                    "minute": None,
+                    "score": {
+                        "duration": "EXTRA_TIME",
+                        "fullTime": {"home": 2, "away": 2},
+                        "halfTime": {"home": 1, "away": 1},
+                    },
+                    "homeTeam": {"tla": "A"},
+                    "awayTeam": {"tla": "B"},
+                }
+            ]
+        }
+    )
+    out = provider.fetch(["1"])
+    assert out[0].period == "ET"
+
+
+@patch("competition.services.football_data.urlopen")
+def test_fetch_uses_duration_for_penalty_shootout_when_minute_missing(urlopen, provider):
+    urlopen.return_value = _resp(
+        {
+            "matches": [
+                {
+                    "id": 1,
+                    "status": "IN_PLAY",
+                    "minute": None,
+                    "score": {
+                        "duration": "PENALTY_SHOOTOUT",
+                        "fullTime": {"home": 2, "away": 2},
+                    },
+                    "homeTeam": {"tla": "A"},
+                    "awayTeam": {"tla": "B"},
+                }
+            ]
+        }
+    )
+    out = provider.fetch(["1"])
+    assert out[0].period == "PEN"
+
+
+@patch("competition.services.football_data.urlopen")
+def test_fetch_handles_extra_time_status_value(urlopen, provider):
+    """Algunas versiones del API devuelven `status=EXTRA_TIME` directamente."""
+    urlopen.return_value = _resp(
+        {
+            "matches": [
+                {
+                    "id": 1,
+                    "status": "EXTRA_TIME",
+                    "minute": None,
+                    "score": {"fullTime": {"home": 1, "away": 1}},
+                    "homeTeam": {"tla": "A"},
+                    "awayTeam": {"tla": "B"},
+                }
+            ]
+        }
+    )
+    out = provider.fetch(["1"])
+    assert out[0].period == "ET"
+
+
+@patch("competition.services.football_data.urlopen")
+def test_fetch_handles_penalty_shootout_status_value(urlopen, provider):
+    urlopen.return_value = _resp(
+        {
+            "matches": [
+                {
+                    "id": 1,
+                    "status": "PENALTY_SHOOTOUT",
+                    "minute": None,
+                    "score": {"fullTime": {"home": 2, "away": 2}},
+                    "homeTeam": {"tla": "A"},
+                    "awayTeam": {"tla": "B"},
+                }
+            ]
+        }
+    )
+    out = provider.fetch(["1"])
+    assert out[0].period == "PEN"
+
+
+@patch("competition.services.football_data.urlopen")
 def test_fetch_handles_null_score_treats_as_zero(urlopen, provider):
     """Football-data devuelve `null` en home/away cuando aún no ha empezado;
     si nos llega así para un IN_PLAY (raro pero defensivo), tratamos 0-0."""
