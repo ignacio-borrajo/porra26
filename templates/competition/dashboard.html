@@ -18,25 +18,25 @@
     {% else %}
       {% if open_matches %}
       <h2 class="eyebrow" style="margin-top:24px">ABIERTOS · {{ open_matches|length }}</h2>
-      <div class="stagger matches-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+      <div class="stagger matches-grid">
         {% for m in open_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
       </div>
       {% endif %}
       {% if live_matches %}
       <h2 class="eyebrow" style="margin-top:24px">EN JUEGO · {{ live_matches|length }}</h2>
-      <div class="stagger matches-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+      <div class="stagger matches-grid">
         {% for m in live_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
       </div>
       {% endif %}
       {% if awaiting_matches %}
       <h2 class="eyebrow" style="margin-top:24px">PENDIENTE OFICIAL · {{ awaiting_matches|length }}</h2>
-      <div class="stagger matches-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+      <div class="stagger matches-grid">
         {% for m in awaiting_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
       </div>
       {% endif %}
       {% if done_matches %}
       <h2 class="eyebrow" style="margin-top:24px">FINALIZADOS · {{ done_matches|length }}</h2>
-      <div class="stagger matches-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+      <div class="stagger matches-grid">
         {% for m in done_matches %}{% include "competition/_match_card.html" with match=m my_preds=my_preds %}{% endfor %}
       </div>
       {% endif %}

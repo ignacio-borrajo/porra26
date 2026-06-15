@@ -263,6 +263,16 @@ body {
   background: linear-gradient(var(--accent), var(--accent-2));
 }
 
+/* Rejilla de tarjetas de partido (fase de grupos). Usamos `min(280px, 100%)`
+   en el lado mínimo del minmax para que en viewports estrechos (móviles con
+   safe-area, PWA, splits) la columna pueda comprimirse por debajo de 280px
+   en vez de forzar overflow horizontal del documento. */
+.matches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+  gap: 14px;
+}
+
 /* ---------------- Tarjeta de partido ---------------- */
 .match-card {
   display: flex;
