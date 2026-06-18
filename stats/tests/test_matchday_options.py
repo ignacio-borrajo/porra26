@@ -5,8 +5,10 @@ from django.utils import timezone
 
 from competition.tests.factories import MatchFactory, RoundFactory, TeamFactory
 from stats.services.matchday_options import (
-    KO_SCOPE_KEY,
-    KO_SCOPE_LABEL,
+    FINALS_SCOPE_KEY,
+    FINALS_SCOPE_LABEL,
+    R32_SCOPE_KEY,
+    R32_SCOPE_LABEL,
     matchday_options,
 )
 
@@ -29,7 +31,7 @@ def test_matchday_options_groups_yield_one_per_matchday():
 
 
 @pytest.mark.django_db
-def test_matchday_options_collapses_ko_rounds_into_fases_finales():
+def test_matchday_options_splits_ko_into_r32_and_fases_finales():
     grp = RoundFactory(id="groups", label="Grupos", short="G", order=1)
     r32 = RoundFactory(id="r32", label="Dieciseisavos", short="R32", order=2)
     r16 = RoundFactory(id="r16", label="Octavos", short="R16", order=3)
@@ -55,22 +57,28 @@ def test_matchday_options_collapses_ko_rounds_into_fases_finales():
 
     options = matchday_options()
     labels = [o.label for o in options]
-    assert labels == ["Jornada 1", KO_SCOPE_LABEL]
+    assert labels == ["Jornada 1", R32_SCOPE_LABEL, FINALS_SCOPE_LABEL]
+
+    r32_opt = next(o for o in options if o.key == R32_SCOPE_KEY)
+    assert r32_opt.label == R32_SCOPE_LABEL
+    assert r32_opt.round_id == "r32"
+    assert r32_opt.round_ids is None
+    assert r32_opt.matchday is None
 
     fases = options[-1]
-    assert fases.key == KO_SCOPE_KEY
-    assert fases.round_ids == ["r32", "r16", "qf", "sf", "final"]
+    assert fases.key == FINALS_SCOPE_KEY
+    assert fases.round_ids == ["r16", "qf", "sf", "final"]
     assert fases.round_id is None
     assert fases.matchday is None
 
 
 @pytest.mark.django_db
-def test_matchday_options_fases_finales_fully_resolved_only_when_all_ko_done():
-    r32 = RoundFactory(id="r32", label="Dieciseisavos", short="R32", order=2)
+def test_matchday_options_fases_finales_fully_resolved_only_when_all_finals_done():
+    r16 = RoundFactory(id="r16", label="Octavos", short="R16", order=3)
     final = RoundFactory(id="final", label="Final", short="F", order=6)
     now = timezone.now()
     MatchFactory(
-        round=r32,
+        round=r16,
         matchday=None,
         home=TeamFactory(),
         away=TeamFactory(),
@@ -87,5 +95,5 @@ def test_matchday_options_fases_finales_fully_resolved_only_when_all_ko_done():
     )
 
     fases = matchday_options()[-1]
-    assert fases.label == KO_SCOPE_LABEL
+    assert fases.label == FINALS_SCOPE_LABEL
     assert fases.fully_resolved is False

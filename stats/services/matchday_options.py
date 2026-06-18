@@ -4,9 +4,11 @@ from django.db.models import Count, Max, Min, Q
 
 from competition.models import Match, Round
 
-KO_ROUND_IDS: tuple[str, ...] = ("r32", "r16", "qf", "sf", "final")
-KO_SCOPE_KEY = "ko:_"
-KO_SCOPE_LABEL = "Fases Finales"
+FINALS_ROUND_IDS: tuple[str, ...] = ("r16", "qf", "sf", "final")
+R32_SCOPE_KEY = "r32:_"
+R32_SCOPE_LABEL = "Dieciseisavos"
+FINALS_SCOPE_KEY = "finals:_"
+FINALS_SCOPE_LABEL = "Fases Finales"
 
 
 @dataclass
@@ -14,7 +16,7 @@ class MatchdayOption:
     round_id: str | None
     matchday: int | None
     label: str
-    key: str  # "<round_id>:<matchday or '_'>" — usado en URLs ("ko:_" para fases finales)
+    key: str  # "<round_id>:<matchday or '_'>" — usado en URLs ("r32:_", "finals:_" para fases eliminatorias)
     fully_resolved: bool
     round_ids: list[str] | None = field(default=None)
 
@@ -22,9 +24,9 @@ class MatchdayOption:
 def matchday_options() -> list[MatchdayOption]:
     """Opciones del selector de jornada para Rankings.
 
-    La porra tiene 4 jornadas: las tres de la fase de grupos (cada una como
-    opción independiente) y «Fases Finales», que agrupa todos los partidos
-    eliminatorios (R32, R16, cuartos, semis, final) como una única jornada.
+    La porra tiene 5 jornadas: las tres de la fase de grupos (cada una como
+    opción independiente), «Dieciseisavos» (solo R32) y «Fases Finales», que
+    agrupa el resto de eliminatorias (R16, cuartos, semis y final).
     """
     combos = list(
         Match.objects.values("round_id", "matchday")
@@ -38,10 +40,10 @@ def matchday_options() -> list[MatchdayOption]:
     )
     rounds_by_id = {r.id: r for r in Round.objects.all()}
     options: list[MatchdayOption] = []
-    ko_combos: list[dict] = []
+    finals_combos: list[dict] = []
     for c in combos:
-        if c["round_id"] in KO_ROUND_IDS:
-            ko_combos.append(c)
+        if c["round_id"] in FINALS_ROUND_IDS:
+            finals_combos.append(c)
             continue
         rnd = rounds_by_id.get(c["round_id"])
         round_label = rnd.label if rnd else c["round_id"]
@@ -51,6 +53,8 @@ def matchday_options() -> list[MatchdayOption]:
                 label = f"Jornada {md}"
             else:
                 label = f"{round_label} · J{md}"
+        elif c["round_id"] == "r32":
+            label = R32_SCOPE_LABEL
         else:
             label = round_label
         options.append(
@@ -63,17 +67,17 @@ def matchday_options() -> list[MatchdayOption]:
             )
         )
 
-    if ko_combos:
-        total = sum(c["total"] for c in ko_combos)
-        resolved = sum(c["resolved"] for c in ko_combos)
+    if finals_combos:
+        total = sum(c["total"] for c in finals_combos)
+        resolved = sum(c["resolved"] for c in finals_combos)
         options.append(
             MatchdayOption(
                 round_id=None,
                 matchday=None,
-                label=KO_SCOPE_LABEL,
-                key=KO_SCOPE_KEY,
+                label=FINALS_SCOPE_LABEL,
+                key=FINALS_SCOPE_KEY,
                 fully_resolved=total > 0 and resolved == total,
-                round_ids=list(KO_ROUND_IDS),
+                round_ids=list(FINALS_ROUND_IDS),
             )
         )
     return options
