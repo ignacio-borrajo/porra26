@@ -54,7 +54,7 @@ def test_resolving_ko_round_creates_no_announcement(r16_round, gestor):
 
 
 @pytest.mark.django_db
-def test_resolve_final_creates_ko_sede_global(groups_round, final_round, gestor):
+def test_resolve_final_creates_finals_sede_global(groups_round, final_round, gestor):
     # Setup canónico para tener un ganador de sede fuera del podio top 3.
     v1 = UserFactory(name="V1", sede="vigo")
     v2 = UserFactory(name="V2", sede="vigo")
@@ -70,4 +70,4 @@ def test_resolve_final_creates_ko_sede_global(groups_round, final_round, gestor)
     resolve_match(final_match, home=1, away=0, actor=gestor)
 
     kinds = sorted(WinnerAnnouncement.objects.values_list("scope_kind", flat=True))
-    assert kinds == ["global", "ko", "sede"]
+    assert kinds == ["finals", "global", "sede"]
