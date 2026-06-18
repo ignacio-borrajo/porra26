@@ -7,7 +7,7 @@ from announcements.models import WinnerAnnouncement
 from pot.models import PotSettings, Prize
 from pot.services.prizes import PodiumEntry
 
-_VALID_SCOPES = {"matchday", "ko", "global"}
+_VALID_SCOPES = {"matchday", "r32", "finals", "global"}
 
 
 def build_preview(scope: str, *, tied: bool, current_user) -> tuple[WinnerAnnouncement, list]:
@@ -18,7 +18,7 @@ def build_preview(scope: str, *, tied: bool, current_user) -> tuple[WinnerAnnoun
 
     if scope == "matchday":
         ann.scope_matchday = 1
-    # scope == "ko": un único anuncio global por torneo, sin estado adicional.
+    # scope r32 / finals: un único anuncio por torneo, sin estado adicional.
 
     winners = [current_user]
     if tied:
