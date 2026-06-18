@@ -7,7 +7,8 @@ from django.db.models import Q, UniqueConstraint
 class WinnerAnnouncement(models.Model):
     SCOPE_CHOICES = [
         ("matchday", "Jornada de grupos"),
-        ("ko", "Jornada eliminatoria"),
+        ("r32", "Jornada de dieciseisavos"),
+        ("finals", "Jornada de fases finales"),
         ("global", "Campeón del Mundial"),
         ("sede", "Ganadores por sede"),
     ]
@@ -34,8 +35,13 @@ class WinnerAnnouncement(models.Model):
             ),
             UniqueConstraint(
                 fields=["scope_kind"],
-                condition=Q(scope_kind="ko"),
-                name="uniq_ann_ko",
+                condition=Q(scope_kind="r32"),
+                name="uniq_ann_r32",
+            ),
+            UniqueConstraint(
+                fields=["scope_kind"],
+                condition=Q(scope_kind="finals"),
+                name="uniq_ann_finals",
             ),
             UniqueConstraint(
                 fields=["scope_kind"],
@@ -52,8 +58,10 @@ class WinnerAnnouncement(models.Model):
     def __str__(self):
         if self.scope_kind == "matchday":
             return f"Anuncio jornada {self.scope_matchday}"
-        if self.scope_kind == "ko":
-            return "Anuncio jornada eliminatoria"
+        if self.scope_kind == "r32":
+            return "Anuncio jornada de dieciseisavos"
+        if self.scope_kind == "finals":
+            return "Anuncio jornada de fases finales"
         if self.scope_kind == "sede":
             return "Anuncio ganadores por sede"
         return "Anuncio campeón del Mundial"
@@ -64,11 +72,13 @@ class WinnerAnnouncement(models.Model):
             if self.tied:
                 return f"¡Ganadores de la Jornada {self.scope_matchday}!"
             return f"¡Ganador de la Jornada {self.scope_matchday}!"
-        if self.scope_kind == "ko":
+        if self.scope_kind == "r32":
+            return "¡Ganadores de Dieciseisavos!" if self.tied else "¡Ganador de Dieciseisavos!"
+        if self.scope_kind == "finals":
             return (
-                "¡Ganadores de las eliminatorias!"
+                "¡Ganadores de las Fases Finales!"
                 if self.tied
-                else "¡Ganador de las eliminatorias!"
+                else "¡Ganador de las Fases Finales!"
             )
         if self.scope_kind == "sede":
             return "¡Ganadores por sede!"

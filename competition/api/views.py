@@ -122,10 +122,46 @@ def cierre_enviar(request, match_id: int):
 
 @require_teams_api_token
 @require_POST
+def cierres_disparar(request):
+    """Envía el PDF de cierre de todos los matches con apuestas ya cerradas.
+
+    Pensado para que un cron externo (cron-job.org) lo golpee cada N min:
+    recorre los matches con ``kickoff <= now`` cuyo
+    :class:`BetsClosingReport` no tenga ``sent_at`` y dispara
+    :func:`send_closure_email` para cada uno. Idempotente partido a partido —
+    una vez ``sent_at`` queda fijado el service no reenvía.
+
+    Devuelve ``{"checked": N, "sent": N, "errors": N}`` para que el log del
+    cron-job sea autoexplicativo.
+    """
+    now = timezone.now()
+    qs = (
+        Match.objects.filter(kickoff__lte=now)
+        .select_related("home", "away", "round", "closing_report")
+        .order_by("kickoff")
+    )
+    checked = sent = errors = 0
+    for match in qs:
+        report = getattr(match, "closing_report", None)
+        if report is not None and report.sent_at is not None:
+            continue
+        checked += 1
+        try:
+            send_closure_email(match)
+        except Exception as exc:  # noqa: BLE001
+            errors += 1
+            logger.exception("cierres_disparar: error enviando match=%s: %s", match.id, exc)
+            continue
+        sent += 1
+    return JsonResponse({"checked": checked, "sent": sent, "errors": errors})
+
+
+@require_teams_api_token
+@require_POST
 def recordatorios_disparar(request):
     """Procesa las dos ventanas de aviso y dispara los pendientes.
 
-    Endpoint pensado para ser llamado por GitHub Actions cada 15 min. También
+    Endpoint pensado para ser llamado por cron-job.org cada 15 min. También
     lo puede ejecutar un gestor logueado para forzar la verificación.
     """
     summary: dict[str, dict[str, int]] = {}

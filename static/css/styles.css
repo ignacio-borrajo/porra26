@@ -263,6 +263,16 @@ body {
   background: linear-gradient(var(--accent), var(--accent-2));
 }
 
+/* Rejilla de tarjetas de partido (fase de grupos). Usamos `min(280px, 100%)`
+   en el lado mínimo del minmax para que en viewports estrechos (móviles con
+   safe-area, PWA, splits) la columna pueda comprimirse por debajo de 280px
+   en vez de forzar overflow horizontal del documento. */
+.matches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+  gap: 14px;
+}
+
 /* ---------------- Tarjeta de partido ---------------- */
 .match-card {
   display: flex;
@@ -494,6 +504,81 @@ a.match-card:hover {
     height: auto;
     overflow: visible;
   }
+}
+
+/* ---------------- Tabs móviles dashboard competición ----------------
+   Solo se activan a partir del breakpoint <= 860px. En escritorio los
+   radios siguen presentes en el DOM pero no afectan nada (todas las
+   columnas y secciones se muestran de forma normal).
+   En móvil convertimos la pantalla en 3 vistas conmutables: En Juego,
+   Pronósticos y Clasificación. Implementado con radios CSS (sin JS).  */
+.comp-tab-input { position: absolute; opacity: 0; pointer-events: none; }
+.comp-mobile-tabs { display: none; }
+
+@media (max-width: 860px) {
+  .comp-mobile-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: oklch(from var(--text) l c h / 0.04);
+    margin-bottom: 14px;
+  }
+  .comp-mobile-tab {
+    flex: 1;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    padding: 8px 10px;
+    border-radius: 10px;
+    color: var(--text-dim);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+    min-width: 0;
+  }
+  .comp-mobile-tab__count {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: oklch(from var(--c-red) l c h / 0.18);
+    color: var(--c-red);
+    border: 1px solid oklch(from var(--c-red) l c h / 0.45);
+  }
+  #comp-tab-live:checked ~ .comp-mobile-tabs .comp-mobile-tab[data-tab="live"],
+  #comp-tab-pred:checked ~ .comp-mobile-tabs .comp-mobile-tab[data-tab="pred"],
+  #comp-tab-rank:checked ~ .comp-mobile-tabs .comp-mobile-tab[data-tab="rank"] {
+    background: oklch(from var(--accent) l c h / 0.16);
+    border: 1px solid oklch(from var(--accent) l c h / 0.45);
+    color: var(--accent);
+  }
+
+  /* min-width: 0 en las grid items para que el track 1fr de
+     `.dashboard-grid` pueda comprimirse por debajo del min-content de
+     los hijos. Sin esto, en la tab Clasificación algún descendiente
+     del leaderboard con min-content > viewport (nombre largo en el
+     podio sin truncar, h2 con font display, etc.) arrastraba al grid
+     entero y desbordaba el viewport del móvil. */
+  .comp-col--matches,
+  .comp-col--rank { min-width: 0; }
+
+  /* Conmutación de paneles. Por defecto (tab Pronósticos) ocultamos la
+     sección live y la columna de clasificación. */
+  .comp-section--live { display: none; }
+  .comp-col--rank { display: none; }
+
+  #comp-tab-live:checked ~ .dashboard-grid .comp-section--live { display: block; }
+  #comp-tab-live:checked ~ .dashboard-grid .comp-section--pred { display: none; }
+
+  #comp-tab-rank:checked ~ .dashboard-grid .comp-col--matches { display: none; }
+  #comp-tab-rank:checked ~ .dashboard-grid .comp-col--rank { display: block; }
 }
 
 /* Topbar: en pantallas pequeñas ocultamos la nav de escritorio y los
@@ -2975,3 +3060,59 @@ html.fv .team-profile-halo {
     padding: 4px 0;
   }
 }
+
+/* === Banda "EN JUEGO" en Rankings ===================================== */
+.live-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 18px;
+  margin: 16px 0;
+  border-radius: 22px;
+}
+.live-strip__head { display: flex; align-items: center; justify-content: space-between; }
+.live-strip__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.live-strip__chip {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: oklch(from var(--accent) l c h / 0.06);
+  border: 1px solid var(--border);
+  min-width: 220px;
+}
+.live-strip__chip--awaiting {
+  background: oklch(from var(--c-yellow) l c h / 0.08);
+  border-color: oklch(from var(--c-yellow) l c h / 0.4);
+}
+.live-strip__chip--pending {
+  background: transparent;
+  border-style: dashed;
+}
+.live-strip__teams { display: flex; align-items: center; gap: 10px; }
+.live-strip__team { display: flex; align-items: center; gap: 6px; }
+.live-strip__team .team-flag { font-size: 22px; }
+.live-strip__code { font-size: 13px; letter-spacing: 0.05em; }
+.live-strip__score { display: flex; align-items: center; gap: 4px; }
+.live-strip__score .score-bubble {
+  min-width: 30px;
+  height: 36px;
+  font-size: 18px;
+  padding: 0 6px;
+}
+.live-strip__foot { font-size: 11px; color: var(--text-dim); letter-spacing: 0.04em; }
+.live-strip__chip--awaiting .live-strip__foot { color: var(--c-yellow); }
+.live-strip__empty { margin: 0; color: var(--text-faint); font-size: 13px; }

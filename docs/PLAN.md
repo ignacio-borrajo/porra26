@@ -109,7 +109,7 @@ Specs:
 
 **Adaptación a Railway**: durante el despliegue migramos de PythonAnywhere a Railway porque PA no permite SMTP saliente sin Hacker plan ($5/mes) y porque Railway nos da SMTP saliente libre, Postgres gestionado y volumen persistente. El SMTP lo provee Resend (free tier, 100 envíos/día) por el puerto 2587.
 
-**Disparo del envío — on-demand, no cron**: el plan original contemplaba un cron `*/10 min` que recorriese matches pendientes. Lo descartamos al replantearlo: con ~104 partidos en todo el Mundial, un cron consume miles de invocaciones para mover 100 emails (mal ratio), y el gestor ya entra a la plataforma a introducir el resultado oficial — pulsar un botón en esa misma pantalla es trivial. El comando `send_pending_closures` se mantiene como herramienta CLI para reenvíos masivos en emergencia. Ver `docs/DEPLOY_RAILWAY.md` §14.
+**Disparo del envío — cron + botón manual**: arrancamos solo con on-demand desde el botón del gestor (descartado el cron `*/10` original por ratio invocaciones/eventos malo). El primer partido del Mundial mostró el problema: los jugadores esperan ver el PDF al pitido inicial, no horas después cuando el gestor mete el resultado oficial. Solución vigente: un job en cron-job.org cada 15 min llama a `POST /competicion/api/teams/cierres/disparar/`, que recorre los matches con `kickoff <= now` y `sent_at` vacío. El service `send_closure_email` es idempotente, el PDF se pinta con "VS" cuando aún no hay marcador. El botón "✉️ Enviar" en `/competicion/resultados/` sigue para reenvíos manuales. El comando `send_pending_closures` sigue disponible como herramienta CLI para reenvíos masivos en emergencia. Ver `docs/TEAMS_FLOW.md` §0.
 
 Backend ya implementado (modelo, PDF, endpoint `/pdf` para descarga manual, sección "Estado de envíos") sigue valiendo tal cual; solo cambia el "transporte" del PDF al chat.
 
@@ -122,12 +122,14 @@ Backend ya implementado (modelo, PDF, endpoint `/pdf` para descarga manual, secc
 - [x] Eliminar endpoint `marcar-enviado` (ya no se consume desde fuera).
 - [x] SMTP de Resend desde Railway en producción (puerto 2587).
 - [x] Endpoint POST `/api/teams/cierres/<id>/enviar/` + botón Enviar/Reenviar en panel del gestor.
-- [ ] `docs/TEAMS_FLOW.md` con el flujo on-demand (Outlook trigger + Teams Post message in chat).
+- [x] Endpoint POST `/api/teams/cierres/disparar/` para que cron-job.org dispare todos los pendientes al kickoff.
+- [ ] `docs/TEAMS_FLOW.md` con el flujo (Outlook trigger + Teams Post message in chat).
 - [ ] Power Automate flow configurado + regla Outlook que filtra `[Porra26]`.
+- [ ] Job de cron-job.org dado de alta apuntando a `/cierres/disparar/`.
 
 Plan de implementación: [`docs/superpowers/plans/2026-06-01-cierre-apuestas-email.md`](superpowers/plans/2026-06-01-cierre-apuestas-email.md).
 
-**Hecho cuando:** el gestor pulsa "Enviar" tras introducir el resultado oficial y en segundos aparece el PDF en el chat de Teams. Si el envío falla puede reenviar desde la misma pantalla.
+**Hecho cuando:** a los pocos minutos del pitido inicial aparece automáticamente el PDF en el chat de Teams sin intervención del gestor. Si el cron falla, el gestor puede forzar reenvío desde `/competicion/resultados/`.
 
 ---
 
@@ -138,7 +140,7 @@ Plan de implementación: [`docs/superpowers/plans/2026-06-01-cierre-apuestas-ema
 Spec: [`docs/superpowers/specs/2026-06-04-recordatorios-apuestas-design.md`](superpowers/specs/2026-06-04-recordatorios-apuestas-design.md).
 Plan: [`docs/superpowers/plans/2026-06-04-recordatorios-apuestas.md`](superpowers/plans/2026-06-04-recordatorios-apuestas.md).
 
-**Arquitectura distinta de Fase 7**: aquí el cron sí hace falta (la naturaleza del aviso es temporal, no on-demand). Pero **fuera de Railway**: GitHub Actions cron `*/15 * * * *` llama un endpoint Bearer del backend. Coste Railway = 0 cuando no hay trabajo.
+**Arquitectura distinta de Fase 7**: aquí el cron sí hace falta (la naturaleza del aviso es temporal, no on-demand). Pero **fuera de Railway**: **cron-job.org** golpea cada 15 min un endpoint Bearer del backend. Mismo patrón que Fase 9 (live_tick). Coste Railway = 0 cuando no hay trabajo. *Histórico:* arrancó en GitHub Actions, pero el cron de Actions se retrasaba 1–5 h en picos de carga y dejaba pasar las ventanas T-30M (y a veces incluso T-2H) sin disparar — migrado a cron-job.org el 2026-06-11.
 
 - [x] Modelo `BetsReminderLog` (kind ∈ {T_MINUS_4H, T_MINUS_2_5H, MANUAL}) + migración.
 - [x] Service `get_pending_bettors` y `matches_due_for_kind`.
@@ -146,9 +148,8 @@ Plan: [`docs/superpowers/plans/2026-06-04-recordatorios-apuestas.md`](superpower
 - [x] Management command `send_match_reminders`.
 - [x] Endpoints `POST /api/recordatorios/disparar/` (cron) y `POST /api/recordatorios/<id>/enviar/` (botón gestor).
 - [x] UI en `/competicion/resultados/`: pill `🟠 N sin apostar` y botón `✉ Recordatorio` por partido upcoming.
-- [x] GitHub Actions workflow `.github/workflows/match-reminders.yml`.
+- [ ] Job de cron-job.org apuntando a `/competicion/api/teams/recordatorios/disparar/` con `Authorization: Bearer …` (mismo `TEAMS_API_TOKEN` que `live_tick`).
 - [ ] Power Automate flow nuevo configurado (subject filter `[Porra26 RECORDATORIO]`).
-- [ ] Secrets `PORRA26_API_TOKEN` y `PORRA26_BASE_URL` configurados en GitHub.
 
 **Hecho cuando:** un partido entra en ventana T-4h y aparece el aviso en Teams listando los rezagados; el gestor también puede pulsar el botón desde Resultados y disparar uno manual.
 

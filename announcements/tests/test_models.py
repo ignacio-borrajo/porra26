@@ -11,9 +11,13 @@ class TestWinnerAnnouncementStr:
         ann = WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=2, points=9)
         assert "2" in str(ann)
 
-    def test_str_for_ko(self):
-        ann = WinnerAnnouncement.objects.create(scope_kind="ko", points=42)
-        assert "eliminatoria" in str(ann)
+    def test_str_for_r32(self):
+        ann = WinnerAnnouncement.objects.create(scope_kind="r32", points=42)
+        assert "dieciseisavos" in str(ann).lower()
+
+    def test_str_for_finals(self):
+        ann = WinnerAnnouncement.objects.create(scope_kind="finals", points=42)
+        assert "fases finales" in str(ann).lower()
 
     def test_str_for_global(self):
         ann = WinnerAnnouncement.objects.create(scope_kind="global", points=50)
@@ -38,13 +42,21 @@ class TestWinnerAnnouncementTitle:
         )
         assert ann.title == "¡Ganadores de la Jornada 3!"
 
-    def test_title_singular_ko(self):
-        ann = WinnerAnnouncement.objects.create(scope_kind="ko", points=42, tied=False)
-        assert ann.title == "¡Ganador de las eliminatorias!"
+    def test_title_singular_r32(self):
+        ann = WinnerAnnouncement.objects.create(scope_kind="r32", points=42, tied=False)
+        assert ann.title == "¡Ganador de Dieciseisavos!"
 
-    def test_title_plural_ko(self):
-        ann = WinnerAnnouncement.objects.create(scope_kind="ko", points=42, tied=True)
-        assert ann.title == "¡Ganadores de las eliminatorias!"
+    def test_title_plural_r32(self):
+        ann = WinnerAnnouncement.objects.create(scope_kind="r32", points=42, tied=True)
+        assert ann.title == "¡Ganadores de Dieciseisavos!"
+
+    def test_title_singular_finals(self):
+        ann = WinnerAnnouncement.objects.create(scope_kind="finals", points=42, tied=False)
+        assert ann.title == "¡Ganador de las Fases Finales!"
+
+    def test_title_plural_finals(self):
+        ann = WinnerAnnouncement.objects.create(scope_kind="finals", points=42, tied=True)
+        assert ann.title == "¡Ganadores de las Fases Finales!"
 
     def test_title_singular_global(self):
         ann = WinnerAnnouncement.objects.create(scope_kind="global", points=99, tied=False)
@@ -66,10 +78,15 @@ class TestUniquenessConstraints:
         with pytest.raises(IntegrityError):
             WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=1, points=10)
 
-    def test_uniqueness_constraint_ko(self):
-        WinnerAnnouncement.objects.create(scope_kind="ko", points=42)
+    def test_uniqueness_constraint_r32(self):
+        WinnerAnnouncement.objects.create(scope_kind="r32", points=42)
         with pytest.raises(IntegrityError):
-            WinnerAnnouncement.objects.create(scope_kind="ko", points=50)
+            WinnerAnnouncement.objects.create(scope_kind="r32", points=50)
+
+    def test_uniqueness_constraint_finals(self):
+        WinnerAnnouncement.objects.create(scope_kind="finals", points=42)
+        with pytest.raises(IntegrityError):
+            WinnerAnnouncement.objects.create(scope_kind="finals", points=50)
 
     def test_uniqueness_constraint_global(self):
         WinnerAnnouncement.objects.create(scope_kind="global", points=99)

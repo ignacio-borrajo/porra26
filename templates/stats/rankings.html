@@ -15,6 +15,8 @@
   {% endfor %}
 </nav>
 
+{% include "partials/_live_matches_strip.html" %}
+
 {% if tab == "general" %}
   <div class="rankings-clas">
     <div class="rankings-clas__col">
@@ -101,5 +103,21 @@
     {% endfor %}
     </div>
   </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if has_live_matches %}
+<script id="live-autorefresh" type="module">
+  // Recarga la página cada 60s cuando hay partidos en juego para que el
+  // marcador parcial y la clasificación live se vean al vuelo. Pausa si el
+  // usuario tiene un modal abierto o la pestaña está oculta.
+  const INTERVAL_MS = 60_000;
+  setInterval(() => {
+    if (document.hidden) return;
+    if (document.querySelector(".ovl")) return;
+    window.location.reload();
+  }, INTERVAL_MS);
+</script>
 {% endif %}
 {% endblock %}

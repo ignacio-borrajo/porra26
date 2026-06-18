@@ -1,6 +1,6 @@
 """Comando de cron / debug para enviar recordatorios pre-cierre.
 
-Llamado por GitHub Actions a través del endpoint ``/api/recordatorios/disparar/``
+Llamado por cron-job.org a través del endpoint ``/api/recordatorios/disparar/``
 y también disponible para invocación manual en local. Sin args recorre las dos
 ventanas (T-2h y T-30min antes de kickoff) y dispara los pendientes.
 """
