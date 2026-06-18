@@ -88,7 +88,8 @@ def clear_match_result(match: Match, *, actor) -> None:
 
 def _remove_invalidated_announcements(match: Match) -> None:
     """Tras borrar el resultado, elimina los `WinnerAnnouncement` cuyo scope
-    incluye este partido y ya no se considera resuelto."""
+    incluye este partido y ya no se considera resuelto (matchday de grupos,
+    dieciseisavos `r32`, fases finales `finals`, y `global` al deshacer la Final)."""
     from announcements.models import WinnerAnnouncement
     from pot.services.prizes import matchday_winners
 
@@ -100,13 +101,10 @@ def _remove_invalidated_announcements(match: Match) -> None:
                 {"scope_kind": "matchday", "scope_matchday": match.matchday},
             )
         )
-    else:
-        scope_filters.append(
-            (
-                ("round", match.round_id),
-                {"scope_kind": "round", "scope_round_id": match.round_id},
-            )
-        )
+    elif match.round_id == "r32":
+        scope_filters.append((("r32", None), {"scope_kind": "r32"}))
+    elif match.round_id in ("r16", "qf", "sf", "final"):
+        scope_filters.append((("finals", None), {"scope_kind": "finals"}))
         if match.round_id == "final":
             scope_filters.append((("global", None), {"scope_kind": "global"}))
 

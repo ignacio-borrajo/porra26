@@ -128,22 +128,23 @@ def test_rankings_general_groups_ko_rounds_into_fases_finales(client):
     r = client.get(reverse("stats:rankings"))
     body = r.content.decode()
     assert "Jornada 1" in body
+    assert "Dieciseisavos" in body
     assert "Fases Finales" in body
-    # Las rondas KO no se muestran como opciones independientes.
-    assert "Dieciseisavos" not in body
+    # Octavos/cuartos/semis/final NO se muestran como opciones independientes.
     assert "Octavos" not in body
-    assert "scope=ko:_" in body
+    assert "scope=r32:_" in body
+    assert "scope=finals:_" in body
 
 
 @pytest.mark.django_db
-def test_rankings_scope_ko_sums_points_across_ko_rounds(client):
+def test_rankings_scope_finals_sums_points_across_finals_rounds(client):
     ana = UserFactory(name="Ana", email="ana@e.com", must_change_password=False)
     client.force_login(ana)
-    r32 = RoundFactory(id="r32", points=5, label="Dieciseisavos", short="R32", order=2)
+    r16 = RoundFactory(id="r16", points=7, label="Octavos", short="R16", order=3)
     final = RoundFactory(id="final", points=20, label="Final", short="F", order=6)
     now = timezone.now()
-    m_r32 = MatchFactory(
-        round=r32,
+    m_r16 = MatchFactory(
+        round=r16,
         matchday=None,
         home=TeamFactory(),
         away=TeamFactory(),
@@ -160,14 +161,13 @@ def test_rankings_scope_ko_sums_points_across_ko_rounds(client):
         result_home=2,
         result_away=2,
     )
-    PredictionFactory(player=ana, match=m_r32, home=1, away=0, earned=5)
+    PredictionFactory(player=ana, match=m_r16, home=1, away=0, earned=5)
     PredictionFactory(player=ana, match=m_final, home=2, away=2, earned=20)
 
-    r = client.get(reverse("stats:rankings") + "?tab=general&scope=ko:_")
+    r = client.get(reverse("stats:rankings") + "?tab=general&scope=finals:_")
     assert r.status_code == 200
     body = r.content.decode()
-    # El scope=ko:_ está activo y la suma (5+20) aparece como puntos de Ana.
-    assert "scope=ko:_" in body
+    assert "scope=finals:_" in body
     assert "Fases Finales" in body
     assert "25" in body
 

@@ -48,12 +48,20 @@ class TestBuildPreview:
         assert winners == [gestor]
         assert ann.tied is False
 
-    def test_ko_builds_announcement_without_extra_state(self):
+    def test_r32_builds_announcement_without_extra_state(self):
         gestor = GestorFactory()
-        ann, winners = build_preview("ko", tied=False, current_user=gestor)
-        assert ann.scope_kind == "ko"
+        ann, winners = build_preview("r32", tied=False, current_user=gestor)
+        assert ann.scope_kind == "r32"
         assert ann.scope_matchday is None
-        assert ann.title == "¡Ganador de las eliminatorias!"
+        assert ann.title == "¡Ganador de Dieciseisavos!"
+        assert winners == [gestor]
+
+    def test_finals_builds_announcement_without_extra_state(self):
+        gestor = GestorFactory()
+        ann, winners = build_preview("finals", tied=False, current_user=gestor)
+        assert ann.scope_kind == "finals"
+        assert ann.scope_matchday is None
+        assert ann.title == "¡Ganador de las Fases Finales!"
         assert winners == [gestor]
 
     def test_global(self):
@@ -103,10 +111,15 @@ class TestPreviewView:
         assert "Ana Demo" in html
         assert "Empate en la cima" in html
 
-    def test_ko_title(self, client):
+    def test_r32_title(self, client):
         client.force_login(GestorFactory())
-        res = client.get(reverse("announcements:preview") + "?scope=ko&tied=0")
-        assert "¡Ganador de las eliminatorias!" in res.content.decode()
+        res = client.get(reverse("announcements:preview") + "?scope=r32&tied=0")
+        assert "¡Ganador de Dieciseisavos!" in res.content.decode()
+
+    def test_finals_title(self, client):
+        client.force_login(GestorFactory())
+        res = client.get(reverse("announcements:preview") + "?scope=finals&tied=0")
+        assert "¡Ganador de las Fases Finales!" in res.content.decode()
 
     def test_global_title(self, client):
         client.force_login(GestorFactory())

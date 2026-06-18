@@ -194,3 +194,67 @@ def test_clear_match_result_keeps_unrelated_announcement():
     clear_match_result(m_md2, actor=actor)
 
     assert WinnerAnnouncement.objects.filter(scope_kind="matchday", scope_matchday=1).exists()
+
+
+@pytest.mark.django_db
+def test_clear_r32_match_removes_r32_announcement():
+    """Borrar el resultado de un partido de R32 elimina el anuncio de la
+    jornada de dieciseisavos (el scope vuelve a estar incompleto)."""
+    from announcements.models import WinnerAnnouncement
+
+    r32 = RoundFactory(id="r32", points=5, label="Dieciseisavos", short="R32", order=2)
+    user = UserFactory(name="Ganadora")
+    m1 = MatchFactory(round=r32, matchday=None, result_home=1, result_away=0)
+    m2 = MatchFactory(round=r32, matchday=None)
+    PredictionFactory(player=user, match=m1, earned=5)
+    PredictionFactory(player=user, match=m2, home=2, away=0)
+    actor = GestorFactory()
+    resolve_match(m2, home=2, away=0, actor=actor)
+    assert WinnerAnnouncement.objects.filter(scope_kind="r32").exists()
+
+    clear_match_result(m2, actor=actor)
+
+    assert not WinnerAnnouncement.objects.filter(scope_kind="r32").exists()
+
+
+@pytest.mark.django_db
+def test_clear_finals_match_removes_finals_announcement():
+    """Borrar el resultado de un partido de la jornada Fases Finales (p. ej.
+    octavos) elimina el anuncio de esa jornada."""
+    from announcements.models import WinnerAnnouncement
+
+    r16 = RoundFactory(id="r16", points=7, label="Octavos", short="R16", order=3)
+    final = RoundFactory(id="final", points=20, label="Final", short="FIN", order=6)
+    user = UserFactory(name="Ganadora")
+    m_r16 = MatchFactory(round=r16, matchday=None, result_home=1, result_away=0)
+    m_final = MatchFactory(round=final, matchday=None)
+    PredictionFactory(player=user, match=m_r16, earned=7)
+    PredictionFactory(player=user, match=m_final, home=2, away=1)
+    actor = GestorFactory()
+    resolve_match(m_final, home=2, away=1, actor=actor)
+    assert WinnerAnnouncement.objects.filter(scope_kind="finals").exists()
+
+    clear_match_result(m_r16, actor=actor)
+
+    assert not WinnerAnnouncement.objects.filter(scope_kind="finals").exists()
+
+
+@pytest.mark.django_db
+def test_clear_final_removes_finals_and_global_announcements():
+    """Borrar el resultado de la Final elimina tanto el anuncio de la jornada
+    Fases Finales como el de campeón del Mundial (global)."""
+    from announcements.models import WinnerAnnouncement
+
+    final = RoundFactory(id="final", points=20, label="Final", short="FIN", order=6)
+    user = UserFactory(name="Ganadora")
+    m_final = MatchFactory(round=final, matchday=None)
+    PredictionFactory(player=user, match=m_final, home=2, away=1)
+    actor = GestorFactory()
+    resolve_match(m_final, home=2, away=1, actor=actor)
+    assert WinnerAnnouncement.objects.filter(scope_kind="finals").exists()
+    assert WinnerAnnouncement.objects.filter(scope_kind="global").exists()
+
+    clear_match_result(m_final, actor=actor)
+
+    assert not WinnerAnnouncement.objects.filter(scope_kind="finals").exists()
+    assert not WinnerAnnouncement.objects.filter(scope_kind="global").exists()

@@ -10,13 +10,12 @@ def detect_after_match(match: Match) -> list[WinnerAnnouncement]:
     acaba de cerrarse. Devuelve los anuncios creados en esta llamada (0..N).
 
     Reglas:
-    - Cualquier partido de la fase de grupos: 1 anuncio matchday(N) si la
-      jornada N acaba de cerrar.
-    - r32/r16/qf/sf: ningún anuncio (esperan a que la Final cierre la jornada
-      eliminatoria entera).
-    - final: 3 anuncios simultáneos (ko → sede → global) en ese orden, para
-      que el feed de modales muestre la jornada KO primero, luego sede y por
-      último el campeón del Mundial (climax).
+    - Fase de grupos: 1 anuncio matchday(N) si la jornada N acaba de cerrar.
+    - r32: 1 anuncio "r32" cuando el último partido de dieciseisavos se resuelve.
+    - r16/qf/sf: ningún anuncio (esperan a que la Final cierre la jornada finals).
+    - final: 3 anuncios (finals → sede → global) en ese orden, para que el feed
+      de modales muestre la jornada finals primero, luego sede y por último el
+      campeón del Mundial (climax).
     """
     created: list[WinnerAnnouncement] = []
 
@@ -24,8 +23,12 @@ def detect_after_match(match: Match) -> list[WinnerAnnouncement]:
         ann = _try_create("matchday", matchday=match.matchday)
         if ann is not None:
             created.append(ann)
+    elif match.round_id == "r32":
+        ann = _try_create("r32")
+        if ann is not None:
+            created.append(ann)
     elif match.round_id == "final":
-        for kind in ("ko", "sede", "global"):
+        for kind in ("finals", "sede", "global"):
             ann = _try_create(kind)
             if ann is not None:
                 created.append(ann)
@@ -40,7 +43,7 @@ def _try_create(
 ) -> WinnerAnnouncement | None:
     if scope_kind == "matchday":
         filter_kwargs = {"scope_kind": "matchday", "scope_matchday": matchday}
-    elif scope_kind in ("ko", "global", "sede"):
+    elif scope_kind in ("r32", "finals", "global", "sede"):
         filter_kwargs = {"scope_kind": scope_kind}
     else:
         raise ValueError(scope_kind)
