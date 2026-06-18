@@ -45,7 +45,7 @@ def test_resolve_last_match_of_matchday_creates_announcement(groups_round, gesto
 
 
 @pytest.mark.django_db
-def test_resolving_ko_round_creates_no_announcement(r16_round, gestor):
+def test_resolving_r16_round_creates_no_announcement(r16_round, gestor):
     user = UserFactory()
     m = MatchFactory(round=r16_round, matchday=None)
     PredictionFactory(player=user, match=m, home=1, away=0)
