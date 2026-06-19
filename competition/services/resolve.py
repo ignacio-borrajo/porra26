@@ -86,6 +86,48 @@ def clear_match_result(match: Match, *, actor) -> None:
     )
 
 
+@transaction.atomic
+def delete_match(match: Match, *, actor) -> None:
+    """Borra un partido por completo. Pensado para limpiar partidos creados por
+    error (p. ej. cruces de prueba en producción).
+
+    Al eliminar el `Match` se borran en cascada sus pronósticos, marcador en
+    vivo, informe de cierre y registros de recordatorio (todos con
+    `on_delete=CASCADE`). Si el partido tenía resultado y había generado un
+    anuncio de ganador cuyo scope deja de estar resuelto, también se elimina.
+    Queda registro en `AuditLog`.
+    """
+    payload = {
+        "round": match.round_id,
+        "matchday": match.matchday,
+        "home": match.home_id,
+        "away": match.away_id,
+        "home_slot": match.home_slot,
+        "away_slot": match.away_slot,
+        "bracket_code": match.bracket_code,
+        "kickoff": match.kickoff.isoformat() if match.kickoff else None,
+        "result_home": match.result_home,
+        "result_away": match.result_away,
+    }
+    had_result = match.has_result
+    match_id = match.id
+
+    match.delete()
+
+    if had_result:
+        # El objeto en memoria conserva round_id/matchday tras el delete, así que
+        # podemos reutilizar la limpieza de anuncios con el scope ya recalculado.
+        _remove_invalidated_announcements(match)
+
+    AuditLog.objects.create(
+        actor=actor,
+        action="match_deleted",
+        target_type="match",
+        target_id=str(match_id),
+        payload=payload,
+    )
+
+
 def _remove_invalidated_announcements(match: Match) -> None:
     """Tras borrar el resultado, elimina los `WinnerAnnouncement` cuyo scope
     incluye este partido y ya no se considera resuelto (matchday de grupos,

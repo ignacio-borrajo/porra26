@@ -8,7 +8,7 @@ from accounts.mixins import GestorRequiredMixin
 from accounts.models import User
 from competition.models import Match, Prediction, Round
 from competition.services.live_standings import live_standings
-from competition.services.resolve import clear_match_result, resolve_match
+from competition.services.resolve import clear_match_result, delete_match, resolve_match
 
 KO_ROUND_IDS = ("r32", "r16", "qf", "sf", "final")
 
@@ -554,3 +554,49 @@ class AssignTeamsView(GestorRequiredMixin, View):
         m.save(update_fields=["home", "away"])
         messages.success(request, f"Cruce actualizado · {home.name} vs {away.name}")
         return redirect("competicion:manage_results")
+
+
+class DeleteMatchView(GestorRequiredMixin, View):
+    """Borra un partido por completo. Pensado para limpiar partidos creados por
+    error (p. ej. cruces de prueba en producción). Si el partido tiene
+    pronósticos o resultado, exige `confirm_delete=1` para evitar borrados
+    accidentales, igual que `AssignTeamsView` con la invalidación."""
+
+    def post(self, request, match_id):
+        m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
+
+        has_data = m.has_result or Prediction.objects.filter(match=m).exists()
+        if has_data and request.POST.get("confirm_delete") != "1":
+            messages.error(
+                request,
+                "Este partido tiene pronósticos o resultado. Confirma el borrado "
+                "para eliminarlo junto con sus datos asociados.",
+            )
+            return redirect(self._back_url(request))
+
+        if m.has_teams:
+            label = f"{m.home.name} vs {m.away.name}"
+        else:
+            from competition.templatetags.competition_extras import slot_label
+
+            label = f"{slot_label(m.home_slot)} vs {slot_label(m.away_slot)}"
+        delete_match(m, actor=request.user)
+        messages.success(request, f"Partido borrado · {label}")
+        return redirect(self._back_url(request))
+
+    @staticmethod
+    def _back_url(request):
+        """Vuelve a Resultados conservando la ronda/jornada seleccionada."""
+        from urllib.parse import urlencode
+
+        from django.urls import reverse
+
+        params = {}
+        rnd = request.POST.get("round")
+        md = request.POST.get("matchday")
+        if rnd:
+            params["round"] = rnd
+        if md:
+            params["matchday"] = md
+        url = reverse("competicion:manage_results")
+        return f"{url}?{urlencode(params)}" if params else url

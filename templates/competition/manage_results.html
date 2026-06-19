@@ -10,24 +10,27 @@
 <h2 class="eyebrow" style="margin-top:18px">CRUCE PENDIENTE · {{ pending_teams_matches|length }}</h2>
 <div class="table-scroll" style="display:flex;flex-direction:column;gap:10px">
   {% for m in pending_teams_matches %}
-  <form method="post" action="{% url 'competicion:assign_teams' m.id %}"
-        class="glass" style="padding:12px 14px;border-radius:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-    {% csrf_token %}
-    <div style="min-width:220px;display:flex;flex-direction:column;gap:2px">
-      <span class="eyebrow">{{ m.round.short }}{% if m.bracket_code %} · {{ m.bracket_code }}{% endif %}</span>
-      <strong>{{ m.home_slot|slot_label }} vs {{ m.away_slot|slot_label }}</strong>
-      <span class="mono" style="font-size:11px;color:var(--text-faint)">{{ m.kickoff|date:"D j M · H:i" }}</span>
-    </div>
-    <select name="home_code" class="input" required>
-      <option value="">Local…</option>
-      {% for t in all_teams %}<option value="{{ t.code }}">{{ t.flag }} {{ t.name }}</option>{% endfor %}
-    </select>
-    <select name="away_code" class="input" required>
-      <option value="">Visitante…</option>
-      {% for t in all_teams %}<option value="{{ t.code }}">{{ t.flag }} {{ t.name }}</option>{% endfor %}
-    </select>
-    <button class="btn btn-primary" type="submit" style="padding:6px 14px;font-size:13px">Asignar equipos</button>
-  </form>
+  <div class="glass" style="padding:12px 14px;border-radius:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+    <form method="post" action="{% url 'competicion:assign_teams' m.id %}"
+          style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;flex:1;margin:0">
+      {% csrf_token %}
+      <div style="min-width:220px;display:flex;flex-direction:column;gap:2px">
+        <span class="eyebrow">{{ m.round.short }}{% if m.bracket_code %} · {{ m.bracket_code }}{% endif %}</span>
+        <strong>{{ m.home_slot|slot_label }} vs {{ m.away_slot|slot_label }}</strong>
+        <span class="mono" style="font-size:11px;color:var(--text-faint)">{{ m.kickoff|date:"D j M · H:i" }}</span>
+      </div>
+      <select name="home_code" class="input" required>
+        <option value="">Local…</option>
+        {% for t in all_teams %}<option value="{{ t.code }}">{{ t.flag }} {{ t.name }}</option>{% endfor %}
+      </select>
+      <select name="away_code" class="input" required>
+        <option value="">Visitante…</option>
+        {% for t in all_teams %}<option value="{{ t.code }}">{{ t.flag }} {{ t.name }}</option>{% endfor %}
+      </select>
+      <button class="btn btn-primary" type="submit" style="padding:6px 14px;font-size:13px">Asignar equipos</button>
+    </form>
+    {% include "competition/_delete_match_form.html" %}
+  </div>
   {% endfor %}
 </div>
 {% endif %}
@@ -35,7 +38,7 @@
 <h2 class="eyebrow" style="margin-top:18px">PENDIENTES DE FINALIZAR · {{ pending|length }}</h2>
 <div class="table-scroll" style="display:flex;flex-direction:column;gap:8px">
   {% for m in pending %}
-  <div class="glass table-row" style="display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
+  <div class="glass table-row" style="display:grid;grid-template-columns:auto 1fr auto auto auto auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
     <span class="mono" style="color:var(--text-faint)">Grupo {{ m.group }}</span>
     <span>{{ m.home.flag }} {{ m.home.name }} vs {{ m.away.flag }} {{ m.away.name }}</span>
     <span class="chip chip-{{ m.status }}">{{ m.status }}</span>
@@ -45,6 +48,7 @@
       <button type="submit" class="btn btn-ghost" style="padding:6px 12px;font-size:12px" title="{% if m.closing_report.sent_at %}Reenviar PDF a Teams{% else %}Enviar PDF a Teams{% endif %}">{% if m.closing_report.sent_at %}↻ Reenviar{% else %}✉️ Enviar{% endif %}</button>
     </form>
     <a class="btn btn-primary" href="{% url 'competicion:official' m.id %}" data-modal-url="{% url 'competicion:official' m.id %}" style="padding:6px 12px;font-size:12px">Finalizar</a>
+    {% include "competition/_delete_match_form.html" %}
   </div>
   {% endfor %}
 </div>
@@ -54,7 +58,7 @@
 <div class="table-scroll" style="display:flex;flex-direction:column;gap:8px">
   {% for m in upcoming %}
   {% with cnt=pending_counts|get_item:m.id last=last_reminders|get_item:m.id %}
-  <div class="glass table-row" style="display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
+  <div class="glass table-row" style="display:grid;grid-template-columns:auto 1fr auto auto auto auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
     <span class="mono" style="color:var(--text-faint)">Grupo {{ m.group }}</span>
     <span>{{ m.home.flag }} {{ m.home.name }} vs {{ m.away.flag }} {{ m.away.name }}</span>
     {% if cnt %}
@@ -68,6 +72,7 @@
     </form>
     <span class="mono" style="font-size:11px">{{ m.kickoff|date:"d M · H:i" }}</span>
     <a class="btn btn-ghost" href="{% url 'competicion:official' m.id %}" data-modal-url="{% url 'competicion:official' m.id %}" style="padding:6px 12px;font-size:12px">Finalizar</a>
+    {% include "competition/_delete_match_form.html" %}
   </div>
   {% endwith %}
   {% endfor %}
@@ -77,7 +82,7 @@
 <h2 class="eyebrow" style="margin-top:18px">FINALIZADOS · {{ done|length }}</h2>
 <div class="table-scroll" style="display:flex;flex-direction:column;gap:8px">
   {% for m in done %}
-  <div class="glass table-row" style="display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
+  <div class="glass table-row" style="display:grid;grid-template-columns:auto 1fr auto auto auto auto auto;gap:14px;align-items:center;padding:12px 14px;border-radius:14px">
     <span class="mono" style="color:var(--text-faint)">Grupo {{ m.group }}</span>
     <span>{{ m.home.flag }} {{ m.home.name }} {{ m.result_home }}–{{ m.result_away }} {{ m.away.flag }} {{ m.away.name }}</span>
     <span class="chip chip-done">Final</span>
@@ -87,6 +92,7 @@
       <button type="submit" class="btn btn-ghost" style="padding:6px 12px;font-size:12px" title="{% if m.closing_report.sent_at %}Reenviar PDF a Teams{% else %}Enviar PDF a Teams{% endif %}">{% if m.closing_report.sent_at %}↻ Reenviar{% else %}✉️ Enviar{% endif %}</button>
     </form>
     <a class="btn btn-ghost" href="{% url 'competicion:official' m.id %}" data-modal-url="{% url 'competicion:official' m.id %}" style="padding:6px 12px;font-size:12px">Editar</a>
+    {% include "competition/_delete_match_form.html" %}
   </div>
   {% endfor %}
 </div>
