@@ -13,5 +13,10 @@ urlpatterns = [
         views.AssignTeamsView.as_view(),
         name="assign_teams",
     ),
+    path(
+        "resultados/<int:match_id>/borrar/",
+        views.DeleteMatchView.as_view(),
+        name="delete_match",
+    ),
     path("api/teams/", include(("competition.api.urls", "api"), namespace="api")),
 ]
