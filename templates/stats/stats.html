@@ -1,33 +1,105 @@
 {% extends "base.html" %}
 {% load static %}
 {% block main %}
-<h1 class="display" style="font-size:28px">Tu rendimiento</h1>
-{% if kpis %}
-<div class="stats-kpis" style="margin-top:18px">
-  <article class="glass" style="padding:18px;border-radius:18px"><div class="eyebrow">% Aciertos</div><div class="display" style="font-size:32px">{% widthratio kpis.hit_rate 1 100 %}%</div></article>
-  <article class="glass" style="padding:18px;border-radius:18px"><div class="eyebrow">vs Media</div><div class="display" style="font-size:32px">{{ kpis.vs_avg|floatformat:1 }}</div></article>
-  <article class="glass" style="padding:18px;border-radius:18px"><div class="eyebrow">vs Líder</div><div class="display" style="font-size:32px">{{ kpis.vs_leader }}</div></article>
-  <article class="glass" style="padding:18px;border-radius:18px"><div class="eyebrow">Percentil</div><div class="display" style="font-size:32px">Top {{ kpis.percentile|floatformat:0 }}%</div></article>
-</div>
-{% else %}
-<p class="glass" style="padding:18px">Aún no hay partidos resueltos para calcular tus estadísticas.</p>
-{% endif %}
+<div class="stats-page">
+  <h1 class="display" style="font-size:28px;flex-shrink:0;margin:0">Tu rendimiento</h1>
 
-<div class="stats-grid" style="display:grid;grid-template-columns:4fr 1fr;gap:14px;margin-top:18px">
-  <article class="glass" style="padding:18px;border-radius:18px;min-height:360px">
-    <div class="eyebrow">EVOLUCIÓN</div>
-    <div data-rank-chart data-src="{% url 'stats:chart_data' %}">
-      <noscript><p>Activa JavaScript para ver el gráfico de evolución.</p></noscript>
+  {% if kpis %}
+  <div class="stats-kpis" style="flex-shrink:0">
+    <article class="glass" style="padding:18px;border-radius:18px"><div class="eyebrow">% Aciertos</div><div class="display" style="font-size:32px">{% widthratio kpis.hit_rate 1 100 %}%</div></article>
+    <article class="glass" style="padding:18px;border-radius:18px"><div class="eyebrow">vs Media</div><div class="display" style="font-size:32px">{{ kpis.vs_avg|floatformat:1 }}</div></article>
+    <article class="glass" style="padding:18px;border-radius:18px"><div class="eyebrow">vs Líder</div><div class="display" style="font-size:32px">{{ kpis.vs_leader }}</div></article>
+    <article class="glass" style="padding:18px;border-radius:18px"><div class="eyebrow">Percentil</div><div class="display" style="font-size:32px">Top {{ kpis.percentile|floatformat:0 }}%</div></article>
+  </div>
+  {% else %}
+  <p class="glass" style="padding:18px;flex-shrink:0">Aún no hay partidos resueltos para calcular tus estadísticas.</p>
+  {% endif %}
+
+  <div class="stats-grid">
+    {# ===================== Evolución ===================== #}
+    <article class="glass evo-card">
+      <div class="evo-head">
+        <div>
+          <div class="evo-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="m7 14 3.5-4 3 2.5L20 6"/></svg>
+            <h3 class="display" data-evo-heading style="margin:0;font-size:16px">Evolución de puntos</h3>
+          </div>
+          <p class="evo-sub" data-evo-sub></p>
+        </div>
+        <div class="evo-controls">
+          <button type="button" class="evo-switch" data-evo-showall aria-pressed="false" title="Cargar el gráfico con todos los jugadores">
+            <span class="evo-switch-track"><span class="evo-switch-knob"></span></span>
+            Mostrar todos
+          </button>
+          <div class="evo-modes" data-evo-modes>
+            <button type="button" data-mode="pts" class="is-active">Puntos</button>
+            <button type="button" data-mode="rank">Posición</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="evo-plot" data-evo-plot>
+        <canvas data-evo-canvas></canvas>
+        <div class="evo-labels" data-evo-labels></div>
+        <p class="evo-empty" data-evo-empty hidden>Aún no hay partidos resueltos.</p>
+      </div>
+
+      <div class="evo-legend" data-evo-legend></div>
+    </article>
+
+    {# ===================== Columna derecha ===================== #}
+    <div class="stats-side">
+      {% if compare %}
+      <article class="glass cmp-card">
+        <div class="evo-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--c-gold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 3v18"/><path d="M5 7h14"/><path d="m5 7-2 6a4 4 0 0 0 8 0z"/><path d="m19 7-2 6a4 4 0 0 0 8 0z"/></svg>
+          <h3 class="display" style="margin:0;font-size:16px">Tú frente al grupo</h3>
+        </div>
+        <div class="cmp-bars">
+          {% for m in compare.metrics %}
+          <div class="cmp-row">
+            <div class="cmp-top"><span class="cmp-label">{{ m.label }}</span><span class="cmp-me mono">{{ m.me }}</span></div>
+            <div class="cmp-track">
+              <div class="cmp-fill" style="width:{{ m.me_pct }}%"></div>
+              <div class="cmp-mark cmp-mark-avg" style="left:{{ m.avg_pct }}%" title="Media"></div>
+              <div class="cmp-mark cmp-mark-best" style="left:100%" title="Mejor"></div>
+            </div>
+            <div class="cmp-foot mono"><span>media {{ m.avg }}</span><span class="cmp-best-txt">máx {{ m.best }}</span></div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="cmp-legend">
+          <span><span class="cmp-key cmp-key-me"></span> Tú</span>
+          <span><span class="cmp-key cmp-key-avg"></span> Media</span>
+          <span><span class="cmp-key cmp-key-best"></span> Mejor</span>
+        </div>
+      </article>
+      {% endif %}
+
+      <article class="glass donut-card">
+        <div class="evo-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--c-cyan)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
+          <h3 class="display" style="margin:0;font-size:16px">Tus pronósticos</h3>
+        </div>
+        <div class="donut-body" data-donut-body>
+          <div class="donut-ring">
+            <canvas data-donut-canvas></canvas>
+            <div class="donut-center">
+              <div class="display donut-pct" data-donut-pct>—</div>
+              <div class="eyebrow" style="font-size:8.5px;margin-top:4px">aciertos</div>
+            </div>
+          </div>
+          <div class="donut-legend" data-donut-legend></div>
+        </div>
+        <p class="evo-empty" data-donut-empty hidden>Aún no tienes pronósticos resueltos.</p>
+      </article>
     </div>
-  </article>
-  <article class="glass" style="padding:18px;border-radius:18px">
-    <div class="eyebrow">PRONÓSTICOS</div>
-    <ul style="list-style:none;padding:0;margin:10px 0;font-size:13px">
-      <li>Exactos · {{ donut.exact }}</li>
-      <li>Aciertos · {{ donut.partial }}</li>
-      <li>Fallos · {{ donut.fail }}</li>
-    </ul>
-  </article>
+  </div>
+
+  <div data-chart-src="{% url 'stats:chart_data' %}" hidden></div>
 </div>
 {% endblock %}
-{% block scripts %}<script type="module" src="{% static 'js/rank-chart.js' %}"></script>{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/vendor/chart.umd.min.js' %}"></script>
+<script type="module" src="{% static 'js/stats-charts.js' %}"></script>
+{% endblock %}
