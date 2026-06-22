@@ -6,10 +6,10 @@ from django.views import View
 from accounts.models import User
 from competition.services.live_view import current_live_matches
 from stats.services.group_standings import CHOICES_BY_DIMENSION, group_standings
-from stats.services.history import per_player_history
+from stats.services.history import build_chart_payload
 from stats.services.history_matrix import build_matrix
 from stats.services.history_xlsx import render_xlsx
-from stats.services.kpis import donut, kpis
+from stats.services.kpis import compare, kpis
 from stats.services.rankings_context import build_general_context
 
 
@@ -30,25 +30,14 @@ class StatsView(LoginRequiredMixin, View):
             "stats/stats.html",
             {
                 "kpis": kpis(request.user),
-                "donut": donut(request.user.id),
+                "compare": compare(request.user.id),
             },
         )
 
 
 class ChartDataView(LoginRequiredMixin, View):
     def get(self, request):
-        h = per_player_history()
-        users = User.objects.in_bulk(list(h.keys()))
-        players = {
-            pid: {
-                "name": u.name,
-                "initials": u.initials,
-                "hue": (ord(str(pid)[-1]) * 47) % 360,
-                "avatar_url": u.avatar.url if u.avatar else None,
-            }
-            for pid, u in users.items()
-        }
-        return JsonResponse({"history": h, "me": request.user.id, "players": players})
+        return JsonResponse(build_chart_payload(request.user.id))
 
 
 class RankingsView(LoginRequiredMixin, View):
