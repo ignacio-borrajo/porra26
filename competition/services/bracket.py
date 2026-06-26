@@ -74,10 +74,13 @@ def resolve_slot(code: str) -> Team | None:
 def propagate_after_match(match: Match) -> list[Match]:
     """Rellena home/away en todos los partidos cuyos slots queden resolvibles
     tras procesar `match`. Idempotente: solo escribe donde está a None."""
+    # R32 (Dieciseisavos) se excluye a propósito: sus equipos los asigna siempre
+    # un gestor a mano para evitar errores. Octavos+ sí se propagan desde los
+    # ganadores (`WM…`) una vez el gestor ha confirmado el resultado del R32.
     pending = (
         Match.objects.filter(home__isnull=True).exclude(home_slot="")
         | Match.objects.filter(away__isnull=True).exclude(away_slot="")
-    ).distinct()
+    ).distinct().exclude(round_id="r32")
     updated: list[Match] = []
     for m in pending:
         update_fields: list[str] = []
