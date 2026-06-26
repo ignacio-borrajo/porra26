@@ -158,5 +158,5 @@ def test_seed_updates_bracket_order_without_touching_teams():
     m.save(update_fields=["home", "bracket_order"])
     call_command("seed_world_cup_2026")
     m.refresh_from_db()
-    assert m.bracket_order == 3       # reaplicado
-    assert m.home_id == "ZZ1"         # no se pisa el equipo asignado
+    assert m.bracket_order == 3  # reaplicado
+    assert m.home_id == "ZZ1"  # no se pisa el equipo asignado

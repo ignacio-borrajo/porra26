@@ -78,9 +78,13 @@ def propagate_after_match(match: Match) -> list[Match]:
     # un gestor a mano para evitar errores. Octavos+ sí se propagan desde los
     # ganadores (`WM…`) una vez el gestor ha confirmado el resultado del R32.
     pending = (
-        Match.objects.filter(home__isnull=True).exclude(home_slot="")
-        | Match.objects.filter(away__isnull=True).exclude(away_slot="")
-    ).distinct().exclude(round_id="r32")
+        (
+            Match.objects.filter(home__isnull=True).exclude(home_slot="")
+            | Match.objects.filter(away__isnull=True).exclude(away_slot="")
+        )
+        .distinct()
+        .exclude(round_id="r32")
+    )
     updated: list[Match] = []
     for m in pending:
         update_fields: list[str] = []

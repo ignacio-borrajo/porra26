@@ -3,14 +3,15 @@ from django.core.management import call_command
 
 from competition.models import Match, Prediction
 from competition.tests.factories import (
-    MatchFactory, PredictionFactory, RoundFactory, TeamFactory,
+    PredictionFactory,
+    RoundFactory,
+    TeamFactory,
 )
 
 
 @pytest.fixture(autouse=True)
 def _rounds(db):
-    for rid, order in [("groups", 1), ("r32", 2), ("r16", 3),
-                       ("qf", 4), ("sf", 5), ("final", 6)]:
+    for rid, order in [("groups", 1), ("r32", 2), ("r16", 3), ("qf", 4), ("sf", 5), ("final", 6)]:
         RoundFactory(id=rid, order=order, short=rid.upper())
 
 

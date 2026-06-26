@@ -30,7 +30,7 @@ def _group_into_pairs(matches: list) -> list[list]:
 
 def _chunk_pairs(matches: list) -> list[list]:
     """Agrupa la lista en parejas consecutivas [[m0,m1],[m2,m3],...]."""
-    return [matches[i:i + 2] for i in range(0, len(matches), 2)]
+    return [matches[i : i + 2] for i in range(0, len(matches), 2)]
 
 
 class CompetitionView(LoginRequiredMixin, View):

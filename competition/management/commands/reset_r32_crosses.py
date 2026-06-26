@@ -26,11 +26,7 @@ class Command(BaseCommand):
         call_command("seed_world_cup_2026")
 
         # 2) Limpiar estado de todos los cruces KO con slots.
-        ko = (
-            Match.objects.exclude(round_id="groups")
-            .exclude(home_slot="")
-            .exclude(away_slot="")
-        )
+        ko = Match.objects.exclude(round_id="groups").exclude(home_slot="").exclude(away_slot="")
         n = 0
         for m in ko:
             Prediction.objects.filter(match=m).delete()
