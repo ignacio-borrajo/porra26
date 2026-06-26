@@ -510,44 +510,30 @@ def test_round_selector_chips_have_target_round(client):
 
 
 @pytest.mark.django_db
-def test_dashboard_ko_r32_siblings_are_adjacent(client):
-    """En R32 las cards que alimentan el mismo R16 deben quedar adyacentes en la columna."""
+def test_dashboard_ko_r32_ordered_by_bracket_order_with_position_pairs(client):
+    """En R32 la vista respeta el orden explícito `bracket_order` y agrupa las
+    parejas por posición (1-2, 3-4, …), no por octavo destino."""
     u = UserFactory(must_change_password=False)
     client.force_login(u)
     RoundFactory(id="groups", points=3, label="Fase de grupos", short="GRP", order=1)
     r32 = RoundFactory(id="r32", points=5, label="Dieciseisavos", short="R32", order=2)
-    r16 = RoundFactory(id="r16", points=7, label="Octavos", short="R16", order=3)
+    RoundFactory(id="r16", points=7, label="Octavos", short="R16", order=3)
     RoundFactory(id="qf", points=10, label="Cuartos", short="QF", order=4)
     RoundFactory(id="sf", points=15, label="Semifinales", short="SF", order=5)
     RoundFactory(id="final", points=25, label="Final", short="FIN", order=6)
 
-    # Mundial 2026: M73 y M75 alimentan M89; M74 y M76 alimentan M90.
-    # En el fixture vienen por bracket_code (M73,M74,M75,M76) pero la vista
-    # debe re-ordenarlos a (M73,M75,M74,M76) para que los hermanos sean adyacentes.
-    for code in ("M73", "M74", "M75", "M76"):
-        MatchFactory(round=r32, bracket_code=code, kickoff=timezone.now() + timedelta(days=10))
-    MatchFactory(
-        round=r16,
-        bracket_code="M89",
-        home=None,
-        away=None,
-        home_slot="WM73",
-        away_slot="WM75",
-        kickoff=timezone.now() + timedelta(days=15),
-    )
-    MatchFactory(
-        round=r16,
-        bracket_code="M90",
-        home=None,
-        away=None,
-        home_slot="WM74",
-        away_slot="WM76",
-        kickoff=timezone.now() + timedelta(days=15),
-    )
+    # Orden explícito: M74→1, M77→2, M73→3, M75→4.
+    for code, order in (("M73", 3), ("M74", 1), ("M77", 2), ("M75", 4)):
+        MatchFactory(
+            round=r32,
+            bracket_code=code,
+            bracket_order=order,
+            kickoff=timezone.now() + timedelta(days=10),
+        )
 
     r = client.get(reverse("competicion:dashboard") + "?round=r32")
     r32_entry = next(e for e in r.context["ko_rounds"] if e["round"].id == "r32")
     codes = [m.bracket_code for m in r32_entry["matches"]]
-    assert codes == ["M73", "M75", "M74", "M76"]
+    assert codes == ["M74", "M77", "M73", "M75"]
     pair_codes = [[m.bracket_code for m in pair] for pair in r32_entry["pairs"]]
-    assert pair_codes == [["M73", "M75"], ["M74", "M76"]]
+    assert pair_codes == [["M74", "M77"], ["M73", "M75"]]
