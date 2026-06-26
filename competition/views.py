@@ -28,6 +28,11 @@ def _group_into_pairs(matches: list) -> list[list]:
     return pairs
 
 
+def _chunk_pairs(matches: list) -> list[list]:
+    """Agrupa la lista en parejas consecutivas [[m0,m1],[m2,m3],...]."""
+    return [matches[i : i + 2] for i in range(0, len(matches), 2)]
+
+
 class CompetitionView(LoginRequiredMixin, View):
     def get(self, request):
         rounds = list(Round.objects.all())
@@ -127,15 +132,28 @@ class CompetitionView(LoginRequiredMixin, View):
                 r_obj = rounds_by_id.get(rid)
                 if r_obj is None:
                     continue
-                rmatches = sorted(
-                    [m for m in ko_matches if m.round_id == rid],
-                    key=lambda m: (m.feeds_into_code or "", m.bracket_code or ""),
-                )
+                rlist = [m for m in ko_matches if m.round_id == rid]
+                if rid == "r32":
+                    # R32: orden explícito 1-16 (bracket_order) y parejas por posición.
+                    rmatches = sorted(
+                        rlist,
+                        key=lambda m: (
+                            m.bracket_order if m.bracket_order is not None else 9999,
+                            m.bracket_code or "",
+                        ),
+                    )
+                    pairs = _chunk_pairs(rmatches)
+                else:
+                    rmatches = sorted(
+                        rlist,
+                        key=lambda m: (m.feeds_into_code or "", m.bracket_code or ""),
+                    )
+                    pairs = _group_into_pairs(rmatches)
                 ko_rounds.append(
                     {
                         "round": r_obj,
                         "matches": rmatches,
-                        "pairs": _group_into_pairs(rmatches),
+                        "pairs": pairs,
                     }
                 )
 

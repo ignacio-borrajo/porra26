@@ -143,9 +143,9 @@ def test_resolve_wm_unknown_code(db):
 
 
 @pytest.mark.django_db
-def test_propagate_fills_r32_when_groups_a_and_b_close(groups_round):
-    """Al cerrar el grupo A, el R32 que dependía de 1A/2B se rellena
-    (si el grupo B ya estaba cerrado)."""
+def test_propagate_does_not_fill_r32_even_when_groups_close(groups_round):
+    """R32 NO se autorrellena aunque los grupos estén cerrados: sus equipos
+    los asigna el gestor a mano. Octavos+ sí se propagan (ver otros tests)."""
     r32 = RoundFactory(id="r32", points=5, label="R32", short="R32", order=2)
     esp = TeamFactory(code="ESP")
     arg = TeamFactory(code="ARG")
@@ -184,9 +184,9 @@ def test_propagate_fills_r32_when_groups_a_and_b_close(groups_round):
 
     updated = propagate_after_match(last)
     ko.refresh_from_db()
-    assert ko.home == esp
-    assert ko.away == ger
-    assert ko in updated
+    assert ko.home is None
+    assert ko.away is None
+    assert ko not in updated
 
 
 @pytest.mark.django_db
@@ -212,48 +212,37 @@ def test_propagate_is_idempotent_does_not_overwrite(groups_round):
 
 @pytest.mark.django_db
 def test_resolve_match_hooks_propagation(groups_round):
-    """Confirmar un resultado debe invocar propagate y rellenar KO dependientes."""
+    """Confirmar el resultado de un R32 debe invocar propagate y rellenar el
+    octavo dependiente desde el ganador (`WM…`)."""
     from accounts.models import User
     from competition.services.resolve import resolve_match
 
     r32 = RoundFactory(id="r32", points=5, label="R32", short="R32", order=2)
+    r16 = RoundFactory(id="r16", points=7, label="Octavos", short="R16", order=3)
     esp = TeamFactory(code="ESP")
     arg = TeamFactory(code="ARG")
-    fra = TeamFactory(code="FRA")
-    bra = TeamFactory(code="BRA")
-    ned = TeamFactory(code="NED")
-    ger = TeamFactory(code="GER")
-    bel = TeamFactory(code="BEL")
-    por = TeamFactory(code="POR")
-    _played(groups_round, "B", ned, ger, 1, 0, matchday=1)
-    _played(groups_round, "B", bel, por, 0, 0, matchday=1)
-    _played(groups_round, "B", ned, bel, 1, 0, matchday=2)
-    _played(groups_round, "B", ger, por, 2, 0, matchday=2)
-    _played(groups_round, "B", ned, por, 3, 0, matchday=3)
-    _played(groups_round, "B", ger, bel, 1, 0, matchday=3)
-    _played(groups_round, "A", esp, arg, 1, 0, matchday=1)
-    _played(groups_round, "A", fra, bra, 1, 0, matchday=1)
-    _played(groups_round, "A", arg, fra, 2, 0, matchday=2)
-    _played(groups_round, "A", esp, bra, 2, 0, matchday=2)
-    _played(groups_round, "A", arg, bra, 3, 0, matchday=3)
-    # Último partido del grupo A sin resolver todavía
+    # R32 ya con equipos asignados (por el gestor), sin resolver todavía.
     last = MatchFactory(
-        round=groups_round,
-        group="A",
-        matchday=3,
-        home=esp,
-        away=fra,
-        kickoff=timezone.now() - timedelta(hours=1),
-    )
-    ko = MatchFactory(
         round=r32,
         group="R32",
         matchday=None,
-        home=None,
-        away=None,
+        home=esp,
+        away=arg,
         home_slot="1A",
         away_slot="2B",
-        bracket_code="M75",
+        bracket_code="M73",
+        kickoff=timezone.now() - timedelta(hours=1),
+    )
+    # Octavo que depende del ganador de M73.
+    ko = MatchFactory(
+        round=r16,
+        group="Octavos",
+        matchday=None,
+        home=None,
+        away=None,
+        home_slot="WM73",
+        away_slot="WM75",
+        bracket_code="M89",
         kickoff=timezone.now() + timedelta(days=10),
     )
 
@@ -261,5 +250,4 @@ def test_resolve_match_hooks_propagation(groups_round):
     resolve_match(last, home=1, away=0, actor=gestor)
 
     ko.refresh_from_db()
-    assert ko.home == esp
-    assert ko.away == ger
+    assert ko.home == esp  # ganador de M73 propagado al octavo
