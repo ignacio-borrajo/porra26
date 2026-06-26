@@ -56,6 +56,15 @@ class Command(BaseCommand):
             )
             n += 1
 
+        # Al resetear TODOS los cruces KO, ningún scope KO puede seguir resuelto:
+        # borramos sus anuncios de ganador para no dejarlos huérfanos (r32,
+        # finals, global y sede). Los de fase de grupos (matchday) no se tocan.
+        from announcements.models import WinnerAnnouncement
+
+        WinnerAnnouncement.objects.filter(
+            scope_kind__in=["r32", "finals", "global", "sede"]
+        ).delete()
+
         AuditLog.objects.create(
             actor=None,
             action="r32_reset",

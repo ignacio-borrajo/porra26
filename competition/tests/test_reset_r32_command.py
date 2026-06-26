@@ -44,3 +44,18 @@ def test_reset_clears_downstream_ko_teams():
     call_command("reset_r32_crosses")
     r16.refresh_from_db()
     assert r16.home_id is None
+
+
+@pytest.mark.django_db
+def test_reset_removes_ko_winner_announcements():
+    from announcements.models import WinnerAnnouncement
+
+    call_command("seed_world_cup_2026")
+    WinnerAnnouncement.objects.create(scope_kind="r32", points=10)
+    # Un anuncio de grupos NO debe borrarse.
+    WinnerAnnouncement.objects.create(scope_kind="matchday", scope_matchday=1, points=5)
+
+    call_command("reset_r32_crosses")
+
+    assert not WinnerAnnouncement.objects.filter(scope_kind="r32").exists()
+    assert WinnerAnnouncement.objects.filter(scope_kind="matchday").exists()
