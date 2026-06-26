@@ -137,3 +137,26 @@ def test_seed_dry_run_does_not_crash_with_real_transactions():
         assert Match.objects.count() == 0
     finally:
         Round.objects.all().delete()
+
+
+@pytest.mark.django_db
+def test_seed_sets_bracket_order_on_r32():
+    call_command("seed_world_cup_2026")
+    m74 = Match.objects.get(bracket_code="M74")
+    assert m74.bracket_order == 1
+    m73 = Match.objects.get(bracket_code="M73")
+    assert m73.bracket_order == 3
+
+
+@pytest.mark.django_db
+def test_seed_updates_bracket_order_without_touching_teams():
+    call_command("seed_world_cup_2026")
+    m = Match.objects.get(bracket_code="M73")
+    home = TeamFactory(code="ZZ1")
+    m.home = home
+    m.bracket_order = None
+    m.save(update_fields=["home", "bracket_order"])
+    call_command("seed_world_cup_2026")
+    m.refresh_from_db()
+    assert m.bracket_order == 3       # reaplicado
+    assert m.home_id == "ZZ1"         # no se pisa el equipo asignado

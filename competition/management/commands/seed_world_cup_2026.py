@@ -85,6 +85,7 @@ class Command(BaseCommand):
                         away_id=f.get("away"),
                         home_slot=f.get("home_slot", ""),
                         away_slot=f.get("away_slot", ""),
+                        bracket_order=f.get("bracket_order"),
                         kickoff=kickoff,
                     )
                     created_ko += 1
@@ -106,6 +107,10 @@ class Command(BaseCommand):
                         changed = True
                     if existing.round_id != f["round"]:
                         existing.round_id = f["round"]
+                        changed = True
+                    new_order = f.get("bracket_order")
+                    if existing.bracket_order != new_order:
+                        existing.bracket_order = new_order
                         changed = True
                     if changed:
                         existing.save()
