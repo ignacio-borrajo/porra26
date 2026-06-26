@@ -143,7 +143,7 @@ Calculados a partir de `kickoff`, el momento actual, el resultado y la asignaci�
 
 > Solo se puede crear/editar un pronóstico mientras el partido esté `open` (ambos equipos conocidos y `now < kickoff`).
 
-> **Cruces KO con slots.** Los partidos eliminatorios se modelan con `home_slot`/`away_slot` (`"1A"`, `"2B"`, `"WM73"`…) y un `bracket_code` propio. Al confirmar el resultado oficial de un partido, el servicio `competition.services.bracket.propagate_after_match` rellena automáticamente los `home`/`away` de los siguientes cruces cuyos dos slots queden resolvibles. El gestor puede asignar manualmente cualquier cruce desde "Resultados → Cruce pendiente".
+> **Cruces KO con slots.** Los partidos eliminatorios se modelan con `home_slot`/`away_slot` (`"1A"`, `"2B"`, `"WM73"`…), un `bracket_code` propio y un `bracket_order` (orden explícito del cruce en la ronda; los Dieciseisavos R32 van numerados 1–16). Al confirmar el resultado oficial de un partido, el servicio `competition.services.bracket.propagate_after_match` rellena automáticamente los `home`/`away` de los siguientes cruces cuyos dos slots queden resolvibles. **Excepción: los Dieciseisavos (`r32`) NO se autorrellenan**; sus equipos los asigna siempre el gestor a mano desde "Resultados → Cruce pendiente", para evitar errores. Octavos y rondas posteriores sí se propagan desde el ganador del cruce anterior (`WM…`) una vez el gestor ha confirmado el resultado del R32. El comando `reset_r32_crosses` devuelve los cruces KO a `pending_teams` (limpia equipos, resultados y pronósticos) y reaplica las fechas/orden correctas; se usa para resetear asignaciones hechas por error.
 
 ---
 
