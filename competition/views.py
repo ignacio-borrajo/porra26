@@ -11,6 +11,28 @@ from competition.services.live_standings import live_standings
 from competition.services.resolve import clear_match_result, delete_match, resolve_match
 
 KO_ROUND_IDS = ("r32", "r16", "qf", "sf", "final")
+# Rondas que comparten un único ámbito de clasificación/premio ("Fases
+# Finales"), igual que el sistema de premios (pot.services.prizes._FINALS_ROUND_IDS).
+# R32 (Dieciseisavos) tiene su propio ámbito y queda fuera de este grupo.
+FINALS_ROUND_IDS = ("r16", "qf", "sf", "final")
+
+
+def _default_round(rounds: list[Round]) -> str:
+    """Ronda activa por defecto cuando no se pide una explícita en `?round`.
+
+    Devuelve la ronda del primer partido sin resolver (por orden de ronda y
+    kickoff), es decir, la fase "en juego". Si está todo resuelto, la última
+    ronda. Así, con la fase de grupos terminada y R32 en juego, el dashboard
+    aterriza en R32 en lugar de la última jornada de grupos."""
+    current = (
+        Match.objects.filter(result_home__isnull=True)
+        .order_by("round__order", "kickoff")
+        .values_list("round_id", flat=True)
+        .first()
+    )
+    if current:
+        return current
+    return rounds[-1].id if rounds else "groups"
 
 
 def _group_into_pairs(matches: list) -> list[list]:
@@ -36,7 +58,7 @@ def _chunk_pairs(matches: list) -> list[list]:
 class CompetitionView(LoginRequiredMixin, View):
     def get(self, request):
         rounds = list(Round.objects.all())
-        active_id = request.GET.get("round", rounds[0].id if rounds else "groups")
+        active_id = request.GET.get("round", _default_round(rounds))
         is_ko_view = active_id in KO_ROUND_IDS
 
         matchdays = sorted(
@@ -90,7 +112,23 @@ class CompetitionView(LoginRequiredMixin, View):
         my_is_tied = bool(my_row and my_row.is_tied and has_points)
         max_pts = max((r.pts for r in rows), default=0) or 1
 
-        scope_rows = live_standings(round_id=active_id, matchday=active_md)
+        # Ámbito de la clasificación local. Las rondas de fases finales
+        # (r16/qf/sf/final) se agrupan bajo un único ámbito "Fases Finales",
+        # igual que el sistema de premios; R32 y cada jornada de grupos son
+        # ámbitos propios.
+        active_round_obj = next((r for r in rounds if r.id == active_id), None)
+        if active_md is not None:
+            scope_rows = live_standings(round_id=active_id, matchday=active_md)
+            scope_label = f"Jornada {active_md}"
+        elif active_id in FINALS_ROUND_IDS:
+            scope_rows = live_standings(round_ids=FINALS_ROUND_IDS)
+            scope_label = "Fases Finales"
+        elif active_round_obj is not None:
+            scope_rows = live_standings(round_id=active_id)
+            scope_label = active_round_obj.label
+        else:
+            scope_rows = live_standings(round_id=active_id)
+            scope_label = "Ronda"
         for r in scope_rows:
             r.pts = r.live_pts
         scope_has_points = bool(scope_rows) and scope_rows[0].pts > 0
@@ -98,13 +136,6 @@ class CompetitionView(LoginRequiredMixin, View):
         scope_my_rank = scope_my_row.position if scope_my_row and scope_has_points else None
         scope_my_is_tied = bool(scope_my_row and scope_my_row.is_tied and scope_has_points)
         scope_max_pts = max((r.pts for r in scope_rows), default=0) or 1
-        active_round_obj = next((r for r in rounds if r.id == active_id), None)
-        if active_md is not None:
-            scope_label = f"Jornada {active_md}"
-        elif active_round_obj is not None:
-            scope_label = active_round_obj.short or active_round_obj.label
-        else:
-            scope_label = "Ronda"
 
         all_ids = {r.player_id for r in rows} | {r.player_id for r in scope_rows}
         users_by_id = User.objects.in_bulk(all_ids)
@@ -117,6 +148,15 @@ class CompetitionView(LoginRequiredMixin, View):
                 .order_by("round__order", "kickoff", "bracket_code")
             )
             ko_matches = list(ko_qs)
+            # Los partidos KO se consultan aparte de `matches`, así que hay que
+            # adjuntarles también el pronóstico del jugador para que la card lo
+            # muestre (la card lee `match.my_pred`).
+            ko_preds = {
+                p.match_id: p
+                for p in Prediction.objects.filter(player=request.user, match__in=ko_matches)
+            }
+            for m in ko_matches:
+                m.my_pred = ko_preds.get(m.id)
             feeds_map: dict[str, str | None] = {}
             for m in ko_matches:
                 for slot in (m.home_slot, m.away_slot):
