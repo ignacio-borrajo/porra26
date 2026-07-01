@@ -37,10 +37,6 @@ def resolve_match(match: Match, *, home: int, away: int, actor) -> None:
         payload={"home": home, "away": away},
     )
 
-    from competition.services.bracket import propagate_after_match
-
-    propagate_after_match(match)
-
     from announcements.services import detect_after_match
 
     detect_after_match(match)

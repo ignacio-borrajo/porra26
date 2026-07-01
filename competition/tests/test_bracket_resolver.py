@@ -211,8 +211,9 @@ def test_propagate_is_idempotent_does_not_overwrite(groups_round):
 
 
 @pytest.mark.django_db
-def test_resolve_match_hooks_propagation(groups_round):
-    """Confirmar un resultado debe invocar propagate y rellenar KO dependientes."""
+def test_resolve_match_does_not_propagate_teams(groups_round):
+    """Confirmar un resultado NO debe rellenar equipos del siguiente cruce:
+    la asignación KO es manual (los cruces automáticos estaban mal creados)."""
     from accounts.models import User
     from competition.services.resolve import resolve_match
 
@@ -236,7 +237,6 @@ def test_resolve_match_hooks_propagation(groups_round):
     _played(groups_round, "A", arg, fra, 2, 0, matchday=2)
     _played(groups_round, "A", esp, bra, 2, 0, matchday=2)
     _played(groups_round, "A", arg, bra, 3, 0, matchday=3)
-    # Último partido del grupo A sin resolver todavía
     last = MatchFactory(
         round=groups_round,
         group="A",
@@ -261,5 +261,5 @@ def test_resolve_match_hooks_propagation(groups_round):
     resolve_match(last, home=1, away=0, actor=gestor)
 
     ko.refresh_from_db()
-    assert ko.home == esp
-    assert ko.away == ger
+    assert ko.home is None
+    assert ko.away is None
