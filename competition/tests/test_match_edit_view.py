@@ -178,3 +178,17 @@ def test_edit_non_gestor_forbidden(client, jugador, r32):
     assert resp.status_code in (302, 403)
     m.refresh_from_db()
     assert m.home is None
+
+
+@pytest.mark.django_db
+def test_edit_modal_get_renders_form(client, gestor, r32):
+    TeamFactory(code="ESP")
+    m = _ko(round=r32, home=TeamFactory(code="POR"), away=None, bracket_code="M80")
+    client.force_login(gestor)
+    resp = client.get(reverse("competicion:edit", args=[m.id]))
+    assert resp.status_code == 200
+    html = resp.content.decode()
+    assert "Editar partido" in html
+    assert 'name="home_code"' in html
+    assert 'name="date"' in html
+    assert 'name="time"' in html
