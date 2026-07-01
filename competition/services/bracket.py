@@ -72,12 +72,21 @@ def resolve_slot(code: str) -> Team | None:
 
 
 def propagate_after_match(match: Match) -> list[Match]:
-    """Rellena home/away en todos los partidos cuyos slots queden resolvibles
-    tras procesar `match`. Idempotente: solo escribe donde está a None."""
+    """Rellena home/away en los partidos cuyos slots queden resolvibles tras
+    procesar `match`. Idempotente: solo escribe donde está a None.
+
+    NOTA: desde el rediseño KO ya NO se invoca automáticamente al resolver un
+    partido (`resolve_match` no la llama): la asignación de equipos de todas
+    las eliminatorias es manual desde "Editar partido". Se conserva como
+    utilidad puntual (por eso R32 sigue excluido de la resolución de slots)."""
     pending = (
-        Match.objects.filter(home__isnull=True).exclude(home_slot="")
-        | Match.objects.filter(away__isnull=True).exclude(away_slot="")
-    ).distinct()
+        (
+            Match.objects.filter(home__isnull=True).exclude(home_slot="")
+            | Match.objects.filter(away__isnull=True).exclude(away_slot="")
+        )
+        .distinct()
+        .exclude(round_id="r32")
+    )
     updated: list[Match] = []
     for m in pending:
         update_fields: list[str] = []

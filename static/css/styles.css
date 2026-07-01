@@ -619,9 +619,21 @@ a.match-card:hover {
   .topbar-actions .chip { display: none; }
 }
 
-/* Estadísticas: apila gráfico y comparativa en pantallas estrechas */
+/* Estadísticas: la página rellena el alto disponible para que la card de
+   evolución crezca en vertical (líneas más separadas). */
+.stats-page { display: flex; flex-direction: column; gap: 18px; min-height: calc(100dvh - 150px); }
+.stats-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(300px, 1fr);
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+.stats-side { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+/* apila gráfico y comparativa en pantallas estrechas */
 @media (max-width: 920px) {
-  .stats-grid { grid-template-columns: 1fr !important; }
+  .stats-page { min-height: 0; }
+  .stats-grid { grid-template-columns: 1fr !important; flex: none; }
 }
 /* KPIs de estadísticas: 4 columnas → 2 → 1 según ancho */
 .stats-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
@@ -631,6 +643,78 @@ a.match-card:hover {
 @media (max-width: 460px) {
   .stats-kpis { grid-template-columns: 1fr; }
 }
+
+/* ---- Card de evolución ---- */
+.evo-card { padding: 20px; border-radius: 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0; min-height: 0; }
+.evo-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; flex-shrink: 0; }
+.evo-title { display: flex; align-items: center; gap: 9px; }
+.evo-sub { margin: 6px 0 0; font-size: 12px; color: var(--text-dim); }
+.evo-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.evo-switch { display: flex; align-items: center; gap: 9px; padding: 6px 12px 6px 11px; border-radius: 999px; cursor: pointer; border: 1px solid var(--border-hi); background: var(--surface-hi); color: var(--text-dim); font-family: var(--font-display); font-weight: 700; font-size: 12.5px; transition: all .2s; }
+.evo-switch.is-on { border-color: oklch(from var(--accent) l c h / 0.5); background: oklch(from var(--accent) l c h / 0.12); color: var(--text); }
+.evo-switch:disabled { opacity: .5; cursor: not-allowed; }
+.evo-switch-track { position: relative; width: 30px; height: 17px; border-radius: 999px; flex-shrink: 0; background: var(--border-hi); transition: background .2s; }
+.evo-switch.is-on .evo-switch-track { background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+.evo-switch-knob { position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); transition: left .2s; }
+.evo-switch.is-on .evo-switch-knob { left: 15px; }
+.evo-modes { display: flex; gap: 4px; background: var(--surface-hi); padding: 4px; border-radius: 12px; border: 1px solid var(--border-hi); }
+.evo-modes button { padding: 7px 14px; border-radius: 9px; border: none; cursor: pointer; font-family: var(--font-display); font-weight: 700; font-size: 12.5px; background: transparent; color: var(--text-dim); transition: all .25s; }
+.evo-modes button.is-active { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; }
+.evo-plot { position: relative; width: 100%; flex: 1; min-height: 260px; }
+.evo-plot canvas { display: block; }
+.evo-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.evo-label { position: absolute; transform: translateY(-50%); display: flex; align-items: center; gap: 8px; width: 168px; pointer-events: none; }
+.evo-label-av { position: relative; flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; }
+.evo-label-av img, .evo-label-ini { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; }
+.evo-label-ini { color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 11px; }
+.evo-label.is-me .evo-label-av { box-shadow: 0 0 0 2px var(--accent); }
+.evo-label-rank { position: absolute; top: -7px; left: -7px; font-family: var(--font-mono); font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 6px; background: var(--surface-solid); border: 1px solid; line-height: 1.3; }
+.evo-label-txt { min-width: 0; line-height: 1.12; }
+.evo-label-name { font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.evo-empty { color: var(--text-dim); font-size: 13px; display: grid; place-items: center; height: 100%; margin: 0; }
+.evo-empty[hidden] { display: none; }
+.evo-legend { display: flex; flex-wrap: wrap; gap: 7px; border-top: 1px solid var(--border); padding-top: 13px; flex-shrink: 0; }
+.evo-pill { display: flex; align-items: center; gap: 7px; padding: 5px 11px 5px 8px; border-radius: 999px; cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text-faint); font-weight: 600; font-size: 12.5px; transition: all .2s; }
+.evo-pill.is-on { border-color: oklch(from var(--pill) l c h / 0.5); background: oklch(from var(--pill) l c h / 0.12); color: var(--text); }
+.evo-pill-dot { width: 10px; height: 10px; border-radius: 3px; background: var(--border-hi); flex-shrink: 0; }
+.evo-pill.is-on .evo-pill-dot { background: var(--pill); }
+.evo-pill-rank { font-size: 10.5px; color: var(--text-faint); }
+.evo-allinfo { font-size: 12px; color: var(--text-dim); }
+
+/* ---- Panel "Tú frente al grupo" ---- */
+.cmp-card { padding: 20px; border-radius: 22px; display: flex; flex-direction: column; gap: 16px; flex-shrink: 0; }
+.cmp-bars { display: flex; flex-direction: column; gap: 16px; }
+.cmp-row { display: flex; flex-direction: column; gap: 6px; }
+.cmp-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.cmp-label { font-size: 13px; font-weight: 600; }
+.cmp-me { font-size: 13px; font-weight: 700; color: var(--accent); }
+.cmp-track { position: relative; height: 13px; border-radius: 999px; background: var(--border); }
+.cmp-fill { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); box-shadow: 0 0 12px -3px var(--accent); }
+.cmp-mark { position: absolute; top: -3px; bottom: -3px; width: 2px; transform: translateX(-1px); }
+.cmp-mark-avg { background: var(--text-faint); }
+.cmp-mark-best { background: var(--c-gold); }
+.cmp-foot { font-size: 10.5px; color: var(--text-faint); display: flex; gap: 12px; }
+.cmp-best-txt { color: var(--c-gold); }
+.cmp-legend { display: flex; gap: 14px; border-top: 1px solid var(--border); padding-top: 12px; font-size: 11px; color: var(--text-dim); flex-wrap: wrap; }
+.cmp-legend span { display: flex; align-items: center; gap: 6px; }
+.cmp-key { width: 12px; height: 8px; border-radius: 3px; }
+.cmp-key-me { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+.cmp-key-avg { width: 2px; height: 12px; background: var(--text-faint); }
+.cmp-key-best { width: 2px; height: 12px; background: var(--c-gold); }
+
+/* ---- Donut de pronósticos ---- */
+.donut-card { padding: 20px; border-radius: 22px; display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 300px; }
+.donut-body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; flex: 1; min-height: 0; }
+.donut-ring { position: relative; width: 168px; height: 168px; flex-shrink: 0; }
+.donut-ring canvas { width: 168px !important; height: 168px !important; }
+.donut-center { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; pointer-events: none; }
+.donut-pct { font-size: 34px; font-weight: 800; line-height: 1; color: var(--c-cyan); }
+.donut-legend { display: flex; flex-direction: column; gap: 9px; width: 100%; }
+.donut-leg-row { display: flex; align-items: center; gap: 9px; }
+.donut-leg-key { width: 11px; height: 11px; border-radius: 4px; flex-shrink: 0; }
+.donut-leg-label { flex: 1; font-size: 12.5px; color: var(--text-dim); }
+.donut-leg-val { font-size: 13px; font-weight: 700; }
+.donut-leg-pct { font-size: 11px; color: var(--text-faint); min-width: 34px; text-align: right; }
 
 /* Tablas con grid de columnas fijas: en pantallas pequeñas habilitamos
    scroll horizontal en lugar de aplastar las columnas. */

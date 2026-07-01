@@ -875,6 +875,7 @@
       "home_slot": "1A",
       "away_slot": "3WG_S1",
       "bracket_code": "M73",
+      "bracket_order": 3,
       "kickoff": "2026-06-28T19:00:00Z"
     }
   },
@@ -890,7 +891,8 @@
       "home_slot": "1B",
       "away_slot": "2I",
       "bracket_code": "M74",
-      "kickoff": "2026-06-28T22:00:00Z"
+      "bracket_order": 1,
+      "kickoff": "2026-06-29T20:30:00Z"
     }
   },
   {
@@ -905,7 +907,8 @@
       "home_slot": "1C",
       "away_slot": "2H",
       "bracket_code": "M75",
-      "kickoff": "2026-06-29T19:00:00Z"
+      "bracket_order": 4,
+      "kickoff": "2026-06-30T01:00:00Z"
     }
   },
   {
@@ -920,7 +923,8 @@
       "home_slot": "1D",
       "away_slot": "3WG_S2",
       "bracket_code": "M76",
-      "kickoff": "2026-06-29T22:00:00Z"
+      "bracket_order": 9,
+      "kickoff": "2026-06-29T17:00:00Z"
     }
   },
   {
@@ -935,7 +939,8 @@
       "home_slot": "2A",
       "away_slot": "2C",
       "bracket_code": "M77",
-      "kickoff": "2026-06-30T19:00:00Z"
+      "bracket_order": 2,
+      "kickoff": "2026-06-30T21:00:00Z"
     }
   },
   {
@@ -950,7 +955,8 @@
       "home_slot": "1E",
       "away_slot": "3WG_S3",
       "bracket_code": "M78",
-      "kickoff": "2026-06-30T22:00:00Z"
+      "bracket_order": 10,
+      "kickoff": "2026-06-30T17:00:00Z"
     }
   },
   {
@@ -965,7 +971,8 @@
       "home_slot": "1F",
       "away_slot": "2K",
       "bracket_code": "M79",
-      "kickoff": "2026-07-01T19:00:00Z"
+      "bracket_order": 11,
+      "kickoff": "2026-07-01T01:00:00Z"
     }
   },
   {
@@ -980,7 +987,8 @@
       "home_slot": "2D",
       "away_slot": "3WG_S4",
       "bracket_code": "M80",
-      "kickoff": "2026-07-01T22:00:00Z"
+      "bracket_order": 12,
+      "kickoff": "2026-07-01T16:00:00Z"
     }
   },
   {
@@ -995,7 +1003,8 @@
       "home_slot": "1G",
       "away_slot": "3WG_S5",
       "bracket_code": "M81",
-      "kickoff": "2026-07-02T19:00:00Z"
+      "bracket_order": 7,
+      "kickoff": "2026-07-02T00:00:00Z"
     }
   },
   {
@@ -1010,7 +1019,8 @@
       "home_slot": "1H",
       "away_slot": "2L",
       "bracket_code": "M82",
-      "kickoff": "2026-07-02T22:00:00Z"
+      "bracket_order": 8,
+      "kickoff": "2026-07-01T20:00:00Z"
     }
   },
   {
@@ -1025,7 +1035,8 @@
       "home_slot": "1I",
       "away_slot": "3WG_S6",
       "bracket_code": "M83",
-      "kickoff": "2026-07-03T19:00:00Z"
+      "bracket_order": 5,
+      "kickoff": "2026-07-02T23:00:00Z"
     }
   },
   {
@@ -1040,7 +1051,8 @@
       "home_slot": "1J",
       "away_slot": "2E",
       "bracket_code": "M84",
-      "kickoff": "2026-07-03T22:00:00Z"
+      "bracket_order": 6,
+      "kickoff": "2026-07-02T19:00:00Z"
     }
   },
   {
@@ -1055,7 +1067,8 @@
       "home_slot": "2B",
       "away_slot": "2G",
       "bracket_code": "M85",
-      "kickoff": "2026-07-03T01:00:00Z"
+      "bracket_order": 15,
+      "kickoff": "2026-07-03T03:00:00Z"
     }
   },
   {
@@ -1070,7 +1083,8 @@
       "home_slot": "1K",
       "away_slot": "3WG_S7",
       "bracket_code": "M86",
-      "kickoff": "2026-07-03T04:00:00Z"
+      "bracket_order": 13,
+      "kickoff": "2026-07-03T22:00:00Z"
     }
   },
   {
@@ -1085,7 +1099,8 @@
       "home_slot": "1L",
       "away_slot": "2J",
       "bracket_code": "M87",
-      "kickoff": "2026-07-04T01:00:00Z"
+      "bracket_order": 16,
+      "kickoff": "2026-07-04T01:30:00Z"
     }
   },
   {
@@ -1100,7 +1115,8 @@
       "home_slot": "2F",
       "away_slot": "3WG_S8",
       "bracket_code": "M88",
-      "kickoff": "2026-07-04T04:00:00Z"
+      "bracket_order": 14,
+      "kickoff": "2026-07-03T18:00:00Z"
     }
   },
   {

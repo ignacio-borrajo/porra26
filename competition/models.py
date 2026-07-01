@@ -50,6 +50,7 @@ class Match(models.Model):
     home_slot = models.CharField(max_length=12, blank=True)
     away_slot = models.CharField(max_length=12, blank=True)
     bracket_code = models.CharField(max_length=12, blank=True, null=True, unique=True)
+    bracket_order = models.PositiveSmallIntegerField(null=True, blank=True)
     external_id = models.CharField(max_length=64, blank=True, null=True, unique=True)
     kickoff = models.DateTimeField()
     result_home = models.PositiveSmallIntegerField(null=True, blank=True)

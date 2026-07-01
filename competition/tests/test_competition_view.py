@@ -278,23 +278,138 @@ def test_dashboard_renders_scope_leaderboard_tab_for_matchday(client):
 
 
 @pytest.mark.django_db
-def test_dashboard_scope_tab_uses_round_label_outside_groups(client):
+def test_dashboard_scope_tab_uses_dieciseisavos_label_for_r32(client):
     u = UserFactory(must_change_password=False)
     client.force_login(u)
     RoundFactory(id="groups", points=3, label="Grupos", short="G", order=1)
-    r16 = RoundFactory(id="r16", points=7, label="Octavos", short="OCT", order=3)
+    r32 = RoundFactory(id="r32", points=5, label="Dieciseisavos", short="R32", order=2)
     MatchFactory(
-        round=r16,
+        round=r32,
         matchday=None,
+        bracket_code="M73",
         home=TeamFactory(),
         away=TeamFactory(),
         kickoff=timezone.now() + timedelta(days=20),
     )
-    r = client.get(reverse("competicion:dashboard") + "?round=r16")
+    r = client.get(reverse("competicion:dashboard") + "?round=r32")
     body = r.content.decode()
     assert "lb-scope-local" in body
-    # Sin jornada activa: la pestaña usa el `short` (o label) de la ronda.
-    assert "OCT" in body
+    # R32 es su propio ámbito: "Dieciseisavos".
+    assert r.context["scope_label"] == "Dieciseisavos"
+
+
+@pytest.mark.django_db
+def test_dashboard_scope_tab_groups_all_finals_rounds(client):
+    """En cualquier ronda de fases finales (r16/qf/sf/final) el ámbito de la
+    clasificación agrupa las cuatro rondas bajo 'Fases Finales', igual que el
+    sistema de premios (pot._FINALS_ROUND_IDS)."""
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    RoundFactory(id="groups", points=3, label="Grupos", short="G", order=1)
+    RoundFactory(id="r32", points=5, label="Dieciseisavos", short="R32", order=2)
+    r16 = RoundFactory(id="r16", points=7, label="Octavos", short="OCT", order=3)
+    RoundFactory(id="qf", points=10, label="Cuartos", short="QF", order=4)
+    RoundFactory(id="sf", points=15, label="Semifinales", short="SF", order=5)
+    RoundFactory(id="final", points=25, label="Final", short="FIN", order=6)
+    MatchFactory(
+        round=r16,
+        matchday=None,
+        bracket_code="M89",
+        home=TeamFactory(),
+        away=TeamFactory(),
+        kickoff=timezone.now() + timedelta(days=20),
+    )
+    r = client.get(reverse("competicion:dashboard") + "?round=qf")
+    assert r.context["scope_label"] == "Fases Finales"
+
+
+@pytest.mark.django_db
+def test_dashboard_default_round_is_current_round_in_play(client):
+    """Sin `?round`, el dashboard aterriza en la ronda con el primer partido
+    sin resolver. Con la fase de grupos resuelta y R32 en juego, debe abrir R32
+    (no la última jornada de grupos)."""
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    grp = RoundFactory(id="groups", points=3, label="Grupos", short="G", order=1)
+    r32 = RoundFactory(id="r32", points=5, label="Dieciseisavos", short="R32", order=2)
+    RoundFactory(id="r16", points=7, label="Octavos", short="OCT", order=3)
+    RoundFactory(id="qf", points=10, label="Cuartos", short="QF", order=4)
+    RoundFactory(id="sf", points=15, label="Semifinales", short="SF", order=5)
+    RoundFactory(id="final", points=25, label="Final", short="FIN", order=6)
+    # Grupos: todo resuelto.
+    MatchFactory(
+        round=grp,
+        matchday=3,
+        home=TeamFactory(),
+        away=TeamFactory(),
+        result_home=1,
+        result_away=0,
+        kickoff=timezone.now() - timedelta(days=3),
+    )
+    # R32: sin resolver (en juego / abierto).
+    MatchFactory(
+        round=r32,
+        bracket_code="M73",
+        home=TeamFactory(),
+        away=TeamFactory(),
+        kickoff=timezone.now() + timedelta(days=2),
+    )
+    r = client.get(reverse("competicion:dashboard"))
+    assert r.context["active_round"] == "r32"
+    assert r.context["is_ko_view"] is True
+
+
+@pytest.mark.django_db
+def test_dashboard_default_round_falls_back_to_last_when_all_resolved(client):
+    u = UserFactory(must_change_password=False)
+    client.force_login(u)
+    grp = RoundFactory(id="groups", points=3, label="Grupos", short="G", order=1)
+    final = RoundFactory(id="final", points=25, label="Final", short="FIN", order=6)
+    MatchFactory(
+        round=grp,
+        matchday=1,
+        home=TeamFactory(),
+        away=TeamFactory(),
+        result_home=2,
+        result_away=2,
+        kickoff=timezone.now() - timedelta(days=10),
+    )
+    MatchFactory(
+        round=final,
+        bracket_code="M104",
+        home=TeamFactory(),
+        away=TeamFactory(),
+        result_home=1,
+        result_away=0,
+        kickoff=timezone.now() - timedelta(days=1),
+    )
+    r = client.get(reverse("competicion:dashboard"))
+    assert r.context["active_round"] == "final"
+
+
+@pytest.mark.django_db
+def test_dashboard_ko_card_shows_my_prediction(client):
+    """Regresión: en la vista KO la card debe mostrar el pronóstico del jugador
+    (los partidos KO no recibían `my_pred`)."""
+    u = UserFactory(must_change_password=False, name="Ana")
+    client.force_login(u)
+    RoundFactory(id="groups", points=3, label="Fase de grupos", short="GRP", order=1)
+    r32 = RoundFactory(id="r32", points=5, label="Dieciseisavos", short="R32", order=2)
+    RoundFactory(id="r16", points=7, label="Octavos", short="R16", order=3)
+    RoundFactory(id="qf", points=10, label="Cuartos", short="QF", order=4)
+    RoundFactory(id="sf", points=15, label="Semifinales", short="SF", order=5)
+    RoundFactory(id="final", points=25, label="Final", short="FIN", order=6)
+    m = MatchFactory(
+        round=r32,
+        bracket_code="M73",
+        home=TeamFactory(),
+        away=TeamFactory(),
+        kickoff=timezone.now() + timedelta(days=10),  # abierto/editable
+    )
+    PredictionFactory(player=u, match=m, home=3, away=1)
+    r = client.get(reverse("competicion:dashboard") + "?round=r32")
+    body = r.content.decode()
+    assert "Apostaste 3-1" in body
 
 
 @pytest.mark.django_db

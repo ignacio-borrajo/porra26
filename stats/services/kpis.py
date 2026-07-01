@@ -19,6 +19,41 @@ def donut(player_id: int) -> dict:
     return {"exact": exact, "partial": partial, "fail": fail}
 
 
+def compare(player_id: int) -> dict:
+    """Métricas del jugador frente a la media y el máximo del grupo.
+
+    Alimenta el panel "Tú frente al grupo": para puntos, aciertos y exactos
+    devuelve el valor del jugador, la media y el mejor del grupo.
+    """
+    s = standings()
+    me = next((r for r in s if r.player_id == player_id), None)
+    if me is None:
+        return {}
+    n = len(s)
+    metrics = []
+    for label, sel in (
+        ("Puntos", lambda r: r.pts),
+        ("Aciertos", lambda r: r.hits),
+        ("Exactos", lambda r: r.exact_hits),
+    ):
+        values = [sel(r) for r in s]
+        my_val = sel(me)
+        avg_val = round(sum(values) / n, 1)
+        best_val = max(values)
+        scale = best_val or 1
+        metrics.append(
+            {
+                "label": label,
+                "me": my_val,
+                "avg": avg_val,
+                "best": best_val,
+                "me_pct": round(my_val / scale * 100),
+                "avg_pct": round(avg_val / scale * 100),
+            }
+        )
+    return {"metrics": metrics}
+
+
 def kpis(player) -> dict:
     s = standings()
     if not s:
