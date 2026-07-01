@@ -211,9 +211,10 @@ def test_propagate_is_idempotent_does_not_overwrite(groups_round):
 
 
 @pytest.mark.django_db
-def test_resolve_match_hooks_propagation(groups_round):
-    """Confirmar el resultado de un R32 debe invocar propagate y rellenar el
-    octavo dependiente desde el ganador (`WM…`)."""
+def test_resolve_match_does_not_propagate_teams(groups_round):
+    """Confirmar un resultado NO debe rellenar equipos de NINGÚN cruce
+    posterior: la asignación KO es siempre manual (los cruces automáticos
+    estaban mal creados)."""
     from accounts.models import User
     from competition.services.resolve import resolve_match
 
@@ -250,4 +251,5 @@ def test_resolve_match_hooks_propagation(groups_round):
     resolve_match(last, home=1, away=0, actor=gestor)
 
     ko.refresh_from_db()
-    assert ko.home == esp  # ganador de M73 propagado al octavo
+    assert ko.home is None
+    assert ko.away is None

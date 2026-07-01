@@ -1,0 +1,54 @@
+{% load icons %}
+<section class="glass pop" style="width:min(560px,100%);padding:28px;border-radius:24px;background:var(--surface-solid)">
+  <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+    <div>
+      <div class="eyebrow">{{ match.round.short }}{% if match.bracket_code %} · {{ match.bracket_code }}{% endif %}</div>
+      <h1 class="display" style="font-size:24px;margin:4px 0 0">Editar partido</h1>
+    </div>
+    <button type="button" data-modal-close class="btn btn-ghost" style="width:36px;height:36px;padding:0;border-radius:12px" aria-label="Cerrar">{% icon "x" width=14 %}</button>
+  </header>
+  <form method="post" action="{% url 'competicion:edit' match.id %}" style="margin-top:16px;display:flex;flex-direction:column;gap:14px">
+    {% csrf_token %}
+    <input type="hidden" name="round" value="{{ match.round_id }}">
+    {% if match.matchday %}<input type="hidden" name="matchday" value="{{ match.matchday }}">{% endif %}
+
+    <label style="display:flex;flex-direction:column;gap:4px">
+      <span class="eyebrow">Local</span>
+      <select name="home_code" class="input">
+        <option value="">Por definir…</option>
+        {% for t in all_teams %}<option value="{{ t.code }}"{% if match.home_id == t.code %} selected{% endif %}>{{ t.flag }} {{ t.name }}</option>{% endfor %}
+      </select>
+    </label>
+
+    <label style="display:flex;flex-direction:column;gap:4px">
+      <span class="eyebrow">Visitante</span>
+      <select name="away_code" class="input">
+        <option value="">Por definir…</option>
+        {% for t in all_teams %}<option value="{{ t.code }}"{% if match.away_id == t.code %} selected{% endif %}>{{ t.flag }} {{ t.name }}</option>{% endfor %}
+      </select>
+    </label>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <label style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:150px">
+        <span class="eyebrow">Fecha</span>
+        <input type="date" name="date" class="input" value="{{ match.kickoff|date:'Y-m-d' }}" required>
+      </label>
+      <label style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:120px">
+        <span class="eyebrow">Hora</span>
+        <input type="time" name="time" class="input" value="{{ match.kickoff|date:'H:i' }}" required>
+      </label>
+    </div>
+
+    {% if has_predictions %}
+    <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--text-dim)">
+      <input type="checkbox" name="confirm_invalidate" value="1" style="margin-top:2px">
+      <span>Este partido tiene pronósticos. Si cambio los equipos, confirmo que se <strong>borrarán</strong> los pronósticos existentes.</span>
+    </label>
+    {% endif %}
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:4px">
+      <button class="btn btn-ghost" type="button" data-modal-close>Cancelar</button>
+      <button class="btn btn-primary" type="submit">Guardar cambios</button>
+    </div>
+  </form>
+</section>

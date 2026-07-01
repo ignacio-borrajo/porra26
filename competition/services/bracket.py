@@ -72,11 +72,13 @@ def resolve_slot(code: str) -> Team | None:
 
 
 def propagate_after_match(match: Match) -> list[Match]:
-    """Rellena home/away en todos los partidos cuyos slots queden resolvibles
-    tras procesar `match`. Idempotente: solo escribe donde está a None."""
-    # R32 (Dieciseisavos) se excluye a propósito: sus equipos los asigna siempre
-    # un gestor a mano para evitar errores. Octavos+ sí se propagan desde los
-    # ganadores (`WM…`) una vez el gestor ha confirmado el resultado del R32.
+    """Rellena home/away en los partidos cuyos slots queden resolvibles tras
+    procesar `match`. Idempotente: solo escribe donde está a None.
+
+    NOTA: desde el rediseño KO ya NO se invoca automáticamente al resolver un
+    partido (`resolve_match` no la llama): la asignación de equipos de todas
+    las eliminatorias es manual desde "Editar partido". Se conserva como
+    utilidad puntual (por eso R32 sigue excluido de la resolución de slots)."""
     pending = (
         (
             Match.objects.filter(home__isnull=True).exclude(home_slot="")

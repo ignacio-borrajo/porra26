@@ -37,7 +37,9 @@ def test_r32_no_autofill_from_group_standings():
 
 
 @pytest.mark.django_db
-def test_r16_autofills_from_r32_winner():
+def test_r16_does_not_autofill_from_r32_winner():
+    """Resolver un R32 NO rellena el octavo: la asignación de equipos es
+    siempre manual en todas las eliminatorias."""
     actor = GestorFactory()
     a, b = TeamFactory(), TeamFactory()
     r32 = MatchFactory(
@@ -62,4 +64,4 @@ def test_r16_autofills_from_r32_winner():
     )
     resolve_match(r32, home=2, away=1, actor=actor)
     r16.refresh_from_db()
-    assert r16.home_id == a.code  # ganador de M73 propagado a octavos
+    assert r16.home_id is None and r16.away_id is None

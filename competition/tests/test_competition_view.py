@@ -517,51 +517,7 @@ def test_dashboard_ko_view_flag_for_r32(client):
 
 
 @pytest.mark.django_db
-def test_dashboard_ko_matches_have_feeds_into_code(client):
-    u = UserFactory(must_change_password=False)
-    client.force_login(u)
-    RoundFactory(id="groups", points=3, label="Fase de grupos", short="GRP", order=1)
-    r32 = RoundFactory(id="r32", points=5, label="Dieciseisavos", short="R32", order=2)
-    r16 = RoundFactory(id="r16", points=7, label="Octavos", short="R16", order=3)
-    RoundFactory(id="qf", points=10, label="Cuartos", short="QF", order=4)
-    RoundFactory(id="sf", points=15, label="Semifinales", short="SF", order=5)
-    final = RoundFactory(id="final", points=25, label="Final", short="FIN", order=6)
-
-    MatchFactory(
-        round=r32,
-        bracket_code="M73",
-        kickoff=timezone.now() + timedelta(days=10),
-    )
-    MatchFactory(
-        round=r16,
-        bracket_code="M89",
-        home=None,
-        away=None,
-        home_slot="WM73",
-        away_slot="WM74",
-        kickoff=timezone.now() + timedelta(days=15),
-    )
-    MatchFactory(
-        round=final,
-        bracket_code="M104",
-        home=None,
-        away=None,
-        home_slot="WM101",
-        away_slot="WM102",
-        kickoff=timezone.now() + timedelta(days=30),
-    )
-
-    r = client.get(reverse("competicion:dashboard") + "?round=r32")
-    assert r.status_code == 200
-    matches_by_code = {
-        m.bracket_code: m for entry in r.context["ko_rounds"] for m in entry["matches"]
-    }
-    assert matches_by_code["M73"].feeds_into_code == "M89"
-    assert matches_by_code["M104"].feeds_into_code is None
-
-
-@pytest.mark.django_db
-def test_dashboard_ko_template_renders_canvas(client):
+def test_dashboard_ko_template_renders_columns(client):
     u = UserFactory(must_change_password=False)
     client.force_login(u)
     RoundFactory(id="groups", points=3, label="Fase de grupos", short="GRP", order=1)
@@ -574,40 +530,10 @@ def test_dashboard_ko_template_renders_canvas(client):
 
     r = client.get(reverse("competicion:dashboard") + "?round=r32")
     html = r.content.decode("utf-8")
-    assert "ko-canvas" in html
+    assert "ko-columns" in html
     assert html.count('class="ko-col"') == 5
-    assert "ko-connectors" in html
+    assert "ko-connectors" not in html
     assert 'data-active-round="r32"' in html
-
-
-@pytest.mark.django_db
-def test_match_card_has_bracket_data_attributes_in_ko(client):
-    u = UserFactory(must_change_password=False)
-    client.force_login(u)
-    RoundFactory(id="groups", points=3, label="Fase de grupos", short="GRP", order=1)
-    r32 = RoundFactory(id="r32", points=5, label="Dieciseisavos", short="R32", order=2)
-    r16 = RoundFactory(id="r16", points=7, label="Octavos", short="R16", order=3)
-    RoundFactory(id="qf", points=10, label="Cuartos", short="QF", order=4)
-    RoundFactory(id="sf", points=15, label="Semifinales", short="SF", order=5)
-    RoundFactory(id="final", points=25, label="Final", short="FIN", order=6)
-    MatchFactory(round=r32, bracket_code="M73", kickoff=timezone.now() + timedelta(days=10))
-    MatchFactory(
-        round=r16,
-        bracket_code="M89",
-        home=None,
-        away=None,
-        home_slot="WM73",
-        away_slot="WM74",
-        kickoff=timezone.now() + timedelta(days=15),
-    )
-
-    r = client.get(reverse("competicion:dashboard") + "?round=r32")
-    html = r.content.decode("utf-8")
-    assert 'data-bracket-code="M73"' in html
-    assert 'data-feeds-into="M89"' in html
-    assert 'data-status="open"' in html
-    assert 'data-bracket-code="M89"' in html
-    assert 'data-status="pending_teams"' in html
 
 
 @pytest.mark.django_db
@@ -625,30 +551,44 @@ def test_round_selector_chips_have_target_round(client):
 
 
 @pytest.mark.django_db
-def test_dashboard_ko_r32_ordered_by_bracket_order_with_position_pairs(client):
-    """En R32 la vista respeta el orden explícito `bracket_order` y agrupa las
-    parejas por posición (1-2, 3-4, …), no por octavo destino."""
-    u = UserFactory(must_change_password=False)
-    client.force_login(u)
-    RoundFactory(id="groups", points=3, label="Fase de grupos", short="GRP", order=1)
-    r32 = RoundFactory(id="r32", points=5, label="Dieciseisavos", short="R32", order=2)
-    RoundFactory(id="r16", points=7, label="Octavos", short="R16", order=3)
-    RoundFactory(id="qf", points=10, label="Cuartos", short="QF", order=4)
-    RoundFactory(id="sf", points=15, label="Semifinales", short="SF", order=5)
-    RoundFactory(id="final", points=25, label="Final", short="FIN", order=6)
+def test_order_ko_column_unfinished_first_then_by_kickoff():
+    from competition.views import _order_ko_column
 
-    # Orden explícito: M74→1, M77→2, M73→3, M75→4.
-    for code, order in (("M73", 3), ("M74", 1), ("M77", 2), ("M75", 4)):
-        MatchFactory(
-            round=r32,
-            bracket_code=code,
-            bracket_order=order,
-            kickoff=timezone.now() + timedelta(days=10),
-        )
+    r32 = RoundFactory(id="r32", points=5, label="R32", short="R32", order=2)
+    now = timezone.now()
+    done_old = MatchFactory(
+        round=r32,
+        matchday=None,
+        home=TeamFactory(),
+        away=TeamFactory(),
+        result_home=1,
+        result_away=0,
+        kickoff=now - timedelta(days=3),
+    )
+    done_new = MatchFactory(
+        round=r32,
+        matchday=None,
+        home=TeamFactory(),
+        away=TeamFactory(),
+        result_home=2,
+        result_away=2,
+        kickoff=now - timedelta(days=1),
+    )
+    open_late = MatchFactory(
+        round=r32,
+        matchday=None,
+        home=TeamFactory(),
+        away=TeamFactory(),
+        kickoff=now + timedelta(days=5),
+    )
+    open_soon = MatchFactory(
+        round=r32,
+        matchday=None,
+        home=TeamFactory(),
+        away=TeamFactory(),
+        kickoff=now + timedelta(days=2),
+    )
 
-    r = client.get(reverse("competicion:dashboard") + "?round=r32")
-    r32_entry = next(e for e in r.context["ko_rounds"] if e["round"].id == "r32")
-    codes = [m.bracket_code for m in r32_entry["matches"]]
-    assert codes == ["M74", "M77", "M73", "M75"]
-    pair_codes = [[m.bracket_code for m in pair] for pair in r32_entry["pairs"]]
-    assert pair_codes == [["M74", "M77"], ["M73", "M75"]]
+    ordered = _order_ko_column([done_old, done_new, open_late, open_soon])
+
+    assert ordered == [open_soon, open_late, done_old, done_new]
