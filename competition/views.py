@@ -491,53 +491,123 @@ class MatchDetailView(LoginRequiredMixin, View):
         )
 
 
-class AssignTeamsView(GestorRequiredMixin, View):
-    """Asigna o corrige los dos equipos de un cruce KO. Si el partido ya tenía
-    equipos asignados y existen pronósticos, requiere `confirm_invalidate=1` y
-    borra los pronósticos para no quedar inconsistentes con los nuevos equipos."""
+class MatchEditView(GestorRequiredMixin, View):
+    """Edita cualquier partido: equipos (pueden quedar vacíos → 'Por definir')
+    y fecha/hora de saque. Si al cambiar los equipos el partido ya tenía
+    pronósticos, exige `confirm_invalidate=1` y los borra. Si el nuevo kickoff
+    es futuro y cambió, resetea los recordatorios automáticos para que se
+    reprogramen en las nuevas ventanas."""
+
+    def get(self, request, match_id):
+        from competition.models import Team
+
+        m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
+        return render(
+            request,
+            "competition/_match_edit_modal.html",
+            {
+                "match": m,
+                "all_teams": list(Team.objects.order_by("name")),
+                "has_predictions": Prediction.objects.filter(match=m).exists(),
+            },
+        )
 
     def post(self, request, match_id):
-        from competition.models import Team
+        from datetime import datetime
+
+        from django.utils import timezone
+
+        from accounts.models import AuditLog
+        from competition.models import BetsReminderLog, Team
 
         m = get_object_or_404(Match, pk=match_id)
         home_code = (request.POST.get("home_code") or "").strip()
         away_code = (request.POST.get("away_code") or "").strip()
-        if not home_code or not away_code or home_code == away_code:
-            messages.error(request, "Selecciona dos equipos distintos.")
-            return redirect("competicion:manage_results")
+        date_str = (request.POST.get("date") or "").strip()
+        time_str = (request.POST.get("time") or "").strip()
 
-        home = Team.objects.filter(code=home_code).first()
-        away = Team.objects.filter(code=away_code).first()
-        if home is None or away is None:
+        if home_code and away_code and home_code == away_code:
+            messages.error(request, "Local y visitante no pueden ser el mismo equipo.")
+            return redirect(self._back_url(request))
+
+        home = Team.objects.filter(code=home_code).first() if home_code else None
+        away = Team.objects.filter(code=away_code).first() if away_code else None
+        if (home_code and home is None) or (away_code and away is None):
             messages.error(request, "Equipo no encontrado.")
-            return redirect("competicion:manage_results")
+            return redirect(self._back_url(request))
 
-        was_assigned = m.has_teams
+        try:
+            new_kickoff = timezone.make_aware(
+                datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+            )
+        except ValueError:
+            messages.error(request, "Fecha u hora inválidas.")
+            return redirect(self._back_url(request))
+
+        teams_changed = m.home_id != (home.code if home else None) or m.away_id != (
+            away.code if away else None
+        )
         existing_preds = Prediction.objects.filter(match=m).exists()
-
-        if was_assigned and existing_preds and request.POST.get("confirm_invalidate") != "1":
+        if teams_changed and existing_preds and request.POST.get("confirm_invalidate") != "1":
             messages.error(
                 request,
-                "Este cruce ya tiene pronósticos. Marca la casilla de confirmación "
-                "para sobrescribir los equipos y borrar los pronósticos existentes.",
+                "Este partido ya tiene pronósticos. Marca la casilla de confirmación "
+                "para cambiar los equipos y borrar los pronósticos existentes.",
             )
-            return redirect("competicion:manage_results")
+            return redirect(self._back_url(request))
 
-        if was_assigned and existing_preds:
+        if teams_changed and existing_preds:
             Prediction.objects.filter(match=m).delete()
 
+        old_kickoff = m.kickoff
         m.home = home
         m.away = away
-        m.save(update_fields=["home", "away"])
-        messages.success(request, f"Cruce actualizado · {home.name} vs {away.name}")
-        return redirect("competicion:manage_results")
+        m.kickoff = new_kickoff
+        m.save(update_fields=["home", "away", "kickoff"])
+
+        if new_kickoff != old_kickoff and new_kickoff > timezone.now():
+            BetsReminderLog.objects.filter(
+                match=m, kind__in=BetsReminderLog.AUTO_KINDS
+            ).delete()
+
+        AuditLog.objects.create(
+            actor=request.user,
+            action="match_edited",
+            target_type="match",
+            target_id=str(m.id),
+            payload={
+                "home": home.code if home else None,
+                "away": away.code if away else None,
+                "kickoff": new_kickoff.isoformat(),
+            },
+        )
+
+        label = f"{home.name if home else 'Por definir'} vs {away.name if away else 'Por definir'}"
+        messages.success(request, f"Partido actualizado · {label}")
+        return redirect(self._back_url(request))
+
+    @staticmethod
+    def _back_url(request):
+        from urllib.parse import urlencode
+
+        from django.urls import reverse
+
+        params = {}
+        rnd = request.POST.get("round")
+        md = request.POST.get("matchday")
+        if rnd:
+            params["round"] = rnd
+        if md:
+            params["matchday"] = md
+        url = reverse("competicion:manage_results")
+        return f"{url}?{urlencode(params)}" if params else url
 
 
 class DeleteMatchView(GestorRequiredMixin, View):
     """Borra un partido por completo. Pensado para limpiar partidos creados por
     error (p. ej. cruces de prueba en producción). Si el partido tiene
     pronósticos o resultado, exige `confirm_delete=1` para evitar borrados
-    accidentales, igual que `AssignTeamsView` con la invalidación."""
+    accidentales, igual que `MatchEditView` con la invalidación."""
 
     def post(self, request, match_id):
         m = get_object_or_404(Match.objects.select_related("home", "away", "round"), pk=match_id)
