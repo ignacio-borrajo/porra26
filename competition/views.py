@@ -566,9 +566,7 @@ class MatchEditView(GestorRequiredMixin, View):
         m.save(update_fields=["home", "away", "kickoff"])
 
         if new_kickoff != old_kickoff and new_kickoff > timezone.now():
-            BetsReminderLog.objects.filter(
-                match=m, kind__in=BetsReminderLog.AUTO_KINDS
-            ).delete()
+            BetsReminderLog.objects.filter(match=m, kind__in=BetsReminderLog.AUTO_KINDS).delete()
 
         AuditLog.objects.create(
             actor=request.user,

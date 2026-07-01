@@ -12,7 +12,10 @@ from competition.tests.factories import MatchFactory, RoundFactory, TeamFactory
 @pytest.fixture
 def gestor(db):
     return User.objects.create(
-        email="g@example.com", is_gestor=True, name="G", is_active=True,
+        email="g@example.com",
+        is_gestor=True,
+        name="G",
+        is_active=True,
         must_change_password=False,
     )
 
@@ -20,7 +23,10 @@ def gestor(db):
 @pytest.fixture
 def jugador(db):
     return User.objects.create(
-        email="j@example.com", is_jugador=True, name="J", is_active=True,
+        email="j@example.com",
+        is_jugador=True,
+        name="J",
+        is_active=True,
         must_change_password=False,
     )
 
@@ -32,8 +38,12 @@ def r32(db):
 
 def _ko(**kw):
     defaults = dict(
-        group="R32", matchday=None, home=None, away=None,
-        home_slot="1A", away_slot="2B",
+        group="R32",
+        matchday=None,
+        home=None,
+        away=None,
+        home_slot="1A",
+        away_slot="2B",
         kickoff=timezone.now() + timedelta(days=10),
     )
     defaults.update(kw)
@@ -114,8 +124,13 @@ def test_edit_invalidates_predictions_with_confirmation(client, gestor, jugador,
     client.force_login(gestor)
     resp = client.post(
         reverse("competicion:edit", args=[m.id]),
-        {"home_code": "FRA", "away_code": "ARG", "date": "2026-07-15",
-         "time": "21:00", "confirm_invalidate": "1"},
+        {
+            "home_code": "FRA",
+            "away_code": "ARG",
+            "date": "2026-07-15",
+            "time": "21:00",
+            "confirm_invalidate": "1",
+        },
     )
     assert resp.status_code == 302
     m.refresh_from_db()
@@ -127,11 +142,19 @@ def test_edit_invalidates_predictions_with_confirmation(client, gestor, jugador,
 def test_edit_future_kickoff_resets_auto_reminders(client, gestor, r32):
     esp = TeamFactory(code="ESP")
     arg = TeamFactory(code="ARG")
-    m = _ko(round=r32, home=esp, away=arg, bracket_code="M78",
-            kickoff=timezone.now() + timedelta(hours=1))
+    m = _ko(
+        round=r32,
+        home=esp,
+        away=arg,
+        bracket_code="M78",
+        kickoff=timezone.now() + timedelta(hours=1),
+    )
     BetsReminderLog.objects.create(
-        match=m, kind=BetsReminderLog.KIND_T_MINUS_2H,
-        sent_at=timezone.now(), pending_count=3, pending_names=["A", "B", "C"],
+        match=m,
+        kind=BetsReminderLog.KIND_T_MINUS_2H,
+        sent_at=timezone.now(),
+        pending_count=3,
+        pending_names=["A", "B", "C"],
     )
     client.force_login(gestor)
     resp = client.post(

@@ -442,19 +442,35 @@ def test_order_ko_column_unfinished_first_then_by_kickoff():
     r32 = RoundFactory(id="r32", points=5, label="R32", short="R32", order=2)
     now = timezone.now()
     done_old = MatchFactory(
-        round=r32, matchday=None, home=TeamFactory(), away=TeamFactory(),
-        result_home=1, result_away=0, kickoff=now - timedelta(days=3),
+        round=r32,
+        matchday=None,
+        home=TeamFactory(),
+        away=TeamFactory(),
+        result_home=1,
+        result_away=0,
+        kickoff=now - timedelta(days=3),
     )
     done_new = MatchFactory(
-        round=r32, matchday=None, home=TeamFactory(), away=TeamFactory(),
-        result_home=2, result_away=2, kickoff=now - timedelta(days=1),
+        round=r32,
+        matchday=None,
+        home=TeamFactory(),
+        away=TeamFactory(),
+        result_home=2,
+        result_away=2,
+        kickoff=now - timedelta(days=1),
     )
     open_late = MatchFactory(
-        round=r32, matchday=None, home=TeamFactory(), away=TeamFactory(),
+        round=r32,
+        matchday=None,
+        home=TeamFactory(),
+        away=TeamFactory(),
         kickoff=now + timedelta(days=5),
     )
     open_soon = MatchFactory(
-        round=r32, matchday=None, home=TeamFactory(), away=TeamFactory(),
+        round=r32,
+        matchday=None,
+        home=TeamFactory(),
+        away=TeamFactory(),
         kickoff=now + timedelta(days=2),
     )
 

@@ -43,7 +43,6 @@ class Command(BaseCommand):
         Match.objects.filter(id__in=affected_ids).update(home=None, away=None)
         self.stdout.write(
             self.style.SUCCESS(
-                f"Reseteados {len(affected_ids)} cruce(s) KO y borrados "
-                f"{pred_count} pronóstico(s)."
+                f"Reseteados {len(affected_ids)} cruce(s) KO y borrados {pred_count} pronóstico(s)."
             )
         )

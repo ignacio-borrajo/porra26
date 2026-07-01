@@ -21,8 +21,10 @@ def r32(db):
 @pytest.mark.django_db
 def test_reset_nulls_unfinished_ko_and_deletes_predictions(r32):
     ko = MatchFactory(
-        round=r32, matchday=None,
-        home=TeamFactory(code="ESP"), away=TeamFactory(code="ARG"),
+        round=r32,
+        matchday=None,
+        home=TeamFactory(code="ESP"),
+        away=TeamFactory(code="ARG"),
         kickoff=timezone.now() + timedelta(days=5),
     )
     PredictionFactory(match=ko, home=1, away=0)
@@ -37,9 +39,12 @@ def test_reset_nulls_unfinished_ko_and_deletes_predictions(r32):
 @pytest.mark.django_db
 def test_reset_leaves_finished_ko_untouched(r32):
     done = MatchFactory(
-        round=r32, matchday=None,
-        home=TeamFactory(code="FRA"), away=TeamFactory(code="BRA"),
-        result_home=2, result_away=1,
+        round=r32,
+        matchday=None,
+        home=TeamFactory(code="FRA"),
+        away=TeamFactory(code="BRA"),
+        result_home=2,
+        result_away=1,
         kickoff=timezone.now() - timedelta(days=1),
     )
     PredictionFactory(match=done, home=2, away=1)
@@ -54,8 +59,10 @@ def test_reset_leaves_finished_ko_untouched(r32):
 @pytest.mark.django_db
 def test_reset_dry_run_changes_nothing(r32):
     ko = MatchFactory(
-        round=r32, matchday=None,
-        home=TeamFactory(code="ESP"), away=TeamFactory(code="ARG"),
+        round=r32,
+        matchday=None,
+        home=TeamFactory(code="ESP"),
+        away=TeamFactory(code="ARG"),
         kickoff=timezone.now() + timedelta(days=5),
     )
     PredictionFactory(match=ko, home=1, away=0)
@@ -71,8 +78,10 @@ def test_reset_dry_run_changes_nothing(r32):
 def test_reset_ignores_group_matches(r32):
     groups = RoundFactory(id="groups", points=3, label="Grupos", short="GRP", order=1)
     gm = MatchFactory(
-        round=groups, matchday=1,
-        home=TeamFactory(code="ESP"), away=TeamFactory(code="ARG"),
+        round=groups,
+        matchday=1,
+        home=TeamFactory(code="ESP"),
+        away=TeamFactory(code="ARG"),
         kickoff=timezone.now() + timedelta(days=1),
     )
 
