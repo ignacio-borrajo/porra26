@@ -2934,35 +2934,28 @@ html.fv .team-profile-halo {
 /* ============================================================
    Cuadro de eliminatorias (KO bracket)
    ============================================================ */
-.ko-canvas {
+/* Columnas por ronda: una columna por eliminatoria, cards apiladas y
+   ordenadas por fecha (no finalizados arriba). Scroll horizontal + arrastre. */
+.ko-columns {
   position: relative;
   display: flex;
-  align-items: stretch;
-  gap: 56px;
-  padding: 32px;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 16px 4px;
   overflow-x: auto;
   overflow-y: visible;
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: x proximity;
   scroll-behavior: smooth;
   scrollbar-width: none;
   cursor: grab;
 }
-.ko-canvas.grabbing { cursor: grabbing; }
-.ko-canvas.prevent-scroll-animation { scroll-behavior: auto; }
-.ko-canvas::-webkit-scrollbar { display: none; }
+.ko-columns.grabbing { cursor: grabbing; }
+.ko-columns.prevent-scroll-animation { scroll-behavior: auto; }
+.ko-columns::-webkit-scrollbar { display: none; }
 
-/* Bracket clásico — layout híbrido:
-   - R32 usa flex con .ko-col-body + .ko-pair: 8 parejas con altura mínima fija,
-     space-around reparte el espacio sobrante. Cada pareja queda con sus dos cards
-     pegadas (gap 14px interno) y entre parejas hay hueco visible.
-   - R16/QF/SF/Final usan CSS Grid con 16 filas iguales: las cards se colocan con
-     row-span 2/4/8/16 y `align-self: center`, así su centro cae matemáticamente
-     en el punto medio de las dos cards de la ronda anterior (eso ancla a las
-     parejas de R32, que están centradas por pair-area).
-   - Las cards llevan min-height para que la altura sea uniforme y la distribución
-     no se desplace por longitudes de texto distintas. */
 .ko-col {
-  min-width: 280px;
+  flex: 0 0 300px;
+  min-width: 300px;
   scroll-snap-align: start;
 }
 .ko-col-head {
@@ -2976,88 +2969,25 @@ html.fv .team-profile-halo {
   text-transform: uppercase;
   color: var(--text-dim);
 }
-
-/* --- R32: flex con parejas --- */
-.ko-col[data-round="r32"] {
+.ko-col-body {
   display: flex;
   flex-direction: column;
+  gap: 12px;
 }
-.ko-col[data-round="r32"] .ko-col-body {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-}
-.ko-col[data-round="r32"] .ko-pair {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  min-height: 300px;            /* fuerza altura uniforme por pareja → hueco visible entre parejas */
-  justify-content: center;
-}
-
-/* --- R16/QF/SF/Final: grid de 16 filas iguales --- */
-.ko-col[data-round="r16"],
-.ko-col[data-round="qf"],
-.ko-col[data-round="sf"],
-.ko-col[data-round="final"] {
-  display: grid;
-  grid-template-rows: auto repeat(16, 1fr);
-}
-.ko-col[data-round="r16"]   > .match-card { grid-row: span 2; }
-.ko-col[data-round="qf"]    > .match-card { grid-row: span 4; }
-.ko-col[data-round="sf"]    > .match-card { grid-row: span 8; }
-.ko-col[data-round="final"] > .match-card { grid-row: span 16; }
-.ko-col[data-round="r16"]   > .match-card,
-.ko-col[data-round="qf"]    > .match-card,
-.ko-col[data-round="sf"]    > .match-card,
-.ko-col[data-round="final"] > .match-card { align-self: center; width: 100%; }
-
-/* Uniformiza alturas de cards y evita que team-names largos rompan la rejilla. */
-.ko-canvas .match-card { min-height: 140px; }
-.ko-canvas .team-name {
+.ko-columns .team-name {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
 }
-
-.ko-connectors {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-}
-.ko-connectors path { fill: none; stroke-width: 2; }
-.ko-connectors path[data-status="pending_teams"] {
-  stroke: var(--border);
-  stroke-dasharray: 4 6;
-}
-.ko-connectors path[data-status="open"],
-.ko-connectors path[data-status="live"] {
-  stroke: var(--border-hi);
-}
-.ko-connectors path[data-status="done"] {
-  stroke: var(--accent);
-  opacity: .85;
-}
-
 .match-card[data-status="pending_teams"] {
   border: 1px dashed var(--border);
 }
 
-/* En desktop el bracket manda; la lista de móvil queda oculta. */
-.ko-mobile-list { display: none; }
-
 @media (max-width: 768px) {
-  /* Móvil: ocultamos el bracket y mostramos solo la ronda activa como lista vertical
-     (similar al layout de la fase de grupos). Los chips recargan la página. */
-  .ko-canvas { display: none; }
-  .ko-mobile-list {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 14px;
-    padding: 4px 0;
+  .ko-col {
+    flex-basis: 82vw;
+    min-width: 82vw;
   }
 }
 

@@ -13,19 +13,10 @@ from competition.services.resolve import clear_match_result, delete_match, resol
 KO_ROUND_IDS = ("r32", "r16", "qf", "sf", "final")
 
 
-def _group_into_pairs(matches: list) -> list[list]:
-    """Agrupa matches consecutivos con el mismo feeds_into_code (asume pre-sorted).
-    Devuelve [[m1, m2], [m3, m4], ...] para dibujar parejas de hermanos juntas."""
-    pairs: list[list] = []
-    last_key: object = object()
-    for m in matches:
-        key = m.feeds_into_code or "__no_feed__"
-        if key == last_key:
-            pairs[-1].append(m)
-        else:
-            pairs.append([m])
-            last_key = key
-    return pairs
+def _order_ko_column(matches: list) -> list:
+    """Ordena los partidos de una columna KO: primero los no finalizados
+    (`has_result` False) y luego los finalizados, ambos por kickoff ascendente."""
+    return sorted(matches, key=lambda m: (m.has_result, m.kickoff))
 
 
 class CompetitionView(LoginRequiredMixin, View):
@@ -106,38 +97,24 @@ class CompetitionView(LoginRequiredMixin, View):
 
         ko_rounds: list[dict] = []
         if is_ko_view:
-            ko_qs = (
-                Match.objects.filter(round_id__in=KO_ROUND_IDS)
-                .select_related("home", "away", "round")
-                .order_by("round__order", "kickoff", "bracket_code")
+            ko_matches = list(
+                Match.objects.filter(round_id__in=KO_ROUND_IDS).select_related(
+                    "home", "away", "round"
+                )
             )
-            ko_matches = list(ko_qs)
-            feeds_map: dict[str, str | None] = {}
+            ko_my_preds = {
+                p.match_id: p
+                for p in Prediction.objects.filter(player=request.user, match__in=ko_matches)
+            }
             for m in ko_matches:
-                for slot in (m.home_slot, m.away_slot):
-                    if slot.startswith("WM") and m.bracket_code:
-                        feeds_map[slot[2:]] = m.bracket_code
-            for m in ko_matches:
-                if m.bracket_code and m.bracket_code.startswith("M"):
-                    m.feeds_into_code = feeds_map.get(m.bracket_code[1:])
-                else:
-                    m.feeds_into_code = None
+                m.my_pred = ko_my_preds.get(m.id)
             rounds_by_id = {r.id: r for r in rounds}
             for rid in KO_ROUND_IDS:
                 r_obj = rounds_by_id.get(rid)
                 if r_obj is None:
                     continue
-                rmatches = sorted(
-                    [m for m in ko_matches if m.round_id == rid],
-                    key=lambda m: (m.feeds_into_code or "", m.bracket_code or ""),
-                )
-                ko_rounds.append(
-                    {
-                        "round": r_obj,
-                        "matches": rmatches,
-                        "pairs": _group_into_pairs(rmatches),
-                    }
-                )
+                rmatches = _order_ko_column([m for m in ko_matches if m.round_id == rid])
+                ko_rounds.append({"round": r_obj, "matches": rmatches})
 
         from announcements.models import WinnerAnnouncement
 

@@ -1,0 +1,18 @@
+{% load static %}
+<div class="ko-columns" data-active-round="{{ active_ko_id }}">
+  {% for entry in ko_rounds %}
+    <section class="ko-col" data-round="{{ entry.round.id }}">
+      <header class="ko-col-head">{{ entry.round.label }}</header>
+      <div class="ko-col-body">
+        {% for m in entry.matches %}
+          {% include "competition/_match_card.html" with match=m %}
+        {% empty %}
+          <p class="glass" style="padding:16px;opacity:.7"><span class="mono">Sin partidos en esta ronda todavía.</span></p>
+        {% endfor %}
+      </div>
+    </section>
+  {% empty %}
+    <p class="glass" style="padding:18px">No hay eliminatorias todavía.</p>
+  {% endfor %}
+</div>
+<script type="module" src="{% static 'js/ko-bracket.js' %}"></script>

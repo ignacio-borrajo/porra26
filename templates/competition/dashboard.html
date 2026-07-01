@@ -31,7 +31,7 @@
 
     {% if is_ko_view %}
       <div class="comp-section comp-section--pred">
-        {% include "competition/_ko_canvas.html" with ko_rounds=ko_rounds active_ko_id=active_ko_id my_preds=my_preds %}
+        {% include "competition/_ko_columns.html" with ko_rounds=ko_rounds active_ko_id=active_ko_id %}
       </div>
     {% else %}
       {% if live_matches %}
