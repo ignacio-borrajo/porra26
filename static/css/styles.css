@@ -479,6 +479,13 @@ a.match-card:hover {
   grid-template-columns: 1fr 380px;
   gap: 24px;
 }
+/* min-width: 0 en la columna de partidos (track 1fr) para que pueda
+   comprimirse por debajo del min-content de su contenido. Sin esto, el
+   ancho de `.ko-columns` (una columna por eliminatoria) arrastra el grid
+   entero y provoca scroll horizontal de toda la página; con esto el track
+   queda limitado al ancho disponible y es `.ko-columns` quien scrollea
+   con su propio overflow-x. */
+.comp-col--matches { min-width: 0; }
 .leaderboard-aside {
   padding: 18px;
   border-radius: 20px;
