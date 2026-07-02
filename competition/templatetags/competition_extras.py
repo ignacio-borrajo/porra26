@@ -8,6 +8,7 @@ register = template.Library()
 
 GROUP_RE = re.compile(r"^([123])([A-L])$")
 WINNER_RE = re.compile(r"^W(M\d+)$")
+LOSER_RE = re.compile(r"^L(M\d+)$")
 THIRD_RE = re.compile(r"^3WG_(S\d+)$")
 
 
@@ -21,6 +22,8 @@ def slot_label(code: str) -> str:
         return f"{pos}º Grupo {group}"
     if m := WINNER_RE.match(code):
         return f"Ganador {m.group(1)}"
+    if m := LOSER_RE.match(code):
+        return f"Perdedor {m.group(1)}"
     if m := THIRD_RE.match(code):
         return f"Mejor tercero ({m.group(1)})"
     return "Por definir"
