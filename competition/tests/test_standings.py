@@ -418,3 +418,25 @@ def test_standings_round_ids_aggregates_multiple_rounds():
 def test_standings_round_id_and_round_ids_are_mutually_exclusive():
     with pytest.raises(ValueError):
         standings(round_id="groups", round_ids=["r32", "r16"])
+
+
+@pytest.mark.django_db
+def test_third_place_match_counts_in_general_and_finals_scope():
+    final_round = RoundFactory(id="final", label="Final", short="FIN", points=25, order=6)
+    player = UserFactory(name="Ana", is_jugador=True)
+    # Partido del 3.er puesto: misma ronda `final`, sin matchday, resuelto.
+    third = MatchFactory(
+        round=final_round,
+        group="3.º y 4.º puesto",
+        matchday=None,
+        bracket_code="M104",
+        result_home=2,
+        result_away=1,
+    )
+    PredictionFactory(player=player, match=third, earned=25)
+
+    general = {r.player_id: r.pts for r in standings()}
+    assert general[player.id] == 25
+
+    finals = {r.player_id: r.pts for r in standings(round_ids=("r16", "qf", "sf", "final"))}
+    assert finals[player.id] == 25
