@@ -171,3 +171,35 @@ class TestFinalTriggers:
         second = detect_after_match(m)
         assert len(first) >= 1
         assert second == []
+
+    def test_finals_waits_for_third_place_match(
+        self, r16_round, qf_round, sf_round, final_round
+    ):
+        winner = UserFactory(name="W", sede="madrid")
+        for r, pts in ((r16_round, 7), (qf_round, 10), (sf_round, 15)):
+            m = MatchFactory(round=r, matchday=None, result_home=1, result_away=0)
+            PredictionFactory(player=winner, match=m, earned=pts)
+        # 3.er puesto (ronda final) SIN resolver todavía.
+        third = MatchFactory(
+            round=final_round,
+            group="3.º y 4.º puesto",
+            bracket_code="M104",
+            matchday=None,
+            result_home=None,
+            result_away=None,
+        )
+        m_final = MatchFactory(round=final_round, matchday=None, result_home=2, result_away=1)
+        PredictionFactory(player=winner, match=m_final, earned=20)
+
+        # La Final está resuelta pero el 3.er puesto no: nada de finals/global.
+        created = detect_after_match(m_final)
+        assert created == []
+
+        # Al resolver el 3.er puesto se cierra el ámbito y saltan los anuncios.
+        third.result_home, third.result_away = 1, 0
+        third.save(update_fields=["result_home", "result_away"])
+        PredictionFactory(player=winner, match=third, earned=20)
+        created = detect_after_match(third)
+        kinds = [a.scope_kind for a in created]
+        assert "finals" in kinds
+        assert "global" in kinds
