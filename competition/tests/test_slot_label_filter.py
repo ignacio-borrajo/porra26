@@ -11,6 +11,8 @@ from competition.templatetags.competition_extras import slot_label
         ("3L", "3º Grupo L"),
         ("WM49", "Ganador M49"),
         ("WM104", "Ganador M104"),
+        ("LM101", "Perdedor M101"),
+        ("LM102", "Perdedor M102"),
         ("3WG_S1", "Mejor tercero (S1)"),
         ("", "Por definir"),
         ("X9", "Por definir"),

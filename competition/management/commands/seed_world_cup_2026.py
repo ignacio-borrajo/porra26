@@ -1,4 +1,4 @@
-"""Carga el calendario del Mundial 2026: 48 selecciones + 72 partidos de grupos + 31 KO.
+"""Carga el calendario del Mundial 2026: 48 selecciones + 72 partidos de grupos + 32 KO.
 
 Idempotente. Claves funcionales:
 - Partidos de grupos (sin `bracket_code`): `(round, group, matchday, home, away)`.
@@ -22,7 +22,7 @@ FIXTURES_DIR = Path(__file__).resolve().parents[3] / "fixtures"
 
 
 class Command(BaseCommand):
-    help = "Carga el calendario del Mundial 2026 (48 equipos + 72 grupos + 31 KO)."
+    help = "Carga el calendario del Mundial 2026 (48 equipos + 72 grupos + 32 KO)."
 
     def add_arguments(self, parser):
         parser.add_argument(
