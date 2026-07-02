@@ -27,10 +27,10 @@ def test_seed_creates_48_teams_and_72_matches():
 
 
 @pytest.mark.django_db
-def test_seed_creates_31_ko_matches_with_slots_and_null_teams():
+def test_seed_creates_32_ko_matches_with_slots_and_null_teams():
     call_command("seed_world_cup_2026")
     ko = Match.objects.exclude(round_id="groups")
-    assert ko.count() == 31
+    assert ko.count() == 32
     # Cada cruce KO arranca sin equipos y con ambos slots no vacíos
     for m in ko:
         assert m.home_id is None
@@ -38,12 +38,12 @@ def test_seed_creates_31_ko_matches_with_slots_and_null_teams():
         assert m.bracket_code is not None and m.bracket_code != ""
         assert m.home_slot != ""
         assert m.away_slot != ""
-    # Distribución por ronda
+    # Distribución por ronda (la ronda `final` incluye la Final y el 3.er puesto)
     assert ko.filter(round_id="r32").count() == 16
     assert ko.filter(round_id="r16").count() == 8
     assert ko.filter(round_id="qf").count() == 4
     assert ko.filter(round_id="sf").count() == 2
-    assert ko.filter(round_id="final").count() == 1
+    assert ko.filter(round_id="final").count() == 2
 
 
 @pytest.mark.django_db
@@ -54,7 +54,7 @@ def test_seed_is_idempotent():
     call_command("seed_world_cup_2026")
     assert Team.objects.count() == 48
     assert Match.objects.filter(round_id="groups").count() == 72
-    assert Match.objects.exclude(round_id="groups").count() == 31
+    assert Match.objects.exclude(round_id="groups").count() == 32
 
 
 @pytest.mark.django_db
@@ -137,6 +137,20 @@ def test_seed_dry_run_does_not_crash_with_real_transactions():
         assert Match.objects.count() == 0
     finally:
         Round.objects.all().delete()
+
+
+@pytest.mark.django_db
+def test_seed_creates_third_place_match():
+    call_command("seed_world_cup_2026")
+    third = Match.objects.get(bracket_code="M104")
+    assert third.round_id == "final"
+    assert third.group == "3.º y 4.º puesto"
+    assert third.home_slot == "LM101"
+    assert third.away_slot == "LM102"
+    assert third.home_id is None and third.away_id is None
+    # Se juega antes que la Final (M103)
+    final = Match.objects.get(bracket_code="M103")
+    assert third.kickoff < final.kickoff
 
 
 @pytest.mark.django_db

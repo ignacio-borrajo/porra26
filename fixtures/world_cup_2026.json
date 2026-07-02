@@ -1343,5 +1343,20 @@
       "bracket_code": "M103",
       "kickoff": "2026-07-19T19:00:00Z"
     }
+  },
+  {
+    "model": "competition.match",
+    "pk": 104,
+    "fields": {
+      "round": "final",
+      "group": "3.º y 4.º puesto",
+      "matchday": null,
+      "home": null,
+      "away": null,
+      "home_slot": "LM101",
+      "away_slot": "LM102",
+      "bracket_code": "M104",
+      "kickoff": "2026-07-18T19:00:00Z"
+    }
   }
 ]
