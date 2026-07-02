@@ -172,9 +172,7 @@ class TestFinalTriggers:
         assert len(first) >= 1
         assert second == []
 
-    def test_finals_waits_for_third_place_match(
-        self, r16_round, qf_round, sf_round, final_round
-    ):
+    def test_finals_waits_for_third_place_match(self, r16_round, qf_round, sf_round, final_round):
         winner = UserFactory(name="W", sede="madrid")
         for r, pts in ((r16_round, 7), (qf_round, 10), (sf_round, 15)):
             m = MatchFactory(round=r, matchday=None, result_home=1, result_away=0)
