@@ -3220,7 +3220,12 @@ html.fv .team-profile-halo {
   font-size: clamp(20px, 2.4vw, 34px);
   line-height: 1.15;
   margin-top: 6px;
-  min-height: 1.2em;
+  /* Caja fija de 2 líneas: el panel no salta cuando el nombre que cruza
+     la flecha ocupa 1 o 2 líneas durante el giro. */
+  height: 2.3em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow-wrap: anywhere;
 }
 .raffle-current-name.is-pop { animation: raffle-pop calc(0.5s * var(--anim)) var(--ease-spring); }
