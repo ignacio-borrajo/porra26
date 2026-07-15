@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -8,59 +9,41 @@ from accounts.mixins import GestorRequiredMixin
 from accounts.models import AuditLog
 
 from .models import Raffle
-from .services import eligible_players, get_or_create_raffle, spin
+from .services import public_state, start_raffle
 
 
 def _state(request):
-    """Estado del sorteo para el JS: participantes (snapshot o elegibles) y urls."""
-    raffle = Raffle.objects.first()
-    if raffle is not None:
-        participants = [
-            {"id": e.player_id, "name": e.player.name, "eliminatedOrder": e.eliminated_order}
-            for e in raffle.entries.select_related("player")
-        ]
-    else:
-        participants = [
-            {"id": p.id, "name": p.name, "eliminatedOrder": None}
-            for p in eligible_players().order_by("name")
-        ]
-    return {
-        "participants": participants,
-        "isGestor": request.user.is_gestor,
-        "spinUrl": reverse("raffle:spin"),
-    }
+    state = public_state()
+    state["isGestor"] = request.user.is_gestor
+    state["stateUrl"] = reverse("raffle:state")
+    state["startUrl"] = reverse("raffle:start")
+    return state
 
 
-class DrawView(GestorRequiredMixin, View):
+class DrawView(LoginRequiredMixin, View):
     def get(self, request):
         return render(request, "raffle/draw.html", {"state": _state(request)})
 
 
-class SpinView(GestorRequiredMixin, View):
+class StateView(LoginRequiredMixin, View):
+    def get(self, request):
+        return JsonResponse(public_state())
+
+
+class StartView(GestorRequiredMixin, View):
     def post(self, request):
-        raffle = get_or_create_raffle()
         try:
-            eliminated, remaining, winner = spin(raffle)
+            raffle = start_raffle()
         except ValueError as exc:
             return JsonResponse({"error": str(exc)}, status=400)
         AuditLog.objects.create(
             actor=request.user,
-            action="raffle_spin",
+            action="raffle_start",
             target_type="raffle",
             target_id=str(raffle.pk),
-            payload={
-                "eliminated": [e.player_id for e in eliminated],
-                "remaining": remaining,
-                "winner": winner.player_id if winner else None,
-            },
+            payload={"participants": raffle.entries.count()},
         )
-        return JsonResponse(
-            {
-                "eliminated": [e.player_id for e in eliminated],
-                "remaining": remaining,
-                "winner": winner.player_id if winner else None,
-            }
-        )
+        return JsonResponse(public_state())
 
 
 class ResetView(GestorRequiredMixin, View):

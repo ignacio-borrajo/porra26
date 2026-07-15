@@ -3251,6 +3251,8 @@ html.fv .team-profile-halo {
   border-radius: var(--r-md);
 }
 .raffle-spin-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+.raffle-spin-btn[hidden] { display: none; }
+.raffle-sound-btn { width: 100%; font-size: 12px; opacity: 0.75; }
 .raffle-elims {
   padding: 14px 16px;
   border-radius: var(--r-md);

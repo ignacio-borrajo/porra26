@@ -2,9 +2,15 @@ from django.db import models
 
 
 class Raffle(models.Model):
-    """Sorteo por descarte. El activo es el más reciente; reiniciar lo borra."""
+    """Sorteo por descarte. El activo es el más reciente; reiniciar lo borra.
+
+    Al iniciarse se fija `started_at` y se precalcula el guion completo de
+    eliminaciones; los clientes lo reproducen sincronizados con el reloj del
+    servidor.
+    """
 
     created_at = models.DateTimeField(auto_now_add=True)
+    started_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -14,7 +20,11 @@ class Raffle(models.Model):
 
 
 class RaffleEntry(models.Model):
-    """Snapshot de un participante; `eliminated_order` 1..n según van cayendo."""
+    """Snapshot de un participante; `eliminated_order` 1..n-1 según el guion.
+
+    `eliminated_at` es el instante PROGRAMADO de la caída (started_at + orden ×
+    cadencia); puede estar en el futuro. El ganador es la única entry sin orden.
+    """
 
     raffle = models.ForeignKey(Raffle, on_delete=models.CASCADE, related_name="entries")
     player = models.ForeignKey("accounts.User", on_delete=models.CASCADE, related_name="+")

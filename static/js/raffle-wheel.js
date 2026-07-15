@@ -1,9 +1,11 @@
-/* Ruleta de eliminación del sorteo de camiseta.
+/* Ruleta de eliminación del sorteo de camiseta, en directo.
  *
- * El servidor decide SIEMPRE el resultado (POST girar/ devuelve los ids
- * eliminados en orden); aquí solo se anima esa secuencia: giro con
- * aceleración/deceleración, tick sonoro por gajo, nombre del eliminado en
- * grande, desaparición del gajo y re-giro automático hasta agotar la tanda.
+ * El servidor decide SIEMPRE el resultado: "Iniciar sorteo" precalcula el
+ * guion completo (orden + timestamp programado de cada caída) y estado/ lo
+ * revela poco a poco (anti-spoiler). Aquí solo se reproduce: polling ligero,
+ * reloj sincronizado con el servidor y cada giro animado para que la flecha
+ * caiga exactamente en su timestamp, de modo que todas las pantallas —gestor
+ * y espectadores— vean caer al mismo eliminado a la vez.
  */
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -18,10 +20,14 @@ const PALETTE = [
   "var(--c-green)",
   "var(--c-red)",
 ];
-const SPIN_TURNS = 2; // giros completos mínimos por tirada (decidido con el gestor)
-const FIRST_SPIN_MS = 4400;
-const CHAINED_SPIN_MS = 3000;
-const ELIMINATION_PAUSE_MS = 1600;
+
+const POLL_MS = 5000;
+const NORMAL_TURNS = 3.5; // 3-4 vueltas por giro (decidido con el gestor)
+const DRAMATIC_TURNS = 5.5; // 5-6 vueltas para los últimos
+const DRAMATIC_FROM = 10; // "los últimos" = 10 o menos en juego
+const NORMAL_SPIN_MS = 8000;
+const DRAMATIC_SPIN_MS = 13000;
+const MIN_SPIN_MS = 800; // sin tiempo para animar: la caída se aplica en seco
 
 function getCsrf() {
   const m = document.cookie.match(/csrftoken=([^;]+)/);
@@ -39,28 +45,37 @@ function init(state) {
   const aliveEl = root.querySelector("[data-raffle-alive]");
   const outEl = root.querySelector("[data-raffle-out]");
   const elimsEl = root.querySelector("[data-raffle-elims]");
-  const spinBtn = root.querySelector("[data-raffle-spin]");
+  const startBtn = root.querySelector("[data-raffle-start]");
+  const soundBtn = root.querySelector("[data-raffle-sound]");
   const resetForm = root.querySelector("[data-raffle-reset]");
   const overlay = document.querySelector("[data-raffle-overlay]");
   const winnerNameEl = document.querySelector("[data-raffle-winner-name]");
 
-  const byId = new Map(state.participants.map((p) => [p.id, p]));
-  const eliminated = state.participants
-    .filter((p) => p.eliminatedOrder !== null)
-    .sort((a, b) => a.eliminatedOrder - b.eliminatedOrder);
-  let alive = state.participants
-    .filter((p) => p.eliminatedOrder === null)
-    .sort((a, b) => a.name.localeCompare(b.name, "es"));
+  let participants = [];
+  let byId = new Map();
+  let eliminated = [];
+  let alive = [];
+  const knownEvents = new Map(); // orden -> { id, atMs } revelados por el servidor
+  let processed = 0; // último orden ya reproducido en esta pantalla
+  let finalOrder = 0; // total - 1: la última caída deja al ganador
+  let started = false;
+  let finished = false;
+  let sawLiveAction = false; // distingue directo de fast-forward (recargas)
+  let waitTimer = null;
 
   let rotation = 0; // grados acumulados de la ruleta
   let spinning = false;
+  let soundOn = false;
   let audioCtx = null;
   let wheelGroup = null;
   let segmentEls = new Map();
 
+  let clockOffset = state.serverNowMs - Date.now();
+  const serverNow = () => Date.now() + clockOffset;
+
   // --- Sonido: tick corto por gajo, sin assets (WebAudio) ---
   function tick() {
-    if (!audioCtx) return;
+    if (!soundOn || !audioCtx) return;
     const t = audioCtx.currentTime;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -79,6 +94,14 @@ function init(state) {
       if (Ctx) audioCtx = new Ctx();
     }
     if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+  }
+
+  function setSound(on) {
+    soundOn = on;
+    if (on) ensureAudio();
+    if (soundBtn) {
+      soundBtn.textContent = on ? "🔇 Silenciar" : "🔊 Activar sonido";
+    }
   }
 
   // --- Geometría ---
@@ -171,7 +194,7 @@ function init(state) {
     return 1 - Math.pow(1 - Math.pow(t, 1.4), 3);
   }
 
-  function spinTo(victimId, durationMs) {
+  function spinTo(victimId, durationMs, turns) {
     return new Promise((resolve) => {
       const idx = alive.findIndex((p) => p.id === victimId);
       const mid = (idx + 0.5) * step();
@@ -181,14 +204,14 @@ function init(state) {
       const current = ((rotation % 360) + 360) % 360;
       const targetNorm = ((target % 360) + 360) % 360;
       const delta = (targetNorm - current + 360) % 360;
-      const total = SPIN_TURNS * 360 + delta;
+      const total = turns * 360 + delta;
       const start = rotation;
       const t0 = performance.now();
       let lastTickIdx = null;
 
       function frame(now) {
         // El timestamp del primer rAF puede ser anterior a t0: clamp a [0, 1]
-        // o ease() devuelve NaN y la animación muere a mitad de tanda.
+        // o ease() devuelve NaN y la animación muere a mitad de guion.
         const t = Math.min(1, Math.max(0, (now - t0) / durationMs));
         setRotation(start + total * ease(t));
         const under = indexAtPointer();
@@ -238,14 +261,14 @@ function init(state) {
   }
 
   function showWinner(p) {
-    winnerNameEl.textContent = p.name;
-    overlay.hidden = false;
-    popName("🏆 Ganador", p.name);
-    if (spinBtn) {
-      spinBtn.disabled = true;
-      spinBtn.textContent = "Sorteo finalizado";
+    finished = true;
+    if (startBtn) startBtn.hidden = true;
+    if (sawLiveAction) {
+      winnerNameEl.textContent = p.name;
+      overlay.hidden = false;
+      confettiBlast();
     }
-    confettiBlast();
+    popName("🏆 Ganador", p.name);
   }
 
   function confettiBlast() {
@@ -272,12 +295,18 @@ function init(state) {
     })();
   }
 
-  async function eliminate(victimId, chained) {
-    await spinTo(victimId, chained ? CHAINED_SPIN_MS : FIRST_SPIN_MS);
-    const victim = byId.get(victimId);
-    popName("Eliminado", victim.name);
-    await removeSegment(victimId);
-    alive = alive.filter((p) => p.id !== victimId);
+  // --- Estado y roster ---
+  function setRoster(list) {
+    participants = list.map((p) => ({ id: p.id, name: p.name, eliminatedOrder: null }));
+    byId = new Map(participants.map((p) => [p.id, p]));
+    finalOrder = participants.length - 1;
+    eliminated = [];
+    alive = participants.slice().sort((a, b) => a.name.localeCompare(b.name, "es"));
+    rotation = 0;
+  }
+
+  function applyElimination(victim) {
+    alive = alive.filter((p) => p.id !== victim.id);
     victim.eliminatedOrder = eliminated.length + 1;
     eliminated.push(victim);
     // La ruleta se recompone con los gajos que quedan; la flecha manda,
@@ -285,58 +314,129 @@ function init(state) {
     rotation = rotation % 360;
     buildWheel();
     renderPanels();
+    processed += 1;
   }
 
-  async function handleSpin() {
-    if (spinning) return;
+  function afterStep() {
+    if (processed === finalOrder) {
+      showWinner(alive[0]);
+    } else {
+      scheduleNext();
+    }
+  }
+
+  // Reproduce la siguiente caída del guion: si su timestamp aún queda lejos
+  // espera, si hay margen anima el giro para caer clavado en él y si esta
+  // pantalla llega tarde (recarga, incorporación a mitad) la aplica en seco.
+  function scheduleNext() {
+    if (!started || finished || spinning || waitTimer) return;
+    const next = knownEvents.get(processed + 1);
+    if (!next) return; // aún no revelado: el próximo poll volverá a llamar
+    const lead = next.atMs - serverNow();
+    if (lead <= MIN_SPIN_MS) {
+      applyElimination(byId.get(next.id));
+      afterStep();
+      return;
+    }
+    const base = alive.length <= DRAMATIC_FROM ? DRAMATIC_SPIN_MS : NORMAL_SPIN_MS;
+    const startIn = Math.max(0, lead - base);
+    waitTimer = setTimeout(() => {
+      waitTimer = null;
+      runSpin(next);
+    }, startIn);
+  }
+
+  async function runSpin(evt) {
+    if (finished || spinning) return;
     spinning = true;
-    spinBtn.disabled = true;
-    ensureAudio();
+    sawLiveAction = true;
+    const duration = Math.max(MIN_SPIN_MS, evt.atMs - serverNow());
+    const turns = alive.length <= DRAMATIC_FROM ? DRAMATIC_TURNS : NORMAL_TURNS;
+    await spinTo(evt.id, duration, turns);
+    const victim = byId.get(evt.id);
+    popName("Eliminado", victim.name);
+    await removeSegment(evt.id);
+    applyElimination(victim);
+    spinning = false;
+    afterStep();
+  }
+
+  function mergeState(data) {
+    clockOffset = data.serverNowMs - Date.now();
+    if (data.startedAtMs === null) {
+      if (started) {
+        // El gestor reinició a mitad: recarga limpia hacia la pantalla de espera.
+        window.location.reload();
+        return;
+      }
+      // Pre-inicio: los elegibles pueden cambiar (altas, pagos).
+      const ids = (list) => list.map((p) => p.id).join(",");
+      if (ids(data.participants) !== ids(participants)) {
+        setRoster(data.participants);
+        buildWheel();
+        renderPanels();
+      }
+      return;
+    }
+    if (!started) {
+      started = true;
+      if (startBtn) startBtn.hidden = true;
+      setRoster(data.participants); // snapshot congelado al iniciar
+      buildWheel();
+      renderPanels();
+      popName("Sorteo en marcha", "…");
+    }
+    for (const p of data.participants) {
+      if (p.eliminatedOrder !== null && !knownEvents.has(p.eliminatedOrder)) {
+        knownEvents.set(p.eliminatedOrder, { id: p.id, atMs: p.eliminatedAtMs });
+      }
+    }
+    scheduleNext();
+  }
+
+  async function poll() {
     try {
-      const res = await fetch(state.spinUrl, {
+      const res = await fetch(state.stateUrl, { credentials: "same-origin" });
+      if (res.ok) mergeState(await res.json());
+    } catch (err) {
+      console.error(err);
+    }
+    if (!finished) setTimeout(poll, POLL_MS);
+  }
+
+  async function handleStart() {
+    if (!window.confirm("¿Iniciar el sorteo? A partir de aquí la ruleta corre sola.")) {
+      return;
+    }
+    startBtn.disabled = true;
+    setSound(true);
+    try {
+      const res = await fetch(state.startUrl, {
         method: "POST",
         headers: { "X-CSRFToken": getCsrf() },
         credentials: "same-origin",
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      for (let i = 0; i < data.eliminated.length; i++) {
-        await eliminate(data.eliminated[i], i > 0);
-        const isLast = i === data.eliminated.length - 1;
-        if (!isLast || data.winner === null) {
-          await new Promise((r) => setTimeout(r, ELIMINATION_PAUSE_MS));
-        }
-      }
-      if (data.winner !== null) {
-        showWinner(byId.get(data.winner));
-        return;
-      }
+      mergeState(await res.json());
     } catch (err) {
-      popName("Error", "No se pudo girar, reintenta");
+      popName("Error", "No se pudo iniciar, reintenta");
+      startBtn.disabled = false;
       console.error(err);
-    } finally {
-      spinning = false;
-      if (spinBtn && !(spinBtn.textContent === "Sorteo finalizado")) {
-        spinBtn.disabled = false;
-      }
     }
   }
 
+  // --- Arranque ---
+  setRoster(state.participants);
   buildWheel();
   renderPanels();
-
-  if (alive.length === 1 && eliminated.length > 0) {
-    // Sorteo ya finalizado (p. ej. recarga): estado ganador sin overlay ruidoso.
-    popName("🏆 Ganador", alive[0].name);
-    if (spinBtn) {
-      spinBtn.disabled = true;
-      spinBtn.textContent = "Sorteo finalizado";
-    }
-  } else if (eliminated.length > 0) {
-    popName("Último eliminado", eliminated[eliminated.length - 1].name);
+  if (state.startedAtMs === null) {
+    popName("Sorteo de camiseta", "El sorteo empezará en breve");
   }
+  mergeState(state); // fast-forward de lo ya caído e inicio del guion
+  if (!finished) setTimeout(poll, POLL_MS);
 
-  if (spinBtn) spinBtn.addEventListener("click", handleSpin);
+  if (startBtn) startBtn.addEventListener("click", handleStart);
+  if (soundBtn) soundBtn.addEventListener("click", () => setSound(!soundOn));
   if (resetForm) {
     resetForm.addEventListener("submit", (e) => {
       if (!window.confirm("¿Seguro? Se borra todo el progreso del sorteo.")) {
