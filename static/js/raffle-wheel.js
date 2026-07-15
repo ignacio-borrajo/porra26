@@ -22,8 +22,10 @@ const PALETTE = [
 ];
 
 const POLL_MS = 5000;
-const NORMAL_TURNS = 3.5; // 3-4 vueltas por giro (decidido con el gestor)
-const DRAMATIC_TURNS = 5.5; // 5-6 vueltas para los últimos
+// Las vueltas deben ser ENTERAS: el aterrizaje suma turns*360 + delta, y una
+// fracción de vuelta desplaza la caída ese ángulo respecto a la flecha.
+const NORMAL_TURNS = [3, 4]; // vueltas por giro (decidido con el gestor)
+const DRAMATIC_TURNS = [5, 6]; // vueltas para los últimos
 const DRAMATIC_FROM = 10; // "los últimos" = 10 o menos en juego
 const NORMAL_SPIN_MS = 8000;
 const DRAMATIC_SPIN_MS = 13000;
@@ -45,6 +47,7 @@ function init(state) {
   const aliveEl = root.querySelector("[data-raffle-alive]");
   const outEl = root.querySelector("[data-raffle-out]");
   const elimsEl = root.querySelector("[data-raffle-elims]");
+  const nextEl = root.querySelector("[data-raffle-next]");
   const startBtn = root.querySelector("[data-raffle-start]");
   const soundBtn = root.querySelector("[data-raffle-sound]");
   const resetForm = root.querySelector("[data-raffle-reset]");
@@ -62,6 +65,9 @@ function init(state) {
   let finished = false;
   let sawLiveAction = false; // distingue directo de fast-forward (recargas)
   let waitTimer = null;
+  let startedAtMs = null;
+  let cadenceMs = null;
+  let doomedId = null; // eliminado que sigue en la ruleta hasta la siguiente tirada
 
   let rotation = 0; // grados acumulados de la ruleta
   let spinning = false;
@@ -305,24 +311,39 @@ function init(state) {
     rotation = 0;
   }
 
-  function applyElimination(victim) {
+  // Recompone la ruleta sin el gajo pendiente de retirar (si lo hay).
+  // La flecha manda: reseteamos la rotación acumulada sin salto visual.
+  function flushDoomed() {
+    doomedId = null;
+    rotation = rotation % 360;
+    buildWheel();
+  }
+
+  function eliminateData(victim) {
     alive = alive.filter((p) => p.id !== victim.id);
     victim.eliminatedOrder = eliminated.length + 1;
     eliminated.push(victim);
-    // La ruleta se recompone con los gajos que quedan; la flecha manda,
-    // así que reseteamos la rotación acumulada sin salto visual apreciable.
-    rotation = rotation % 360;
-    buildWheel();
     renderPanels();
     processed += 1;
   }
 
-  function afterStep() {
+  // Caída aplicada en seco, sin animación (fast-forward o llegamos tarde).
+  function applyElimination(victim) {
+    eliminateData(victim);
+    flushDoomed();
+  }
+
+  async function afterStep() {
     if (processed === finalOrder) {
+      if (doomedId !== null) {
+        await removeSegment(doomedId);
+        flushDoomed();
+      }
       showWinner(alive[0]);
     } else {
       scheduleNext();
     }
+    updateCountdown();
   }
 
   // Reproduce la siguiente caída del guion: si su timestamp aún queda lejos
@@ -350,13 +371,23 @@ function init(state) {
     if (finished || spinning) return;
     spinning = true;
     sawLiveAction = true;
+    updateCountdown();
+    // El eliminado anterior sale de la ruleta ahora, al empezar esta tirada.
+    if (doomedId !== null) {
+      await removeSegment(doomedId);
+      flushDoomed();
+    }
     const duration = Math.max(MIN_SPIN_MS, evt.atMs - serverNow());
-    const turns = alive.length <= DRAMATIC_FROM ? DRAMATIC_TURNS : NORMAL_TURNS;
+    const range = alive.length <= DRAMATIC_FROM ? DRAMATIC_TURNS : NORMAL_TURNS;
+    const turns = range[Math.floor(Math.random() * range.length)];
     await spinTo(evt.id, duration, turns);
     const victim = byId.get(evt.id);
     popName("Eliminado", victim.name);
-    await removeSegment(evt.id);
-    applyElimination(victim);
+    // El gajo se queda (atenuado) hasta la siguiente tirada.
+    const seg = segmentEls.get(evt.id);
+    if (seg) seg.classList.add("is-doomed");
+    doomedId = evt.id;
+    eliminateData(victim);
     spinning = false;
     afterStep();
   }
@@ -380,6 +411,8 @@ function init(state) {
     }
     if (!started) {
       started = true;
+      startedAtMs = data.startedAtMs;
+      cadenceMs = data.cadenceMs;
       if (startBtn) startBtn.hidden = true;
       setRoster(data.participants); // snapshot congelado al iniciar
       buildWheel();
@@ -392,6 +425,25 @@ function init(state) {
       }
     }
     scheduleNext();
+  }
+
+  // Contador hasta que arranque el giro de la siguiente tirada.
+  function updateCountdown() {
+    if (!nextEl) return;
+    const usable = started && !finished && !spinning && cadenceMs && processed < finalOrder;
+    if (!usable) {
+      nextEl.hidden = true;
+      return;
+    }
+    const nextAt = startedAtMs + (processed + 1) * cadenceMs;
+    const base = alive.length <= DRAMATIC_FROM ? DRAMATIC_SPIN_MS : NORMAL_SPIN_MS;
+    const secs = Math.ceil((nextAt - base - serverNow()) / 1000);
+    if (secs <= 0) {
+      nextEl.hidden = true;
+      return;
+    }
+    nextEl.hidden = false;
+    nextEl.textContent = `Siguiente tirada en ${secs} s`;
   }
 
   async function poll() {
@@ -434,6 +486,7 @@ function init(state) {
   }
   mergeState(state); // fast-forward de lo ya caído e inicio del guion
   if (!finished) setTimeout(poll, POLL_MS);
+  setInterval(updateCountdown, 250);
 
   if (startBtn) startBtn.addEventListener("click", handleStart);
   if (soundBtn) soundBtn.addEventListener("click", () => setSound(!soundOn));

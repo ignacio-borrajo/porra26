@@ -91,5 +91,6 @@ def public_state(now=None):
     return {
         "serverNowMs": _ms(now),
         "startedAtMs": started_ms,
+        "cadenceMs": CADENCE_SECONDS * 1000,
         "participants": participants,
     }
