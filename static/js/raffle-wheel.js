@@ -220,9 +220,9 @@ function init(state) {
     aliveEl.textContent = alive.length;
     outEl.textContent = eliminated.length;
     elimsEl.textContent = "";
-    const last = eliminated.slice(-14).reverse();
-    if (last.length) elimsEl.setAttribute("start", eliminated.length);
-    for (const p of last) {
+    const all = eliminated.slice().reverse();
+    if (all.length) elimsEl.setAttribute("start", eliminated.length);
+    for (const p of all) {
       const li = document.createElement("li");
       li.textContent = p.name;
       elimsEl.appendChild(li);
