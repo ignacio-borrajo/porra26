@@ -28,10 +28,14 @@
     </div>
 
     {% if user.is_gestor %}
-    <button type="button" class="btn btn-primary raffle-spin-btn" data-raffle-spin>
-      Que gire la ruleta
+    <button type="button" class="btn btn-primary raffle-spin-btn" data-raffle-start>
+      Iniciar sorteo
     </button>
     {% endif %}
+
+    <button type="button" class="btn btn-ghost raffle-sound-btn" data-raffle-sound>
+      🔊 Activar sonido
+    </button>
 
     <div class="glass raffle-elims">
       <h4>Eliminados</h4>
