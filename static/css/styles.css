@@ -3137,3 +3137,178 @@ html.fv .team-profile-halo {
 .live-strip__foot { font-size: 11px; color: var(--text-dim); letter-spacing: 0.04em; }
 .live-strip__chip--awaiting .live-strip__foot { color: var(--c-yellow); }
 .live-strip__empty { margin: 0; color: var(--text-faint); font-size: 13px; }
+
+/* ============================================================
+   Sorteo de camiseta — ruleta de eliminación
+   ============================================================ */
+.raffle-stage {
+  display: flex;
+  gap: clamp(16px, 2.5vw, 32px);
+  align-items: stretch;
+  height: calc(100dvh - 130px);
+  min-height: 480px;
+}
+.raffle-wheel-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+.raffle-wheel-box {
+  position: relative;
+  height: 100%;
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+}
+.raffle-wheel-wrap svg {
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+}
+.raffle-wheel-wrap svg path,
+.raffle-wheel-wrap svg circle { stroke: var(--bg-0); stroke-width: 0.6; }
+.raffle-wheel-wrap svg text {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  fill: oklch(0.16 0.02 275 / 0.85);
+  pointer-events: none;
+}
+.raffle-seg { transition: opacity 0.55s var(--ease-out); transform-origin: 0 0; }
+.raffle-seg.is-eliminated { opacity: 0; }
+.raffle-hub { fill: var(--surface-solid); stroke: var(--border-hi) !important; }
+.raffle-hub-count {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 20px;
+  fill: var(--text);
+}
+.raffle-pointer {
+  position: absolute;
+  right: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 13px solid transparent;
+  border-bottom: 13px solid transparent;
+  border-right: 22px solid var(--accent);
+  z-index: 2;
+  filter: drop-shadow(0 2px 6px oklch(0.05 0.05 280 / 0.5));
+}
+.raffle-side {
+  flex: 0 0 clamp(280px, 30vw, 380px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.raffle-current { padding: 20px 18px; text-align: center; border-radius: var(--r-md); }
+.raffle-current-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-weight: 700;
+}
+.raffle-current-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(20px, 2.4vw, 34px);
+  line-height: 1.15;
+  margin-top: 6px;
+  min-height: 1.2em;
+  overflow-wrap: anywhere;
+}
+.raffle-current-name.is-pop { animation: raffle-pop calc(0.5s * var(--anim)) var(--ease-spring); }
+@keyframes raffle-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.raffle-stats { display: flex; gap: 12px; }
+.raffle-stat { flex: 1; padding: 12px 14px; text-align: center; border-radius: var(--r-md); }
+.raffle-stat-num { font-family: var(--font-mono); font-size: 26px; font-weight: 700; }
+.raffle-stat-cap {
+  font-size: 10px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+.raffle-spin-btn {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 17px;
+  padding: 15px 20px;
+  border-radius: var(--r-md);
+}
+.raffle-spin-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+.raffle-elims {
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.raffle-elims h4 {
+  margin: 0 0 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-faint);
+}
+.raffle-elims ol {
+  margin: 0;
+  padding-left: 22px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.raffle-elims li { margin-bottom: 4px; text-decoration: line-through; opacity: 0.8; }
+.raffle-reset-btn { width: 100%; font-size: 12px; opacity: 0.7; }
+.raffle-winner-overlay[hidden] { display: none; }
+.raffle-winner-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: oklch(0.1 0.03 280 / 0.72);
+  backdrop-filter: blur(10px);
+}
+.raffle-winner-card {
+  text-align: center;
+  padding: 40px;
+  animation: raffle-winner-in calc(0.7s * var(--anim)) var(--ease-spring);
+}
+@keyframes raffle-winner-in {
+  0% { transform: scale(0.3); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.raffle-winner-label {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(20px, 3vw, 32px);
+  color: var(--c-gold);
+  letter-spacing: 0.04em;
+}
+.raffle-winner-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(40px, 8vw, 110px);
+  line-height: 1.05;
+  color: oklch(0.97 0.01 275);
+  margin: 18px 0 10px;
+  overflow-wrap: anywhere;
+}
+.raffle-winner-sub { font-size: clamp(14px, 1.6vw, 20px); color: oklch(0.78 0.02 275); }
+@media (max-width: 860px) {
+  .raffle-stage { flex-direction: column; height: auto; }
+  .raffle-wheel-wrap { width: 100%; }
+  .raffle-wheel-box { height: auto; width: min(92vw, 62dvh); }
+  .raffle-side { flex: 1 1 auto; }
+  .raffle-elims { max-height: 220px; }
+}

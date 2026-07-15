@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "stats",
     "core",
     "announcements",
+    "raffle",
     "pwa",
     "axes",
     "auditlog",

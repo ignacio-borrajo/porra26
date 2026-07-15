@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Sorteo de camiseta · La Porra del Jefe{% endblock %}
+{% block main %}
+<div class="raffle-stage" data-raffle>
+  <section class="raffle-wheel-wrap">
+    <div class="raffle-wheel-box">
+      <div class="raffle-pointer" aria-hidden="true"></div>
+      <svg data-raffle-wheel viewBox="-160 -160 320 320" role="img" aria-label="Ruleta del sorteo"></svg>
+    </div>
+  </section>
+
+  <aside class="raffle-side">
+    <div class="glass raffle-current">
+      <div class="raffle-current-label" data-raffle-label>Sorteo de camiseta</div>
+      <div class="raffle-current-name" data-raffle-name>&nbsp;</div>
+    </div>
+
+    <div class="raffle-stats">
+      <div class="glass raffle-stat">
+        <div class="raffle-stat-num" data-raffle-alive>0</div>
+        <div class="raffle-stat-cap">En juego</div>
+      </div>
+      <div class="glass raffle-stat">
+        <div class="raffle-stat-num" data-raffle-out>0</div>
+        <div class="raffle-stat-cap">Eliminados</div>
+      </div>
+    </div>
+
+    {% if user.is_gestor %}
+    <button type="button" class="btn btn-primary raffle-spin-btn" data-raffle-spin>
+      Que gire la ruleta
+    </button>
+    {% endif %}
+
+    <div class="glass raffle-elims">
+      <h4>Últimos eliminados</h4>
+      <ol data-raffle-elims reversed></ol>
+    </div>
+
+    {% if user.is_gestor %}
+    <form method="post" action="{% url 'raffle:reset' %}" data-raffle-reset>
+      {% csrf_token %}
+      <button type="submit" class="btn btn-ghost raffle-reset-btn">Reiniciar sorteo</button>
+    </form>
+    {% endif %}
+  </aside>
+</div>
+
+<div class="raffle-winner-overlay" data-raffle-overlay hidden>
+  <div class="raffle-winner-card">
+    <div class="raffle-winner-label">🏆 ¡Tenemos ganador!</div>
+    <div class="raffle-winner-name" data-raffle-winner-name></div>
+    <div class="raffle-winner-sub">se lleva la camiseta de la selección</div>
+  </div>
+</div>
+
+{{ state|json_script:"raffle-data" }}
+{% endblock %}
+{% block scripts %}
+<script type="module" src="{% static 'js/raffle-wheel.js' %}"></script>
+{% endblock %}
