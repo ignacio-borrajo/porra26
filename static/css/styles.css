@@ -3179,6 +3179,16 @@ html.fv .team-profile-halo {
 }
 .raffle-seg { transition: opacity 0.55s var(--ease-out); transform-origin: 0 0; }
 .raffle-seg.is-eliminated { opacity: 0; }
+.raffle-seg.is-doomed { opacity: 0.35; filter: grayscale(0.85); }
+.raffle-next {
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.raffle-next[hidden] { display: none; }
 .raffle-hub { fill: var(--surface-solid); stroke: var(--border-hi) !important; }
 .raffle-hub-count {
   font-family: var(--font-mono);

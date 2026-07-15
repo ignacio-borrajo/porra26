@@ -66,6 +66,12 @@ el giro antes de frenar, pero sin que nadie vea el ganador en las devtools.
   gesto del usuario); el gestor lo activa implícitamente al pulsar iniciar.
 - Menú "Sorteo" visible para todos (escritorio + drawer móvil).
 - Ganador: overlay + confeti como hasta ahora, disparado al caer la última bola.
+- **Contador** "Siguiente tirada en N s" entre giros (el estado envía `cadenceMs`).
+- El gajo del **eliminado permanece en la ruleta** (atenuado, gris) hasta que
+  empieza la siguiente tirada; entonces desaparece y la ruleta se recompone.
+- Las vueltas por giro son **enteras** (3–4 normales, 5–6 dramáticas): el
+  aterrizaje suma `vueltas × 360° + delta` y una fracción de vuelta desplazaría
+  la caída respecto a la flecha (bug corregido tras el estreno de la v1).
 
 ## Tests
 

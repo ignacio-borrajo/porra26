@@ -91,6 +91,7 @@ def test_public_state_sin_sorteo_lista_elegibles():
     _make_players(3)
     state = public_state()
     assert state["startedAtMs"] is None
+    assert state["cadenceMs"] == CADENCE_SECONDS * 1000
     assert len(state["participants"]) == 3
     assert all(p["eliminatedOrder"] is None for p in state["participants"])
 
