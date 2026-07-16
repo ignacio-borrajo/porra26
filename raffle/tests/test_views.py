@@ -20,14 +20,12 @@ def test_draw_requiere_login(client):
 
 
 @pytest.mark.django_db
-def test_draw_abierta_a_jugadores(client):
+def test_draw_redirige_a_jugadores(client):
     _make_players(3)
     client.force_login(UserFactory())
     r = client.get(reverse("raffle:draw"))
-    assert r.status_code == 200
-    html = r.content.decode()
-    assert "Activar sonido" in html
-    assert "Iniciar sorteo" not in html  # el botón es solo del gestor
+    assert r.status_code == 302
+    assert r.url == reverse("competicion:dashboard")
 
 
 @pytest.mark.django_db
@@ -42,7 +40,7 @@ def test_draw_muestra_boton_iniciar_al_gestor(client):
 @pytest.mark.django_db
 def test_draw_sin_sorteo_muestra_elegibles(client):
     _make_players(3)
-    client.force_login(UserFactory())  # sin pago: no cuenta como elegible
+    client.force_login(GestorFactory())  # sin pago: no cuenta como elegible
     data = client.get(reverse("raffle:draw")).context["state"]
     assert len(data["participants"]) == 3
     assert all(p["eliminatedOrder"] is None for p in data["participants"])
@@ -55,9 +53,18 @@ def test_estado_requiere_login(client):
 
 
 @pytest.mark.django_db
-def test_estado_devuelve_json_a_jugadores(client):
+def test_estado_redirige_a_jugadores(client):
     _make_players(2)
     client.force_login(UserFactory())
+    r = client.get(reverse("raffle:state"))
+    assert r.status_code == 302
+    assert r.url == reverse("competicion:dashboard")
+
+
+@pytest.mark.django_db
+def test_estado_devuelve_json_al_gestor(client):
+    _make_players(2)
+    client.force_login(GestorFactory())
     r = client.get(reverse("raffle:state"))
     assert r.status_code == 200
     data = r.json()
@@ -114,9 +121,9 @@ def test_reset_borra_el_sorteo(client):
 
 
 @pytest.mark.django_db
-def test_topbar_muestra_sorteo_a_todos(client):
+def test_topbar_muestra_sorteo_solo_al_gestor(client):
     client.force_login(GestorFactory())
     assert reverse("raffle:draw") in client.get(reverse("competicion:dashboard")).content.decode()
 
     client.force_login(UserFactory())
-    assert reverse("raffle:draw") in client.get(reverse("competicion:dashboard")).content.decode()
+    assert reverse("raffle:draw") not in client.get(reverse("competicion:dashboard")).content.decode()
