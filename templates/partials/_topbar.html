@@ -17,10 +17,10 @@
     <a href="{% url 'core:rules' %}" class="nav-item{% if ns == 'core' and url_name == 'rules' %} is-active{% endif %}">
       {% icon "book" width=17 height=17 %} Reglas
     </a>
+    {% if user.is_gestor %}
     <a href="{% url 'raffle:draw' %}" class="nav-item{% if ns == 'raffle' %} is-active{% endif %}">
       {% icon "target" width=17 height=17 %} Sorteo
     </a>
-    {% if user.is_gestor %}
     <a href="{% url 'pot:manage_players' %}" class="nav-item{% if ns == 'pot' and url_name != 'prizes' and url_name != 'audit' %} is-active{% endif %}">
       {% icon "users" width=17 height=17 %} Jugadores
     </a>
@@ -115,10 +115,6 @@
   <a href="{% url 'core:rules' %}" class="bottom-nav-item{% if ns == 'core' and url_name == 'rules' %} is-active{% endif %}"{% if ns == 'core' and url_name == 'rules' %} aria-current="page"{% endif %}>
     {% icon "book" width=20 height=20 %}
     <span>Reglas</span>
-  </a>
-  <a href="{% url 'raffle:draw' %}" class="bottom-nav-item{% if ns == 'raffle' %} is-active{% endif %}"{% if ns == 'raffle' %} aria-current="page"{% endif %}>
-    {% icon "target" width=20 height=20 %}
-    <span>Sorteo</span>
   </a>
 </nav>
 {% endif %}
