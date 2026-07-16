@@ -126,4 +126,6 @@ def test_topbar_muestra_sorteo_solo_al_gestor(client):
     assert reverse("raffle:draw") in client.get(reverse("competicion:dashboard")).content.decode()
 
     client.force_login(UserFactory())
-    assert reverse("raffle:draw") not in client.get(reverse("competicion:dashboard")).content.decode()
+    assert (
+        reverse("raffle:draw") not in client.get(reverse("competicion:dashboard")).content.decode()
+    )
