@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -19,12 +20,12 @@ def _state(request):
     return state
 
 
-class DrawView(GestorRequiredMixin, View):
+class DrawView(LoginRequiredMixin, View):
     def get(self, request):
         return render(request, "raffle/draw.html", {"state": _state(request)})
 
 
-class StateView(GestorRequiredMixin, View):
+class StateView(LoginRequiredMixin, View):
     def get(self, request):
         return JsonResponse(public_state())
 
