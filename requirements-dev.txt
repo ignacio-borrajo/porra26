@@ -4,6 +4,6 @@ pytest-django>=4.8
 pytest-cov>=4.1
 factory-boy>=3.3
 freezegun>=1.4
-ruff>=0.5
+ruff==0.15.15
 playwright>=1.45
 pdfplumber>=0.11
